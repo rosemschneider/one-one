@@ -1,0 +1,298 @@
+---
+title: "OneOne_analysis"
+author: "Rose M. Schneider"
+date: "4/10/2018"
+output: html_document
+---
+###Setup
+```{r, include = FALSE}
+rm(list = ls())
+require("knitr")
+opts_knit$set(root.dir = "~/Documents/Projects/one-one/") #this is specific to RMS, change accordingly
+library(tidyverse)
+library(magrittr)
+library(langcog)
+library(lme4)
+library(stringr)
+library(RColorBrewer)
+library(ggthemes)
+
+'%!in%' <- function(x,y)!('%in%'(x,y))
+```
+
+###Load Data
+```{r}
+data.raw <- read.csv("~/Documents/Projects/one-one/Data/one-one_data.csv")%>%
+  filter(SID != "CopyPasteMe")%>%
+  droplevels()%>%
+  mutate(Age = as.numeric(as.character(Age)), 
+         Agegroup = cut(Age, breaks = c(3, 3.5, 4, 4.5, 5.1)))%>%
+  mutate(CP_subset = ifelse(Knower_level == "CP", "CP", "Subset"), 
+          CP_subset = factor(CP_subset))
+```
+
+###Exclusions
+```{r}
+#how many kids pre-exclusion
+data.raw %>% 
+  distinct(SID, CP_subset)%>%
+  group_by(CP_subset)%>%
+  summarise(n = n())
+
+#why are kids excluded?
+data.raw %>%
+  filter(Exclude == 1)%>%
+  distinct(SID, Exclude_reason)%>%
+  group_by(Exclude_reason)%>%
+  summarise(n = n())
+
+##exclude these kids from analysis
+all.data <- data.raw %<>%
+  filter(Exclude != 1)
+
+##How many kids?
+all.data %>%
+  distinct(SID, CP_subset)%>%
+  group_by(CP_subset)%>%
+  summarise(n = n())
+```
+
+##Demographics
+```{r}
+all.data %>%
+  distinct(SID, Age, Knower_level)%>%
+  group_by(Knower_level)%>%
+  summarise(n = n(), 
+            mean_age = mean(Age, na.rm = TRUE), 
+            sd_age = sd(Age, na.rm = TRUE))%>%
+  kable()
+
+all.data %>%
+  distinct(SID, Age, Knower_level)%>%
+  ggplot(aes(x = Knower_level, y = Age, fill = Knower_level)) + 
+  geom_boxplot() + 
+  theme_bw()
+```
+
+---
+
+###Data manipulations 
+Get counting proficiency for each participant: 
+Foor each set (8/10), participants received a score of 3 (perfect); 2 (counted incorrectly but fixed mistake); 1 (counted only a few correctly); 0 (counted randomly)
+
+```{r}
+#fix the name of the task for kids who weren't run on two trials of 10
+tmp <- all.data %>%
+  filter(Task == "How Many")%>%
+  mutate(Task_item = ifelse(Task_item == "Score", "10 - Score", as.character(Task_item)))
+
+#compute mean counting
+ms.count <- tmp %>%
+  filter(Task_item == "10 - Score" | 
+           Task_item == "8 - Score")%>%
+  distinct(SID, Task_item, Response)%>%
+  group_by(SID)%>%
+  summarise(count_proficiency = mean(as.numeric(as.character(Response, na.rm = TRUE))))%>%
+  dplyr::select(SID, count_proficiency)
+
+##add to all.data
+all.data <- right_join(all.data, ms.count, by = "SID")
+```
+
+####Get highest count for each participant
+```{r}
+hc.lookup <- all.data %>%
+  filter(Task_item == "Highest_count")%>%
+  dplyr::select(SID, Response)%>%
+  dplyr::rename(highest_count = Response)
+
+##There are several children who will not count out loud, exclude them from analyses with Highest Count
+
+all.data <- right_join(all.data, hc.lookup, by = "SID")
+```
+
+####Classify participants as CP or subset-knowers
+```{r}
+all.data %<>%
+  mutate(CP_subset = ifelse(Knower_level == "CP", "CP", "Subset"))
+```
+
+---
+
+#Set-matching tasks
+##Visualize parallel and orthogonal set-matching task
+```{r}
+all.data %>%
+  filter(Task == "Parallel" | Task == "Orthogonal") %>%
+  filter(Trial_number != "Training")%>%
+  mutate(Response = as.integer(as.character(Response)))%>%
+  mutate(Task_item = factor(Task_item)) %>%
+  ggplot(aes(x = Task_item, y = Response, colour = Correct, group = CP_subset)) +
+  geom_count(stroke = 1.2) +
+  geom_smooth(se = FALSE, colour = "black") + 
+  xlim('3', '4', '6', '8', '10') +
+  scale_y_continuous(breaks = seq(1, 15, 1)) +
+  theme_bw(base_size = 10) +
+  labs(x = "Set size", y = "Number given") +
+  langcog::scale_colour_solarized("Correct")+ 
+  theme(panel.grid.minor = element_blank())+
+  facet_grid(factor(Task, levels = c("Parallel", "Orthogonal"))~CP_subset) + 
+  guides(n = 'legend')
+```
+
+##Mean performance by group
+```{r}
+all.data %>%
+  filter(Task == "Parallel" | Task == "Orthogonal", 
+         Trial_number != "Training")%>%
+  mutate(Task_item = factor(Task_item, levels = c("3", "4", "5", 
+                                                  "6", "7", "8", "9", "10")))%>%
+  group_by(Task, Task_item, CP_subset)%>%
+ summarise(mean = mean(as.integer(as.character(Correct)), na.rm = TRUE), 
+            n = n(), 
+            sd = sd(as.integer(as.character(Correct)), na.rm = TRUE), 
+            se = sd/sqrt(n)) %>%
+  ggplot(aes(x = Task_item, y = mean, colour = CP_subset, group = CP_subset)) +
+  geom_point(size = 2) + 
+  geom_line() +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
+                width = .1) +
+  theme_bw(base_size = 13) + 
+  facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
+  theme(legend.position = "right", 
+        legend.title = element_blank()) +
+  labs(x = "Set size", y = "Mean performance") +
+  scale_colour_brewer(palette = "Dark2") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+```
+
+##Visualization by condition (Identical/Non-Identical)
+```{r}
+all.data %>%
+  filter(Task == "Parallel" | Task == "Orthogonal", 
+         Trial_number != "Training")%>%
+  mutate(Task_item = factor(Task_item, levels = c("3", "4", "5", 
+                                                  "6", "7", "8", "9", "10")))%>%
+  group_by(Task, Task_item, Condition, CP_subset)%>%
+ summarise(mean = mean(as.integer(as.character(Correct)), na.rm = TRUE), 
+            n = n(), 
+            sd = sd(as.integer(as.character(Correct)), na.rm = TRUE), 
+            se = sd/sqrt(n)) %>%
+  ggplot(aes(x = Task_item, y = mean, colour = CP_subset, group = CP_subset)) +
+  geom_point(size = 2) + 
+  geom_line() +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
+                width = .1) +
+  theme_bw(base_size = 13) + 
+  facet_grid(Condition~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
+  theme(legend.position = "right", 
+        legend.title = element_blank()) +
+  labs(x = "Set size", y = "Mean performance") +
+  scale_colour_brewer(palette = "Dark2") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+```
+
+##Visualization of mean absolute error by knower-level for each task 
+Make a mean error df
+```{r}
+error.df <- all.data %>%
+  filter(Task == "Parallel" | Task == "Orthogonal", 
+         Trial_number != "Training")%>%
+  droplevels()%>%
+  mutate(Task_item = as.numeric(as.character(Task_item)), 
+         Response = as.numeric(as.character(Response)), 
+         abs_error = abs(Task_item-Response))
+```
+
+```{r}
+error.df %>%
+  filter(Correct == "0")%>%
+  mutate(Task_item = factor(Task_item, levels = c("3", "4", "5", 
+                                                  "6", "7", "8", "9", "10")))%>%
+  group_by(Task, Task_item, CP_subset)%>%
+ summarise(mean_error = mean(abs_error, na.rm = TRUE), 
+            n = n(), 
+            sd = sd(abs_error, na.rm = TRUE), 
+            se = sd/sqrt(n)) %>%
+  ggplot(aes(x = Task_item, y = mean_error, colour = CP_subset, group = CP_subset)) +
+  geom_point(size = 2) + 
+  geom_line() +
+  geom_errorbar(aes(ymin = mean_error - se, ymax = mean_error + se), 
+                width = .1) +
+  theme_bw(base_size = 13) + 
+  facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
+  theme(legend.position = "right", 
+        legend.title = element_blank()) +
+  labs(x = "Set size", y = "Mean absolute error") +
+  scale_colour_brewer(palette = "Dark2") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+```
+
+##Visualization of mean absolute error by condition
+```{r}
+error.df %>%
+  filter(Correct == "0")%>%
+  mutate(Task_item = factor(Task_item, levels = c("3", "4", "5", 
+                                                  "6", "7", "8", "9", "10")))%>%
+  group_by(Task, Task_item, CP_subset, Condition)%>%
+ summarise(mean_error = mean(abs_error, na.rm = TRUE), 
+            n = n(), 
+            sd = sd(abs_error, na.rm = TRUE), 
+            se = sd/sqrt(n)) %>%
+  ggplot(aes(x = Task_item, y = mean_error, colour = CP_subset, group = CP_subset)) +
+  geom_point(size = 2) + 
+  geom_line() +
+  geom_errorbar(aes(ymin = mean_error - se, ymax = mean_error + se), 
+                width = .1) +
+  theme_bw(base_size = 13) + 
+  facet_grid(Condition~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
+  theme(legend.position = "right", 
+        legend.title = element_blank()) +
+  labs(x = "Set size", y = "Mean absolute error") +
+  scale_colour_brewer(palette = "Dark2") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+```
+
+##Counting proficiency
+Scatterplot of age and counting proficiency
+```{r}
+all.data %>%
+  filter(!is.na(count_proficiency), 
+         count_proficiency != 5) %>% #temporary, coding issue
+  distinct(SID, CP_subset, Age, count_proficiency)%>%
+  mutate(count_proficiency = factor(count_proficiency))%>%
+  ggplot(aes(x = count_proficiency, y = Age, color = count_proficiency, gorup = count_proficiency)) + 
+  geom_point() + 
+  theme_bw() + 
+  facet_grid(~CP_subset)
+```
+
+Barplot by knower-level
+```{r}
+all.data %>%
+  filter(!is.na(count_proficiency), 
+         count_proficiency != 5) %>% #temporary, coding issue
+  distinct(SID, CP_subset, Age, count_proficiency)%>%
+  mutate(count_proficiency = factor(count_proficiency))%>%
+  ggplot(aes(x = CP_subset, fill = count_proficiency)) + 
+  geom_histogram(stat = "count") + 
+  theme_bw()
+```
+
+##Highest count
+```{r}
+all.data %>%
+  filter(!is.na(highest_count))%>%
+  mutate(highest_count = as.numeric(as.character(highest_count)))%>%
+  distinct(SID, Age, CP_subset, highest_count)%>%
+  ggplot(aes(x = highest_count, fill = CP_subset)) + 
+   geom_histogram(color = "black", stat = "count")+
+  theme_bw() + 
+  scale_fill_brewer(palette = "Set1") + 
+  labs(x = "Highest Count (unprompted)", y = "Count")
+```
+
+---
+
+#Analyses
+
