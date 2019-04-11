@@ -197,7 +197,8 @@ Make a mean error df
 ```{r}
 error.df <- all.data %>%
   filter(Task == "Parallel" | Task == "Orthogonal", 
-         Trial_number != "Training")%>%
+         Trial_number != "Training", 
+         Correct == "0")%>%
   droplevels()%>%
   mutate(Task_item = as.numeric(as.character(Task_item)), 
          Response = as.numeric(as.character(Response)), 
@@ -206,7 +207,6 @@ error.df <- all.data %>%
 
 ```{r}
 error.df %>%
-  filter(Correct == "0")%>%
   mutate(Task_item = factor(Task_item, levels = c("3", "4", "5", 
                                                   "6", "7", "8", "9", "10")))%>%
   group_by(Task, Task_item, CP_subset)%>%
@@ -292,7 +292,237 @@ all.data %>%
   labs(x = "Highest Count (unprompted)", y = "Count")
 ```
 
+#Scatterplots of mean performance - when are children reaching ceiling on this task?
+```{r}
+set.ms <- all.data %>%
+  filter(!is.na(highest_count), 
+         count_proficiency != 5)%>%
+  mutate(highest_count = as.numeric(as.character(highest_count)))%>%
+  filter(Task == "Parallel" | Task == "Orthogonal")%>%
+  group_by(SID, Task, Age, highest_count, count_proficiency, CP_subset)%>%
+  summarise(mean = mean(as.numeric(as.character(Correct)), na.rm = TRUE))
+
+##correlation between age and performance
+set.ms %>%
+  ggplot(aes(x = Age, y = mean, color = CP_subset)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) + 
+  theme_bw() +
+  facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal"))) + 
+  scale_color_brewer(palette = "Dark2") + 
+  labs(title = "Relationship between age and mean performance")
+
+##highest count and mean performance
+set.ms %>%
+ ggplot(aes(x = highest_count, y = mean, color = CP_subset)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) + 
+  theme_bw() +
+  facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal"))) + 
+  scale_color_brewer(palette = "Dark2") + 
+  labs(title = "Relationship between Highest Count and mean performance")
+
+##count proficiency and mean performance
+set.ms %>%
+ ggplot(aes(x = count_proficiency, y = mean, color = CP_subset)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) + 
+  theme_bw() +
+  facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal"))) + 
+  scale_color_brewer(palette = "Dark2") + 
+  labs(title = "Relationship between count proficiency and mean performance")
+```
+
 ---
 
 #Analyses
+Make accuracy df
+```{r}
+model.df <- all.data %>%
+  filter(Task == "Parallel" | Task == "Orthogonal", 
+         Trial_number != "Training")%>%
+  mutate(Task_item = as.numeric(as.character(Task_item)), 
+         Response = as.numeric(as.character(Response)), 
+         abs_error = abs(Task_item - Response), 
+         highest_count = as.numeric(as.character(highest_count)), 
+         age.c = as.vector(scale(Age, center = TRUE, scale=TRUE)), 
+         Task_item.c = as.vector(scale(Task_item, center = TRUE, scale=TRUE)), 
+         abs_error.c = as.vector(scale(abs_error, center = TRUE, scale=TRUE)), 
+         highest_count.c = as.vector(scale(highest_count, center = TRUE, scale = TRUE)),
+         count_proficiency.c = as.vector(scale(count_proficiency, center = TRUE, scale = TRUE)),
+         Correct = as.numeric(as.character(Correct)), 
+         CP_subset = factor(CP_subset, levels = c("Subset", "CP")))
+```
+##Do CP-knowers have higher accuracy overall?
+Yes - CP-knowers have significantly better performance compared to subset-knoowers, but they do not have a specific benefit for larger numerosities (i.e., no interaction between knower-level and larger numerosities). Worse performance for larger numerosities; better performance for parallel condition. Significantly better performance with age.  
+```{r}
+#create a base model that includes numerosity and task
+overall.acc.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
+                          family = "binomial", data = model.df, 
+                          control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+#add CP_subset-knower status
+overall.acc.kl <- glmer(Correct ~ CP_subset + Task_item.c + Task + age.c + (1|SID), 
+                          family = "binomial", data = model.df, 
+                          control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+#now add interaction
+overall.acc.kl.int <- glmer(Correct ~ CP_subset*Task_item.c + Task + age.c + (1|SID), 
+                          family = "binomial", data = model.df, 
+                          control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+#compare
+anova(overall.acc.base, overall.acc.kl, overall.acc.kl.int, test = 'LRT') 
+
+summary(overall.acc.kl)
+```
+
+##Followup analysis: Are CP-knowers significantly more accurate than subset-knowers on Orthogonal task?
+Yes; CP-knowers have significantly more accurate performance on the Orthogonal version in comparison to subset knowers.
+```{r}
+#build the base model
+orth.base <- glmer(Correct ~ Task_item.c + age.c + (1|SID), 
+                  family= "binomial", data = subset(model.df, Task == "Orthogonal"), 
+                  control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+#now add KL
+orth.kl <- glmer(Correct ~ CP_subset+ Task_item.c + age.c + (1|SID), 
+                  family= "binomial", data = subset(model.df, Task == "Orthogonal"), 
+                  control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+#does interaction significantly improve fit of the model?
+anova(orth.base, orth.kl, test = 'LRT')
+summary(orth.kl)
+```
+
+##To-do: follow-up analyseis on specific numerosities (6, 8, 10)
+
+##Analysis: Does identity of items matter? 
+Yes; There is a main effect of identity, with worse performance overall for nonidentical items. Effect of CP-status is marginal (*p* = .08); Significantly worse performance for larger set sizes; Better performance for parallel condition. 
+
+Interaction: CP-knowers have significantly better performance on NONIDENTICAL condition in comparison to subset-knowers.
+```{r}
+#make base model without condition term 
+condition.acc.base <- glmer(Correct ~ Condition + CP_subset + Task_item.c + Task + age.c + (1|SID), 
+                            family = "binomial", data = model.df)
+
+##now add interaction - 2-way
+condition.acc.2int <- glmer(Correct ~ Condition*CP_subset + Task_item.c + Task + age.c + (1|SID), 
+                            family = "binomial", data = model.df, 
+                            control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+##now add 3-way interaction
+condition.acc.3int <- glmer(Correct ~ Condition*CP_subset*Task_item.c + Task + age.c + (1|SID), 
+                            family = "binomial", data = model.df, 
+                            control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+#compare
+anova(condition.acc.base, condition.acc.2int, condition.acc.3int, test = 'LRT')
+
+##There is a 2-way interaction between CP_subset and condition, such that subset-knowers are significantly worse on non-identical condition
+summary(condition.acc.2int)
+```
+
+##To-do: follow up analyses with numerosity
+
+##Error: Do CP_knowers have lower rates of absolute error?
+Yes; On trials with incorrect responses, CP-knowers have lower mean absolute error for larger numerosities. Main effect of knower-level is marginal (*p* = .055). Main effect of set size, with significantly worse performance for larger numerosities. Significantly lower absolute error for parallel condition. 
+
+Interaction: CP-knowers have lower mean error for larger numerosities.
+```{r}
+error.model.df <- model.df %>%
+  filter(Correct == 0)
+
+#base model
+overall.error.base <- lmer(abs_error ~ Task_item.c + Task + age.c + (1|SID), 
+                           data = error.model.df)
+
+#add kl
+overall.error.kl <- lmer(abs_error ~ CP_subset + Task_item.c + Task + age.c + (1|SID), 
+                           data = error.model.df)
+
+#add interaction
+overall.error.int <- lmer(abs_error ~ CP_subset*Task_item.c + Task + age.c + (1|SID), 
+                           data = error.model.df)
+
+#compare 
+anova(overall.error.base, overall.error.kl, overall.error.int, test = 'LRT') #subset-knowers have higher absolute error for greater set sizes; significantly lower error on parallel task
+summary(overall.error.int)
+```
+
+##Follow-up: Do CP-knowers have lower absolute error for orthogonal condition? 
+Yes, overall absolute error, but no specific benefit for larger numerosities
+```{r}
+#base model
+orth.overall.error.base <- lmer(abs_error ~ Task_item.c + age.c + (1|SID), 
+                           data = subset(error.model.df, Task == "Orthogonal"))
+
+#add kl
+orth.overall.error.kl <- lmer(abs_error ~ CP_subset + Task_item.c + age.c + (1|SID), 
+                           data = subset(error.model.df, Task == "Orthogonal"))
+
+#add interaction
+orth.overall.error.int <- lmer(abs_error ~ CP_subset*Task_item.c + age.c + (1|SID), 
+                           data = subset(error.model.df, Task == "Orthogonal"))
+
+#compare 
+anova(orth.overall.error.base, orth.overall.error.kl, orth.overall.error.int, test = 'LRT') #Only main effect of knower-level here, no interaction with numerosity
+summary(orth.overall.error.kl)
+```
+
+##Counting proficiency
+Planned analysis with subset-knowers; no significant effect of counting proficiency
+```{r}
+#filter out the kids who don't have counting proficiency for now
+model.df %<>%
+  filter(count_proficiency != 5, 
+         !is.na(count_proficiency))
+
+#make base model
+count.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
+                    family = "binomial", data = subset(model.df, CP_subset == "Subset"))
+
+#add counting proficiency
+count.prof <- glmer(Correct ~ count_proficiency.c + Task_item.c + Task + age.c + (1|SID), 
+                    family = "binomial", data = subset(model.df, CP_subset == "Subset"))
+
+#add interaction
+count.int <- glmer(Correct ~ count_proficiency.c*Task_item.c + Task + age.c + (1|SID), 
+                    family = "binomial", data = subset(model.df, CP_subset == "Subset"))
+
+#compare
+anova(count.base, count.prof, count.int, test = 'LRT')
+```
+
+##Exploratory analysis with CP-knowers
+No significant effect of counting proficiency here
+```{r}
+#filter out the kids who don't have counting proficiency for now
+model.df %<>%
+  filter(count_proficiency != 5, 
+         !is.na(count_proficiency))
+
+#make base model
+cp.count.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
+                    family = "binomial", data = subset(model.df, CP_subset == "CP"))
+
+#add counting proficiency
+cp.count.prof <- glmer(Correct ~ count_proficiency.c + Task_item.c + Task + age.c + (1|SID), 
+                    family = "binomial", data = subset(model.df, CP_subset == "CP"))
+
+#add interaction
+cp.count.int <- glmer(Correct ~ count_proficiency.c*Task_item.c + Task + age.c + (1|SID), 
+                    family = "binomial", data = subset(model.df, CP_subset == "CP"))
+
+#compare
+anova(cp.count.base, cp.count.prof, cp.count.int, test = 'LRT')
+```
+
 
