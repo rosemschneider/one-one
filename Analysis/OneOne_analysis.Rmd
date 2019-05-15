@@ -57,6 +57,35 @@ all.data %>%
   summarise(n = n())
 ```
 
+##How many kids failed the training?
+Determining whether children did not understand the task; using failure on both Parallel training trials as a diagnostic
+```{r}
+#how many kids failed at least one trial in Parallel
+failed.trials <- all.data %>%
+  filter(Task == "Parallel" | Task == "Orthogonal",
+         Trial_number == "Training")%>%
+  distinct(SID, CP_subset, Task, Task_item, Correct)%>%
+  filter(Correct == "0")
+
+#first look at the kids who failed both on parallel, as these are likely to not understand the task 
+failed.trials %>%
+  filter(Task == "Parallel")%>%
+  group_by(SID, CP_subset)%>%
+  summarise(n = n())%>%
+  filter(n == 2)
+
+#021219-KT - gives max for every single trial, failed training trials even with feedback, should be excluded 
+#021919-EL - should not be excluded - failed both Parallel training (15 for both), but seemed to get it (matched for 3 and 4)
+#022519-ER - looked a little confused on training trials at the start, but seemed to get it
+#022619-JM - marginal, failed both parallel (15 for both), some variability after that, succeeded on orthogonal training, but failed on 3 and 4; should not be excluded, succeeded on Orthogonal training
+#022719-SW - marginal, seems to be performing randomly, succeeded on only one training trial
+#022819-BT - should not be excluded, failed on first two parallel, but then seemed to recover, succeeds on orthogonal training
+
+##MANUAL EXCLUSION for complete failure on set-matching
+all.data %<>%
+  filter(SID != '021219-KT')
+```
+
 ##Demographics
 ```{r}
 all.data %>%
@@ -67,12 +96,39 @@ all.data %>%
             sd_age = sd(Age, na.rm = TRUE))%>%
   kable()
 
+#age by knower level
 all.data %>%
   distinct(SID, Age, Knower_level)%>%
   ggplot(aes(x = Knower_level, y = Age, fill = Knower_level)) + 
   geom_boxplot() + 
   theme_bw()
+
+#age by cp/subset
+all.data %>%
+  distinct(SID, Age, CP_subset)%>%
+  ggplot(aes(x = CP_subset, y = Age, fill = CP_subset)) + 
+  geom_boxplot() + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) +
+  scale_fill_brewer(palette = "Dark2", guide = "none") + 
+  labs(x = "Knower Level")
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/Age.png", width = 5, height = 5)
+
+#overall mean age
+all.data %>%
+  distinct(SID, Age)%>%
+  summarise(mean_age = mean(Age, na.rm = TRUE), 
+            sd_age = sd(Age, na.rm = TRUE))
+
+#sex information
+all.data %>%
+  distinct(SID, Sex)%>%
+  group_by(Sex)%>%
+  summarise(n = n())
 ```
+
+
 
 ---
 
@@ -111,10 +167,14 @@ hc.lookup <- all.data %>%
 all.data <- right_join(all.data, hc.lookup, by = "SID")
 ```
 
-####Classify participants as CP or subset-knowers
+
+###Counting attempts on Give-N by knower level 
 ```{r}
-all.data %<>%
-  mutate(CP_subset = ifelse(Knower_level == "CP", "CP", "Subset"))
+# given.ms <- all.data %>%
+#   filter(Task == "Give_N", 
+#          !is.na(Task_item))%>%
+#   group_by(Knower_level, Task_item)%>%
+#   summarise(num_counting = sum(as.numeric(as.character(Counting.Number.language))))
 ```
 
 ---
@@ -127,44 +187,74 @@ all.data %>%
   filter(Trial_number != "Training")%>%
   mutate(Response = as.integer(as.character(Response)))%>%
   mutate(Task_item = factor(Task_item)) %>%
-  ggplot(aes(x = Task_item, y = Response, colour = Correct, group = CP_subset)) +
-  geom_count(stroke = 1.2) +
+  ggplot(aes(x = Task_item, y = Response, colour = Correct, group = CP_subset, shape = Correct)) +
+  geom_count(stroke = 1.2, alpha =.8, show.legend = FALSE) +
   geom_smooth(se = FALSE, colour = "black") + 
   xlim('3', '4', '6', '8', '10') +
   scale_y_continuous(breaks = seq(1, 15, 1)) +
   theme_bw(base_size = 10) +
+  scale_shape_manual(values = c(4, 1))+
   labs(x = "Set size", y = "Number given") +
   langcog::scale_colour_solarized("Correct")+ 
-  theme(panel.grid.minor = element_blank())+
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        legend.position = "bottom")+
   facet_grid(factor(Task, levels = c("Parallel", "Orthogonal"))~CP_subset) + 
   guides(n = 'legend')
+
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/task_corr.png", width = 7, height = 5)
 ```
 
 ##Mean performance by group
 ```{r}
+#add numerosity classification for easier-to-read graphs
+all.data %<>%
+  mutate(Numerosity = ifelse((Task == "Parallel" & as.numeric(as.character(Task_item)) < 5),
+                              "Small", 
+                              ifelse((Task == "Parallel" & as.numeric(as.character(Task_item)) >5), "Large", 
+                                     ifelse((Task == "Orthogonal" & as.numeric(as.character(Task_item)) < 5), "Small", 
+                                            ifelse((Task == "Orthogonal" & as.numeric(as.character(Task_item)) > 5), "Large", "NA")))))
+
 all.data %>%
   filter(Task == "Parallel" | Task == "Orthogonal", 
          Trial_number != "Training")%>%
   mutate(Task_item = factor(Task_item, levels = c("3", "4", "5", 
                                                   "6", "7", "8", "9", "10")))%>%
-  group_by(Task, Task_item, CP_subset)%>%
+  group_by(Numerosity, Task, Task_item, CP_subset)%>%
  summarise(mean = mean(as.integer(as.character(Correct)), na.rm = TRUE), 
             n = n(), 
             sd = sd(as.integer(as.character(Correct)), na.rm = TRUE), 
             se = sd/sqrt(n)) %>%
-  ggplot(aes(x = Task_item, y = mean, colour = CP_subset, group = CP_subset)) +
+  ggplot(aes(x = Task_item, y = mean, colour = CP_subset, group = interaction(Numerosity, CP_subset))) +
   geom_point(size = 2) + 
   geom_line() +
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
                 width = .1) +
   theme_bw(base_size = 13) + 
   facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
-  theme(legend.position = "right", 
-        legend.title = element_blank()) +
-  labs(x = "Set size", y = "Mean performance") +
+  theme(legend.position = "right",  
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) +
+  labs(x = "Set size", y = "Mean accuracy") +
   scale_colour_brewer(palette = "Dark2") + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  labs(color= "Knower Level")
+
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/mean_accuracy.png", width = 7, height = 4)
 ```
+
+##Descriptives of mean performance by numerosity, Task, Condition KL
+###Accuracy
+```{r}
+all.data %>%
+  filter(Task == "Parallel" | Task == "Orthogonal", 
+         Trial_number != "Training")%>%
+  group_by(CP_subset, Condition, Task, Numerosity)%>%
+  summarise(mean = round(mean(as.numeric(as.character(Correct)), na.rm = TRUE), 2), 
+            sd = round(sd(as.numeric(as.character(Correct)), na.rm = TRUE), 2)) %>%
+  kable()
+```
+
 
 ##Visualization by condition (Identical/Non-Identical)
 ```{r}
@@ -172,13 +262,15 @@ all.data %>%
   filter(Task == "Parallel" | Task == "Orthogonal", 
          Trial_number != "Training")%>%
   mutate(Task_item = factor(Task_item, levels = c("3", "4", "5", 
-                                                  "6", "7", "8", "9", "10")))%>%
-  group_by(Task, Task_item, Condition, CP_subset)%>%
+                                                  "6", "7", "8", "9", "10")), 
+         Condition = factor(Condition, levels = c("IDENTICAL", "NONIDENTICAL"), 
+                            labels = c("Identical", "Nonidentical")))%>%
+  group_by(Numerosity, Task, Task_item, Condition, CP_subset)%>%
  summarise(mean = mean(as.integer(as.character(Correct)), na.rm = TRUE), 
             n = n(), 
             sd = sd(as.integer(as.character(Correct)), na.rm = TRUE), 
             se = sd/sqrt(n)) %>%
-  ggplot(aes(x = Task_item, y = mean, colour = CP_subset, group = CP_subset)) +
+  ggplot(aes(x = Task_item, y = mean, colour = CP_subset, group = interaction(Numerosity, CP_subset))) +
   geom_point(size = 2) + 
   geom_line() +
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
@@ -186,10 +278,13 @@ all.data %>%
   theme_bw(base_size = 13) + 
   facet_grid(Condition~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
   theme(legend.position = "right", 
-        legend.title = element_blank()) +
+        panel.grid = element_blank()) +
   labs(x = "Set size", y = "Mean performance") +
   scale_colour_brewer(palette = "Dark2") + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  + 
+  labs(color = "Knower Level")
+
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/mean_accuracy_condition.png", width = 7, height = 4)
 ```
 
 ##Visualization of mean absolute error by knower-level for each task 
@@ -205,16 +300,26 @@ error.df <- all.data %>%
          abs_error = abs(Task_item-Response))
 ```
 
+###Descriptives of absolute error
+```{r}
+error.df %>%
+  filter(Trial_number != "Training")%>%
+  group_by(CP_subset, Condition, Task, Numerosity)%>%
+  summarise(mean_error = mean(abs_error), 
+            sd_error = sd(abs_error)) %>%
+  kable()
+```
+
 ```{r}
 error.df %>%
   mutate(Task_item = factor(Task_item, levels = c("3", "4", "5", 
                                                   "6", "7", "8", "9", "10")))%>%
-  group_by(Task, Task_item, CP_subset)%>%
+  group_by(Numerosity, Task, Task_item, CP_subset)%>%
  summarise(mean_error = mean(abs_error, na.rm = TRUE), 
             n = n(), 
             sd = sd(abs_error, na.rm = TRUE), 
             se = sd/sqrt(n)) %>%
-  ggplot(aes(x = Task_item, y = mean_error, colour = CP_subset, group = CP_subset)) +
+  ggplot(aes(x = Task_item, y = mean_error, colour = CP_subset, group = interaction(Numerosity, CP_subset))) +
   geom_point(size = 2) + 
   geom_line() +
   geom_errorbar(aes(ymin = mean_error - se, ymax = mean_error + se), 
@@ -222,10 +327,13 @@ error.df %>%
   theme_bw(base_size = 13) + 
   facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
   theme(legend.position = "right", 
-        legend.title = element_blank()) +
+        panel.grid = element_blank()) +
   labs(x = "Set size", y = "Mean absolute error") +
   scale_colour_brewer(palette = "Dark2") + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  + 
+  labs(color = "Knower Level")
+
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/mean_abs_error.png", width = 7, height = 4)
 ```
 
 ##Visualization of mean absolute error by condition
@@ -234,12 +342,12 @@ error.df %>%
   filter(Correct == "0")%>%
   mutate(Task_item = factor(Task_item, levels = c("3", "4", "5", 
                                                   "6", "7", "8", "9", "10")))%>%
-  group_by(Task, Task_item, CP_subset, Condition)%>%
+  group_by(Numerosity, Task, Task_item, CP_subset, Condition)%>%
  summarise(mean_error = mean(abs_error, na.rm = TRUE), 
             n = n(), 
             sd = sd(abs_error, na.rm = TRUE), 
             se = sd/sqrt(n)) %>%
-  ggplot(aes(x = Task_item, y = mean_error, colour = CP_subset, group = CP_subset)) +
+  ggplot(aes(x = Task_item, y = mean_error, colour = CP_subset, group = interaction(Numerosity, CP_subset))) +
   geom_point(size = 2) + 
   geom_line() +
   geom_errorbar(aes(ymin = mean_error - se, ymax = mean_error + se), 
@@ -247,10 +355,13 @@ error.df %>%
   theme_bw(base_size = 13) + 
   facet_grid(Condition~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
   theme(legend.position = "right", 
-        legend.title = element_blank()) +
+        panel.grid = element_blank()) +
   labs(x = "Set size", y = "Mean absolute error") +
   scale_colour_brewer(palette = "Dark2") + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  + 
+  labs(color = "Knower Level")
+
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/mean_abs_error_condition.png", width = 7, height = 4)
 ```
 
 ##Counting proficiency
@@ -395,9 +506,16 @@ orth.kl <- glmer(Correct ~ CP_subset+ Task_item.c + age.c + (1|SID),
                   control=glmerControl(optimizer="bobyqa",
                           optCtrl=list(maxfun=2e4)))
 
+#what about an interaction
+orth.kl.int <- glmer(Correct ~ CP_subset*Task_item.c + age.c + (1|SID), 
+                  family= "binomial", data = subset(model.df, Task == "Orthogonal"), 
+                  control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+
 #does interaction significantly improve fit of the model?
-anova(orth.base, orth.kl, test = 'LRT')
-summary(orth.kl)
+anova(orth.base, orth.kl, orth.kl.int, test = 'LRT')
+summary(orth.kl.int)
 ```
 
 ##To-do: follow-up analyseis on specific numerosities (6, 8, 10)
@@ -430,12 +548,52 @@ anova(condition.acc.base, condition.acc.2int, condition.acc.3int, test = 'LRT')
 summary(condition.acc.2int)
 ```
 
+
+####Are SS-knowers more accurate for identical in comparison to nonidentical?
+```{r}
+ss.ident.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
+                  family = "binomial", data = subset(model.df, CP_subset == "Subset"))
+
+#add condition
+ss.ident.condition <- glmer(Correct ~ Condition + Task_item.c + Task + age.c + (1|SID), 
+                  family = "binomial", data = subset(model.df, CP_subset == "Subset"))
+
+#add interaction
+ss.ident.condition.int <- glmer(Correct ~ Condition*Task_item.c + Task + age.c + (1|SID), 
+                  family = "binomial", data = subset(model.df, CP_subset == "Subset"))
+
+#compare
+anova(ss.ident.base, ss.ident.condition, ss.ident.condition.int, test = 'LRT')
+
+#main effect of condition
+summary(ss.ident.condition)
+```
+
+####Are CP-knowers more accurate for non-identical in comparison to identical?
+```{r}
+cp.ident.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
+                  family = "binomial", data = subset(model.df, CP_subset == "CP"))
+
+#add condition
+cp.ident.condition <- glmer(Correct ~ Condition + Task_item.c + Task + age.c + (1|SID), 
+                  family = "binomial", data = subset(model.df, CP_subset == "CP"))
+
+#add interaction
+cp.ident.condition.int <- glmer(Correct ~ Condition*Task_item.c + Task + age.c + (1|SID), 
+                  family = "binomial", data = subset(model.df, CP_subset == "CP"))
+
+#compare
+anova(cp.ident.base, cp.ident.condition, cp.ident.condition.int, test = 'LRT')
+
+#marginal effect of condition
+summary(cp.ident.condition) ##very slightly better performance for 
+```
+
 ##To-do: follow up analyses with numerosity
 
 ##Error: Do CP_knowers have lower rates of absolute error?
-Yes; On trials with incorrect responses, CP-knowers have lower mean absolute error for larger numerosities. Main effect of knower-level is marginal (*p* = .055). Main effect of set size, with significantly worse performance for larger numerosities. Significantly lower absolute error for parallel condition. 
+Yes; On trials with incorrect responses, CP-knowers have lower mean absolute error overall. 
 
-Interaction: CP-knowers have lower mean error for larger numerosities.
 ```{r}
 error.model.df <- model.df %>%
   filter(Correct == 0)
@@ -454,7 +612,7 @@ overall.error.int <- lmer(abs_error ~ CP_subset*Task_item.c + Task + age.c + (1|
 
 #compare 
 anova(overall.error.base, overall.error.kl, overall.error.int, test = 'LRT') #subset-knowers have higher absolute error for greater set sizes; significantly lower error on parallel task
-summary(overall.error.int)
+summary(overall.error.kl)
 ```
 
 ##Follow-up: Do CP-knowers have lower absolute error for orthogonal condition? 
@@ -476,6 +634,52 @@ orth.overall.error.int <- lmer(abs_error ~ CP_subset*Task_item.c + age.c + (1|SI
 anova(orth.overall.error.base, orth.overall.error.kl, orth.overall.error.int, test = 'LRT') #Only main effect of knower-level here, no interaction with numerosity
 summary(orth.overall.error.kl)
 ```
+
+##Error: Does error differ as a function of condition?
+
+```{r}
+#base model
+overall.error.cond.base <- lmer(abs_error ~ CP_subset + Task_item.c + Task + age.c + (1|SID), 
+                           data = error.model.df)
+
+#add kl
+overall.error.cond.kl <- lmer(abs_error ~ Condition + CP_subset + Task_item.c + Task + age.c + (1|SID), 
+                           data = error.model.df)
+
+#add interaction
+overall.error.cond.int <- lmer(abs_error ~ Condition*CP_subset+ Task_item.c + Task + age.c + (1|SID), 
+                           data = error.model.df)
+#add 3-way interaction
+overall.error.cond.3int <- lmer(abs_error ~ Condition*CP_subset*Task_item.c + Task + age.c + (1|SID), 
+                           data = error.model.df)
+
+#compare 
+anova(overall.error.cond.base, overall.error.cond.kl, overall.error.cond.int, overall.error.cond.3int, test = 'LRT') #subset-knowers have higher absolute error for greater set sizes; significantly lower error on parallel task
+
+summary(overall.error.cond.int)
+```
+
+##Error: Do CP-knowers have lower error on the Non-identical vs. identical conditions?
+
+```{r}
+#base model
+cp.error.cond.base <- lmer(abs_error ~ Task_item.c + Task + age.c + (1|SID), 
+                           data = subset(error.model.df, CP_subset == "CP"))
+
+#add condition
+cp.error.cond.kl <- lmer(abs_error ~ Condition + Task_item.c + Task + age.c + (1|SID), 
+                           data = subset(error.model.df, CP_subset == "CP"))
+
+#add interaction
+cp.error.cond.int <- lmer(abs_error ~ Condition*Task_item.c + Task + age.c + (1|SID), 
+                           data = subset(error.model.df, CP_subset == "CP"))
+
+#compare 
+anova(cp.error.cond.base, cp.error.cond.kl, cp.error.cond.int, test = 'LRT') #main effect of condition
+
+summary(cp.error.cond.kl)
+```
+
 
 ##Counting proficiency
 Planned analysis with subset-knowers; no significant effect of counting proficiency
@@ -499,6 +703,28 @@ count.int <- glmer(Correct ~ count_proficiency.c*Task_item.c + Task + age.c + (1
 
 #compare
 anova(count.base, count.prof, count.int, test = 'LRT')
+```
+
+What about error?
+Subset-knowers
+```{r}
+#filter out the kids who don't have counting proficiency for now
+error.model.df %<>%
+  filter(count_proficiency != 5, 
+         !is.na(count_proficiency))
+
+#make base model
+error.count.base <- lmer(abs_error ~ Task_item.c + Task + age.c + (1|SID), data = subset(error.model.df, CP_subset == "Subset"))
+
+#add counting proficiency
+error.count.prof <- lmer(abs_error ~ count_proficiency.c + Task_item.c + Task + age.c + (1|SID), data = subset(error.model.df, CP_subset == "Subset"))
+
+#add interaction
+error.count.int <- lmer(abs_error ~ count_proficiency.c*Task_item.c + Task + age.c + (1|SID), data = subset(error.model.df, CP_subset == "Subset"))
+
+#compare
+anova(error.count.base, error.count.prof, error.count.int, test = 'LRT')
+summary(error.count.prof)
 ```
 
 ##Exploratory analysis with CP-knowers
@@ -525,4 +751,136 @@ cp.count.int <- glmer(Correct ~ count_proficiency.c*Task_item.c + Task + age.c +
 anova(cp.count.base, cp.count.prof, cp.count.int, test = 'LRT')
 ```
 
+Now CP-knowers
+```{r}
+
+#make base model
+cp.error.count.base <- lmer(abs_error ~ Task_item.c + Task + age.c + (1|SID), data = subset(error.model.df, CP_subset == "CP"))
+
+#add counting proficiency
+cp.error.count.prof <- lmer(abs_error ~ count_proficiency.c + Task_item.c + Task + age.c + (1|SID), data = subset(error.model.df, CP_subset == "CP"))
+
+#add interaction
+cp.error.count.int <- lmer(abs_error ~ count_proficiency.c*Task_item.c + Task + age.c + (1|SID), data = subset(error.model.df, CP_subset == "CP"))
+
+#compare
+anova(cp.error.count.base, cp.error.count.prof, cp.error.count.int, test = 'LRT')
+summary(cp.error.count.prof)
+```
+
+##Predicting performance by Highest Count
+###Does highest count predict performance for CP- and subset-knowers?
+```{r}
+##remove highest count NAs
+hc.df <- model.df %>%
+  filter(!is.na(highest_count))
+
+##cp
+#make base model
+hc.cp.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
+                    family = "binomial", data = subset(hc.df, CP_subset == "CP"))
+#add hc
+hp.cp.with.hc <- glmer(Correct ~ highest_count.c + Task_item.c + Task + age.c + (1|SID), 
+                       family = "binomial", data = subset(hc.df, CP_subset == "CP"))
+
+##compare
+anova(hc.cp.base, hp.cp.with.hc, test = 'LRT') ##Not significant
+
+##subset
+#make base model
+hc.ss.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
+                    family = "binomial", data = subset(hc.df, CP_subset == "Subset"))
+#add hc
+hp.ss.with.hc <- glmer(Correct ~ highest_count.c + Task_item.c + Task + age.c + (1|SID), 
+                       family = "binomial", data = subset(hc.df, CP_subset == "Subset"))
+
+##compare
+anova(hc.ss.base, hp.ss.with.hc, test = 'LRT') ##Not significant
+```
+
+
+##Predicting performance by counting attempt
+###Note that this is collapsing across counting and number language
+Interesting - there's an interaction here, such that for CP-knowers who count on larger number trials, they are less accurate.
+```{r}
+counting.df <- model.df %>%
+  filter(Task == "Parallel" | Task == "Orthogonal")%>%
+  droplevels()
+
+#cp-knowers
+counting.attempt.cp.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
+                                  family = "binomial", data = subset(counting.df, CP_subset == "CP"))
+#add counting attempts
+counting.attempt.cp.count <- glmer(Correct ~ Counting.Number.language + Task_item.c + Task + age.c + (1|SID), 
+                                  family = "binomial", data = subset(counting.df, CP_subset == "CP"))
+#add interaction
+counting.attempt.cp.int <- glmer(Correct ~ Counting.Number.language*Task_item.c + Task + age.c + (1|SID), 
+                                  family = "binomial", data = subset(counting.df, CP_subset == "CP"))
+
+#compare 
+anova(counting.attempt.cp.base, counting.attempt.cp.count, counting.attempt.cp.int, test = 'LRT')
+summary(counting.attempt.cp.int)
+
+
+###subset-knowers
+counting.attempt.ss.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
+                                  family = "binomial", data = subset(counting.df, CP_subset == "Subset"))
+#add counting attempts
+counting.attempt.ss.count <- glmer(Correct ~ Counting.Number.language + Task_item.c + Task + age.c + (1|SID), 
+                                  family = "binomial", data = subset(counting.df, CP_subset == "Subset"))
+#add interaction
+counting.attempt.ss.int <- glmer(Correct ~ Counting.Number.language*Task_item.c + Task + age.c + (1|SID), 
+                                  family = "binomial", data = subset(counting.df, CP_subset == "Subset"))
+
+#compare 
+anova(counting.attempt.ss.base, counting.attempt.ss.count, counting.attempt.ss.int, test = 'LRT') ##no significant effect of counting attempts/number language in ss-knowers
+```
+
+##Follow-up: Excluding trials where kids have counted
+###Accuracy
+Does this change anything in terms of CP-advantage?
+```{r}
+#create a base model that includes numerosity and task
+overall.acc.base.no.count <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
+                          family = "binomial", data = subset(model.df, Counting.Number.language == "0"),
+                          control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+#add CP_subset-knower status
+overall.acc.kl.no.count <- glmer(Correct ~ CP_subset + Task_item.c + Task + age.c + (1|SID), 
+                          family = "binomial", data = subset(model.df, Counting.Number.language == "0"), 
+                          control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+#now add interaction
+overall.acc.kl.int.no.count <- glmer(Correct ~ CP_subset*Task_item.c + Task + age.c + (1|SID), 
+                          family = "binomial", data= subset(model.df, Counting.Number.language == "0"), 
+                          control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+#compare
+anova(overall.acc.base.no.count, overall.acc.kl.no.count, overall.acc.kl.int.no.count, test = 'LRT') 
+
+summary(overall.acc.kl.no.count)
+```
+
+###Error
+No, results are pretty much the same
+```{r}
+#base model
+overall.error.base.nocount <- lmer(abs_error ~ Task_item.c + Task + age.c + (1|SID), 
+                           data = subset(error.model.df, Counting.Number.language == "0"))
+
+#add kl
+overall.error.kl.no.count <- lmer(abs_error ~ CP_subset + Task_item.c + Task + age.c + (1|SID), 
+                           data = subset(error.model.df, Counting.Number.language == "0"))
+
+#add interaction
+overall.error.int.no.count <- lmer(abs_error ~ CP_subset*Task_item.c + Task + age.c + (1|SID), 
+                           data = subset(error.model.df, Counting.Number.language == "0"))
+
+#compare 
+anova(overall.error.base.nocount, overall.error.kl.no.count, overall.error.int.no.count, test = 'LRT') #marginal better performance for CP-knowers; significantly lower error on larger numerosities
+summary(overall.error.int.no.count)
+```
 
