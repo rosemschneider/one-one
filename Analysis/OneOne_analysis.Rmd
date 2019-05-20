@@ -276,7 +276,7 @@ all.data %>%
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
                 width = .1) +
   theme_bw(base_size = 13) + 
-  facet_grid(Condition~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
+  facet_grid(factor(Task, levels = c("Parallel", "Orthogonal"))~Condition, scale = "free_x") +
   theme(legend.position = "right", 
         panel.grid = element_blank()) +
   labs(x = "Set size", y = "Mean performance") +
@@ -353,7 +353,7 @@ error.df %>%
   geom_errorbar(aes(ymin = mean_error - se, ymax = mean_error + se), 
                 width = .1) +
   theme_bw(base_size = 13) + 
-  facet_grid(Condition~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
+  facet_grid(factor(Task, levels = c("Parallel", "Orthogonal")) ~ Condition, scale = "free_x") +
   theme(legend.position = "right", 
         panel.grid = element_blank()) +
   labs(x = "Set size", y = "Mean absolute error") +
@@ -426,22 +426,28 @@ set.ms %>%
 ##highest count and mean performance
 set.ms %>%
  ggplot(aes(x = highest_count, y = mean, color = CP_subset)) + 
-  geom_point() +
+  geom_point(position = position_jitter()) +
   geom_smooth(method = "lm", se = FALSE) + 
-  theme_bw() +
+  theme_bw(base_size = 13) +
   facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal"))) + 
+  theme(panel.grid = element_blank()) +
   scale_color_brewer(palette = "Dark2") + 
-  labs(title = "Relationship between Highest Count and mean performance")
+  labs(x = "Highest count", y = "Mean set-matching accuracy", color = "Knower level")
+
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/hc_acc.png", width = 7, height = 4)
 
 ##count proficiency and mean performance
 set.ms %>%
  ggplot(aes(x = count_proficiency, y = mean, color = CP_subset)) + 
-  geom_point() +
+  geom_point(position = position_jitter()) +
   geom_smooth(method = "lm", se = FALSE) + 
-  theme_bw() +
+  theme_bw(base_size = 13) +
   facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal"))) + 
   scale_color_brewer(palette = "Dark2") + 
-  labs(title = "Relationship between count proficiency and mean performance")
+  theme(panel.grid = element_blank()) +
+  labs(x = "Counting proficiency", y = "Mean set-matching accuracy", color = "Knower level")
+
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/counting_acc.png", width = 7, height = 4)
 ```
 
 ---
@@ -680,6 +686,26 @@ anova(cp.error.cond.base, cp.error.cond.kl, cp.error.cond.int, test = 'LRT') #ma
 summary(cp.error.cond.kl)
 ```
 
+##Error: Do SS-knowers have lower error on the Non-identical vs. identical conditions?
+
+```{r}
+#base model
+ss.error.cond.base <- lmer(abs_error ~ Task_item.c + Task + age.c + (1|SID), 
+                           data = subset(error.model.df, CP_subset == "Subset"))
+
+#add condition
+ss.error.cond.kl <- lmer(abs_error ~ Condition + Task_item.c + Task + age.c + (1|SID), 
+                           data = subset(error.model.df, CP_subset == "Subset"))
+
+#add interaction
+ss.error.cond.int <- lmer(abs_error ~ Condition*Task_item.c + Task + age.c + (1|SID), 
+                           data = subset(error.model.df, CP_subset == "Subset"))
+
+#compare 
+anova(ss.error.cond.base, ss.error.cond.kl, ss.error.cond.int, test = 'LRT') #marginal effect of condition
+
+summary(ss.error.cond.kl)
+```
 
 ##Counting proficiency
 Planned analysis with subset-knowers; no significant effect of counting proficiency
@@ -882,5 +908,144 @@ overall.error.int.no.count <- lmer(abs_error ~ CP_subset*Task_item.c + Task + ag
 #compare 
 anova(overall.error.base.nocount, overall.error.kl.no.count, overall.error.int.no.count, test = 'LRT') #marginal better performance for CP-knowers; significantly lower error on larger numerosities
 summary(overall.error.int.no.count)
+```
+
+##Histogram of error
+```{r}
+error.df %>%
+  ggplot(aes(x = abs_error, fill = CP_subset)) + 
+  geom_histogram() + 
+  facet_grid(Task ~ as.factor(Task_item), scale = "free_x") + 
+  scale_x_continuous(breaks = seq(0, 10, 1)) + 
+  theme(legend.position = "bottom")
+
+all.data %>%
+  filter(Task == "Parallel" | Task == "Orthogonal", 
+         Trial_number != "Training")%>%
+  mutate(Task_item = factor(Task_item)) %>%
+  mutate(Response = as.numeric(as.character(Response)))%>%
+  group_by(CP_subset, Task_item, Response, Task)%>%
+  summarise(n = n())%>%
+  mutate(n = ifelse(is.na(n), 0, as.numeric(n)))%>%
+  ggplot(aes(x = Task_item, y = Response, fill = CP_subset, alpha = n)) +
+  geom_tile() +
+  # geom_text(aes(label = as.character(round(prop, 2))), 
+  #           size = 2.5) +
+  coord_fixed(ratio = .25)+
+  scale_fill_manual(values = c(CP = "#1B9E77", Subset = "#D95F02")) + 
+  theme_bw(base_size = 13) + 
+  labs(x = "Set size", y = "Response") + 
+  scale_y_continuous(breaks = seq(1, 15, 1)) + 
+  xlim("3", "4", "6", "8", "10") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.position = "right", 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        legend.title = element_text(size = 11)) +
+  facet_grid(rows = vars(CP_subset), cols = vars(factor(Task, levels = c("Parallel", "Orthogonal"))))
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/corr_error_all.png", width = 7, height = 4)
+
+#By condition, parallel
+all.data %>%
+  filter(Task == "Parallel",
+         Trial_number != "Training")%>%
+  mutate(Task_item = factor(Task_item)) %>%
+  mutate(Response = as.numeric(as.character(Response)))%>%
+  group_by(CP_subset, Task_item, Response, Condition)%>%
+  summarise(n = n())%>%
+  mutate(n = ifelse(is.na(n), 0, as.numeric(n)))%>%
+  ggplot(aes(x = Task_item, y = Response, fill = CP_subset, alpha = n)) +
+  geom_tile() +
+  # geom_text(aes(label = as.character(round(prop, 2))), 
+  #           size = 2.5) +
+  coord_fixed(ratio = .25)+
+  scale_fill_manual(values = c(CP = "#1B9E77", Subset = "#D95F02")) + 
+  theme_bw(base_size = 13) + 
+  labs(x = "Set size", y = "Response") + 
+  scale_y_continuous(breaks = seq(1, 15, 1)) + 
+  xlim("3", "4", "6", "8", "10") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.position = "right", 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        legend.title = element_text(size = 11)) +
+  facet_grid(rows = vars(CP_subset), cols = vars(Condition))
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/corr_error_parallel.png", width = 7, height = 4)
+
+all.data %>%
+  filter(Task == "Orthogonal",
+         Trial_number != "Training")%>%
+  mutate(Task_item = factor(Task_item)) %>%
+  mutate(Response = as.numeric(as.character(Response)))%>%
+  group_by(CP_subset, Task_item, Response, Condition)%>%
+  summarise(n = n())%>%
+  mutate(n = ifelse(is.na(n), 0, as.numeric(n)))%>%
+  ggplot(aes(x = Task_item, y = Response, fill = CP_subset, alpha = n)) +
+  geom_tile() +
+  # geom_text(aes(label = as.character(round(prop, 2))), 
+  #           size = 2.5) +
+  coord_fixed(ratio = .25)+
+  scale_fill_manual(values = c(CP = "#1B9E77", Subset = "#D95F02")) + 
+  theme_bw(base_size = 13) + 
+  labs(x = "Set size", y = "Response") + 
+  scale_y_continuous(breaks = seq(1, 15, 1)) + 
+  xlim("3", "4", "6", "8", "10") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.position = "right", 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        legend.title = element_text(size = 11)) +
+  facet_grid(rows = vars(CP_subset), cols = vars(Condition))
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/corr_error_orthogonal.png", width = 7, height = 4)
+
+```
+
+##Compute COV
+```{r}
+#for each participant
+#hardcode n as 5, no participant has more or less
+cov.df <- all.data %>%
+  filter(Task == "Parallel" | 
+           Task == "Orthogonal", 
+         Trial_number != "Training")%>%
+  dplyr::select(SID, Age, CP_subset, Task, Task_item, Response, Numerosity)%>%
+  mutate(Task_item = as.numeric(as.character(Task_item)), 
+         Response = as.numeric(as.character(Response)))%>%
+  mutate(cov = sqrt((Task_item - Response)^2)/Task_item)
+
+#where my outliers at
+cov.outliers <- cov.df %>%
+  filter(cov > .4)
+
+##group by outliers
+cov.df %<>%
+  mutate(outlier = ifelse(cov > .25, 1, 0))
+
+#are kids systematically outliers?
+tmp <- cov.df %>%
+  group_by(SID, CP_subset, Task)%>%
+  summarise(n = sum(outlier))%>%
+  filter(n > 2)
+
+#correlation for CP across tasks
+cor.test(subset(cov.df, CP_subset == "CP" & Task == "Parallel")$cov, 
+         subset(cov.df, CP_subset == "CP" & Task == "Orthogonal")$cov)
+
+#correlation for subset across tasks
+cor.test(subset(cov.df, CP_subset == "Subset" & Task == "Parallel")$cov, 
+         subset(cov.df, CP_subset == "Subset" & Task == "Orthogonal")$cov)
+
+ggplot(cov.df, aes(x = Task_item, y = cov, color = CP_subset, group = CP_subset)) +
+  geom_point() + 
+  geom_smooth(method = "lm") +
+  facet_grid(~Task)
+
+cov.df %>%
+  group_by(Task, Task_item, CP_subset)%>%
+  summarise(mean_COV = mean(cov, na.rm = TRUE)) %>% #not sure why there are NAs right now - fix
+  ggplot(aes(x = Task_item, y = mean_COV, color = CP_subset, group = CP_subset)) + 
+  geom_point() + 
+  geom_line() + 
+  facet_grid(~Task)
 ```
 
