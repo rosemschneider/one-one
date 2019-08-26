@@ -196,16 +196,14 @@ all.data %>%
   filter(Task == "Parallel" | Task == "Orthogonal", 
          Trial_number != "Training")%>%
   mutate(Task_item = factor(Task_item, levels = c("3", "4",  
-                                                  "6", "8", "10")))%>%
+                                                  "6", "8", "10")), 
+         Correct = as.numeric(as.character(Correct)))%>%
   group_by(Numerosity, Task, Task_item, CP_subset)%>%
- summarise(mean = mean(as.integer(as.character(Correct)), na.rm = TRUE), 
-            n = n(), 
-            sd = sd(as.integer(as.character(Correct)), na.rm = TRUE), 
-            se = sd/sqrt(n)) %>%
+    multi_boot_standard("Correct", na.rm = TRUE)%>%
   ggplot(aes(x = Task_item, y = mean, colour = CP_subset, group = interaction(Numerosity, CP_subset))) +
   geom_point(size = 2) + 
   geom_line() +
-  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
+  geom_linerange(aes(ymin = ci_lower, ymax = ci_upper), 
                 width = .1) +
   theme_bw(base_size = 15) + 
   facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
@@ -222,8 +220,38 @@ all.data %>%
 ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/mean_accuracy.png", width = 5.8, height = 3.5)
 ```
 
-##Distribution of responses for parallel set 
-Looking at variance around the requested item
+##Visualization by condition (Identical/Non-Identical)
+```{r}
+all.data %>%
+  filter(Task == "Parallel" | Task == "Orthogonal", 
+         Trial_number != "Training")%>%
+  mutate(Task_item = factor(Task_item, levels = c("3", "4", 
+                                                  "6", "8", "10")), 
+         Condition = factor(Condition, levels = c("IDENTICAL", "NONIDENTICAL"), 
+                            labels = c("Identical", "Nonidentical")), 
+         Correct = as.numeric(as.character(Correct)))%>%
+  group_by(Numerosity, Task, Task_item, Condition, CP_subset)%>%
+  langcog::multi_boot_standard("Correct", na.rm = TRUE)%>%
+  ggplot(aes(x = Task_item, y = mean, colour = CP_subset, group = interaction(Numerosity, CP_subset))) +
+  geom_point(size = 2) + 
+  geom_line() +
+  geom_linerange(aes(ymin = ci_lower, ymax = ci_upper), 
+                width = .1) +
+  theme_bw(base_size = 15) + 
+  facet_grid(factor(Task, levels = c("Parallel", "Orthogonal"))~Condition, scale = "free_x") +
+  theme(legend.position = "right", 
+        panel.grid = element_blank(), 
+        legend.title = element_blank()) +
+  labs(x = "Set size", y = "Mean performance") +
+  scale_colour_brewer(palette = "Dark2") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  + 
+  labs(color = "Knower Level")
+
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/mean_accuracy_condition.png", width = 6, height = 4.2)
+```
+
+##Distribution of responses for parallel set: Overall, CP vs. Subset 
+Looking at variance around the requested item; this is for both identical and non-identical
 ```{r}
 all.data %>%
   filter(Task == "Parallel")%>%
@@ -244,192 +272,87 @@ all.data %>%
   labs(x = 'Number of items given', y = 'Frequency')
 
 
-ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/dist_response.png", width = 7, height = 3.5)
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/dist_response_parallel.png", width = 7, height = 3.5)
 
 ```
 
-##Trying to analyze distribution of responses
+##Distribution of responses for orthogonal set: Overall, CP vs. Subset 
+Looking at variance around the requested item; this is for both identical and non-identical
 ```{r}
-#get absolute error
-error <- all.data %>%
-  filter(Task == "Parallel" | 
-           Task == "Orthogonal", 
-         Trial_number != "Training") %>%
-  mutate(error = (as.numeric(as.character(Task_item)) - as.numeric(as.character(Response))))
-
-#plot absolute error distribution - parallel
-error %>%
-  filter(Task == "Parallel")%>%
+all.data %>%
+  filter(Task == "Orthogonal")%>%
   mutate(Task_item = as.numeric(as.character(Task_item)), 
-         Response = as.numeric(as.character(Task_item))) %>%
-  group_by(CP_subset, Task_item, error)%>%
-  ggplot(aes(x = error, fill = CP_subset)) + 
+         Response = as.numeric(as.character(Response)))%>%
+  filter(Task_item > 2)%>%
+  group_by(CP_subset, Task_item, Response)%>%
+  # summarise(n = n()) %>%
+  ggplot(aes(x = Response, fill = CP_subset)) +
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
   geom_histogram() + 
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  theme_bw()+
-  theme(legend.position = "none") +
-  scale_fill_brewer(palette = "Dark2") + 
-  facet_grid(CP_subset~Task_item) + 
-  labs(title = 'Error distribution for Parallel')
-
-# error %>%
-#   filter(Task == "Orthogonal")%>%
-#   mutate(Task_item = as.numeric(as.character(Task_item)), 
-#          Response = as.numeric(as.character(Task_item))) %>%
-#   group_by(CP_subset, Task_item, error)%>%
-#   ggplot(aes(x = error, fill = CP_subset)) + 
-#   geom_histogram() + 
-#   geom_vline(xintercept = 0, linetype = "dashed") +
-#   theme_bw()+
-#   theme(legend.position = "none") +
-#   scale_fill_brewer(palette = "Dark2") + 
-#   facet_grid(CP_subset~Task_item) + 
-#   labs(title = 'Error distribution for Orthogonal')
-
-#boxplot of error
-error %>%
-  filter(Task == "Parallel") %>%
-  mutate(Task_item = factor(Task_item, levels = c("3", "4", "6", "8", "10")))%>%
-  group_by(CP_subset, Task_item)%>%
-  ggplot(aes(x = Task_item, y = error, fill = CP_subset)) + 
-  geom_boxplot()+
-  scale_fill_brewer(palette = "Dark2") + 
-  labs(title = 'Error: Parallel')
-
-#leveneTest
-#3
-car::leveneTest(error ~ CP_subset, data = subset(error, Task_item == "3" & 
-                                                   Task == "Parallel"), center = "mean")
-
-#4
-car::leveneTest(error ~ CP_subset, data = subset(error, Task_item == "4" & 
-                                                   Task == "Parallel"), center = "mean")
-
-#8
-car::leveneTest(error ~ CP_subset, data = subset(error, Task_item == "8" & 
-                                                   Task == "Parallel"), center = "mean")
-
-#10
-car::leveneTest(error ~ CP_subset, data = subset(error, Task_item == "10" & 
-                                                   Task == "Parallel"), center = "mean")
-
-#linear regression 
+  theme_bw(base_size = 9) +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  scale_fill_brewer(palette = "Dark2") +
+  facet_grid(CP_subset~Task_item) +
+  scale_x_continuous(breaks = seq(1, 15, 1)) + 
+  labs(x = 'Number of items given', y = 'Frequency')
 
 
-lm(var(error) ~  Age, data = subset(error, Task == "Parallel"))
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/dist_response_orthogonal.png", width = 7, height = 3.5)
 
-#what if we just compute the variance of the error for each group
-error %<>%
-  mutate(abs.error = abs(as.numeric(as.character(Task_item)) - as.numeric(as.character(Response))))
+```
 
-error %>%
-  filter(Task == "Parallel") %>%
-  mutate(Task_item = factor(Task_item, levels = c("3", "4", "6", "8", "10")))%>%
-  group_by(CP_subset, Task_item)%>%
-  ggplot(aes(x = Task_item, y = abs.error, fill = CP_subset)) + 
-  geom_boxplot()+
-  scale_fill_brewer(palette = "Dark2") + 
-  labs(title = 'Error: Parallel')
-
-error %>%
-  filter(Task == "Parallel")%>%
+##Distribution around correct Response: CP-knowers, identical vs. non-identical, Parallel
+Looking at variance around the requested item; this is for both identical and non-identical
+```{r}
+all.data %>%
+  filter(Task == "Parallel", 
+         CP_subset == "CP")%>%
   mutate(Task_item = as.numeric(as.character(Task_item)), 
-         Response = as.numeric(as.character(Task_item))) %>%
-  group_by(CP_subset, Task_item, error)%>%
-  ggplot(aes(x = abs.error, fill = CP_subset)) + 
-  geom_histogram() +
-  geom_vline(xintercept = mean(abs.error), linetype = "dashed") +
-  theme_bw()+
-  theme(legend.position = "none") +
-  scale_fill_brewer(palette = "Dark2") + 
-  facet_grid(CP_subset~Task_item) + 
-  labs(title = 'Absolute Error distribution for Parallel')
-
-error %>%
-  filter(Task == "Parallel") %>%
-  mutate(Task_item = factor(Task_item, levels = c("3", "4", "6", "8", "10")))%>%
-  group_by(CP_subset, Task_item)%>%
-  ggplot(aes(x = Task_item, y = error, fill = CP_subset)) + 
-  geom_boxplot()+
-  scale_fill_brewer(palette = "Dark2") + 
-  labs(title = 'Error: Parallel')
-
-error %<>%
-  mutate(error.c = as.vector(scale(error, center = TRUE, scale = FALSE)))
-
-error %>%
-  filter(Task == "Parallel") %>%
-  mutate(Task_item = factor(Task_item, levels = c("3", "4", "6", "8", "10")))%>%
-  group_by(CP_subset, Task_item)%>%
-  ggplot(aes(x = Task_item, y = error.c, fill = CP_subset)) + 
-  geom_boxplot()+
-  scale_fill_brewer(palette = "Dark2") + 
-  labs(title = 'Error: Parallel')
-
-
-var.df <- error %>%
-  group_by(CP_subset, Numerosity, Task, Task_item)%>%
-  summarise(var.abs.error = var(abs.error))
-
-summary(lm(var.abs.error ~ Numerosity*CP_subset, data = subset(var.df, Task == "Parallel")))
-
-##Notes: 
-#Levene test will compare whether two variances are different with departures from normal distribution: This will tell us that variance for distributions which are centered on the median differ for a particular Task item between CP and SS knowers
-#Comparing variance? Is that the right measure of clumpiness?
-
-
+         Response = as.numeric(as.character(Response)))%>%
+  filter(Task_item > 2)%>%
+  group_by(Condition, Task_item, Response)%>%
+  # summarise(n = n()) %>%
+  ggplot(aes(x = Response, fill = CP_subset)) +
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+  geom_histogram() + 
+  theme_bw(base_size = 9) +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  scale_fill_brewer(palette = "Dark2") +
+  facet_grid(Condition~Task_item) +
+  scale_x_continuous(breaks = seq(1, 15, 1)) + 
+  labs(x = 'Number of items given', y = 'Frequency')
 
 ```
 
-
-
-##Descriptives of mean performance by numerosity, Task, Condition KL
-###Accuracy
+##Distribution around correct Response: Subset-knowers, identical vs. non-identical, Parallel
+Looking at variance around the requested item; this is for both identical and non-identical
 ```{r}
 all.data %>%
-  filter(Task == "Parallel" | Task == "Orthogonal", 
-         Trial_number != "Training")%>%
-  group_by(CP_subset, Condition, Task, Numerosity)%>%
-  summarise(mean = round(mean(as.numeric(as.character(Correct)), na.rm = TRUE), 2), 
-            sd = round(sd(as.numeric(as.character(Correct)), na.rm = TRUE), 2)) %>%
-  kable()
+  filter(Task == "Parallel", 
+         CP_subset == "Subset")%>%
+  mutate(Task_item = as.numeric(as.character(Task_item)), 
+         Response = as.numeric(as.character(Response)))%>%
+  filter(Task_item > 2)%>%
+  group_by(Condition, Task_item, Response)%>%
+  # summarise(n = n()) %>%
+  ggplot(aes(x = Response, fill = CP_subset)) +
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+  geom_histogram() + 
+  theme_bw(base_size = 9) +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  scale_fill_manual(values = "#D95F02") +
+  facet_grid(Condition~Task_item) +
+  scale_x_continuous(breaks = seq(1, 15, 1)) + 
+  labs(x = 'Number of items given', y = 'Frequency')
+
 ```
 
 
-##Visualization by condition (Identical/Non-Identical)
-```{r}
-all.data %>%
-  filter(Task == "Parallel" | Task == "Orthogonal", 
-         Trial_number != "Training")%>%
-  mutate(Task_item = factor(Task_item, levels = c("3", "4", 
-                                                  "6", "8", "10")), 
-         Condition = factor(Condition, levels = c("IDENTICAL", "NONIDENTICAL"), 
-                            labels = c("Identical", "Nonidentical")))%>%
-  group_by(Numerosity, Task, Task_item, Condition, CP_subset)%>%
- summarise(mean = mean(as.integer(as.character(Correct)), na.rm = TRUE), 
-            n = n(), 
-            sd = sd(as.integer(as.character(Correct)), na.rm = TRUE), 
-            se = sd/sqrt(n)) %>%
-  ggplot(aes(x = Task_item, y = mean, colour = CP_subset, group = interaction(Numerosity, CP_subset))) +
-  geom_point(size = 2) + 
-  geom_line() +
-  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
-                width = .1) +
-  theme_bw(base_size = 15) + 
-  facet_grid(factor(Task, levels = c("Parallel", "Orthogonal"))~Condition, scale = "free_x") +
-  theme(legend.position = c(0.35, 0.87), 
-        panel.grid = element_blank(), 
-        legend.title = element_blank()) +
-  labs(x = "Set size", y = "Mean performance") +
-  scale_colour_brewer(palette = "Dark2") + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))  + 
-  labs(color = "Knower Level")
-
-ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/mean_accuracy_condition.png", width = 6, height = 4.2)
-```
-
-##Visualization of mean absolute error by knower-level for each task 
-Make a mean error df
+##Visualizations of mean absolute error by knower-level for each task 
+Make a dataframe containing only the incorrect responses
 ```{r}
 error.df <- all.data %>%
   filter(Task == "Parallel" | Task == "Orthogonal", 
@@ -441,34 +364,21 @@ error.df <- all.data %>%
          abs_error = abs(Task_item-Response))
 ```
 
-###Descriptives of absolute error
-```{r}
-error.df %>%
-  filter(Trial_number != "Training", 
-         Task == "Parallel")%>%
-  group_by(CP_subset, Numerosity)%>%
-  summarise(mean_error = mean(abs_error), 
-            sd_error = sd(abs_error)) %>%
-  kable()
-```
 
 ```{r}
 error.df %>%
   mutate(Task_item = factor(Task_item, levels = c("3", "4", 
                                                   "6", "8", "10")))%>%
   group_by(Numerosity, Task, Task_item, CP_subset)%>%
- summarise(mean_error = mean(abs_error, na.rm = TRUE), 
-            n = n(), 
-            sd = sd(abs_error, na.rm = TRUE), 
-            se = sd/sqrt(n)) %>%
-  ggplot(aes(x = Task_item, y = mean_error, colour = CP_subset, group = interaction(Numerosity, CP_subset))) +
+  multi_boot_standard("abs_error", na.rm = TRUE)%>%
+  ggplot(aes(x = Task_item, y = mean, colour = CP_subset, group = interaction(Numerosity, CP_subset))) +
   geom_point(size = 2) + 
   geom_line() +
-  geom_errorbar(aes(ymin = mean_error - se, ymax = mean_error + se), 
+  geom_linerange(aes(ymin = ci_lower, ymax = ci_upper), 
                 width = .1) +
   theme_bw(base_size = 15) + 
   facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
-  theme(legend.position = c(0.35, 0.85), 
+  theme(legend.position = "right", 
         panel.grid = element_blank(), 
         legend.title = element_blank()) +
   labs(x = "Set size", y = "Mean absolute error") +
@@ -490,18 +400,15 @@ error.df %>%
   mutate(Task_item = factor(Task_item, levels = c("3", "4", "5", 
                                                   "6", "7", "8", "9", "10")))%>%
   group_by(Numerosity, Task, Task_item, CP_subset, Condition)%>%
- summarise(mean_error = mean(abs_error, na.rm = TRUE), 
-            n = n(), 
-            sd = sd(abs_error, na.rm = TRUE), 
-            se = sd/sqrt(n)) %>%
-  ggplot(aes(x = Task_item, y = mean_error, colour = CP_subset, group = interaction(Numerosity, CP_subset))) +
+  multi_boot_standard("abs_error", na.rm = TRUE)%>%
+  ggplot(aes(x = Task_item, y = mean, colour = CP_subset, group = interaction(Numerosity, CP_subset))) +
   geom_point(size = 2) + 
   geom_line() +
-  geom_errorbar(aes(ymin = mean_error - se, ymax = mean_error + se), 
+  geom_linerange(aes(ymin = ci_lower, ymax = ci_upper), 
                 width = .1) +
   theme_bw(base_size = 15) + 
   facet_grid(factor(Task, levels = c("Parallel", "Orthogonal")) ~ Condition, scale = "free_x") +
-  theme(legend.position = c(0.35, 0.87), 
+  theme(legend.position = "right", 
         panel.grid = element_blank(), 
         legend.title = element_blank()) +
   labs(x = "Set size", y = "Mean absolute error") +
@@ -1199,5 +1106,139 @@ cov.df %>%
   geom_point() + 
   geom_line() + 
   facet_grid(~Task)
+```
+
+
+##Trying to analyze distribution of responses
+```{r}
+#get absolute error
+error <- all.data %>%
+  filter(Task == "Parallel" | 
+           Task == "Orthogonal", 
+         Trial_number != "Training") %>%
+  mutate(error = (as.numeric(as.character(Task_item)) - as.numeric(as.character(Response))))
+
+#plot absolute error distribution - parallel
+error %>%
+  filter(Task == "Parallel")%>%
+  mutate(Task_item = as.numeric(as.character(Task_item)), 
+         Response = as.numeric(as.character(Task_item))) %>%
+  group_by(CP_subset, Task_item, error)%>%
+  ggplot(aes(x = error, fill = CP_subset)) + 
+  geom_histogram() + 
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme_bw()+
+  theme(legend.position = "none") +
+  scale_fill_brewer(palette = "Dark2") + 
+  facet_grid(CP_subset~Task_item) + 
+  labs(title = 'Error distribution for Parallel')
+
+# error %>%
+#   filter(Task == "Orthogonal")%>%
+#   mutate(Task_item = as.numeric(as.character(Task_item)), 
+#          Response = as.numeric(as.character(Task_item))) %>%
+#   group_by(CP_subset, Task_item, error)%>%
+#   ggplot(aes(x = error, fill = CP_subset)) + 
+#   geom_histogram() + 
+#   geom_vline(xintercept = 0, linetype = "dashed") +
+#   theme_bw()+
+#   theme(legend.position = "none") +
+#   scale_fill_brewer(palette = "Dark2") + 
+#   facet_grid(CP_subset~Task_item) + 
+#   labs(title = 'Error distribution for Orthogonal')
+
+#boxplot of error
+error %>%
+  filter(Task == "Parallel") %>%
+  mutate(Task_item = factor(Task_item, levels = c("3", "4", "6", "8", "10")))%>%
+  group_by(CP_subset, Task_item)%>%
+  ggplot(aes(x = Task_item, y = error, fill = CP_subset)) + 
+  geom_boxplot()+
+  scale_fill_brewer(palette = "Dark2") + 
+  labs(title = 'Error: Parallel')
+
+#leveneTest
+#3
+car::leveneTest(error ~ CP_subset, data = subset(error, Task_item == "3" & 
+                                                   Task == "Parallel"), center = "mean")
+
+#4
+car::leveneTest(error ~ CP_subset, data = subset(error, Task_item == "4" & 
+                                                   Task == "Parallel"), center = "mean")
+
+#8
+car::leveneTest(error ~ CP_subset, data = subset(error, Task_item == "8" & 
+                                                   Task == "Parallel"), center = "mean")
+
+#10
+car::leveneTest(error ~ CP_subset, data = subset(error, Task_item == "10" & 
+                                                   Task == "Parallel"), center = "mean")
+
+#linear regression 
+
+
+lm(var(error) ~  Age, data = subset(error, Task == "Parallel"))
+
+#what if we just compute the variance of the error for each group
+error %<>%
+  mutate(abs.error = abs(as.numeric(as.character(Task_item)) - as.numeric(as.character(Response))))
+
+error %>%
+  filter(Task == "Parallel") %>%
+  mutate(Task_item = factor(Task_item, levels = c("3", "4", "6", "8", "10")))%>%
+  group_by(CP_subset, Task_item)%>%
+  ggplot(aes(x = Task_item, y = abs.error, fill = CP_subset)) + 
+  geom_boxplot()+
+  scale_fill_brewer(palette = "Dark2") + 
+  labs(title = 'Error: Parallel')
+
+error %>%
+  filter(Task == "Parallel")%>%
+  mutate(Task_item = as.numeric(as.character(Task_item)), 
+         Response = as.numeric(as.character(Task_item))) %>%
+  group_by(CP_subset, Task_item, error)%>%
+  ggplot(aes(x = abs.error, fill = CP_subset)) + 
+  geom_histogram() +
+  geom_vline(xintercept = mean(abs.error), linetype = "dashed") +
+  theme_bw()+
+  theme(legend.position = "none") +
+  scale_fill_brewer(palette = "Dark2") + 
+  facet_grid(CP_subset~Task_item) + 
+  labs(title = 'Absolute Error distribution for Parallel')
+
+error %>%
+  filter(Task == "Parallel") %>%
+  mutate(Task_item = factor(Task_item, levels = c("3", "4", "6", "8", "10")))%>%
+  group_by(CP_subset, Task_item)%>%
+  ggplot(aes(x = Task_item, y = error, fill = CP_subset)) + 
+  geom_boxplot()+
+  scale_fill_brewer(palette = "Dark2") + 
+  labs(title = 'Error: Parallel')
+
+error %<>%
+  mutate(error.c = as.vector(scale(error, center = TRUE, scale = FALSE)))
+
+error %>%
+  filter(Task == "Parallel") %>%
+  mutate(Task_item = factor(Task_item, levels = c("3", "4", "6", "8", "10")))%>%
+  group_by(CP_subset, Task_item)%>%
+  ggplot(aes(x = Task_item, y = error.c, fill = CP_subset)) + 
+  geom_boxplot()+
+  scale_fill_brewer(palette = "Dark2") + 
+  labs(title = 'Error: Parallel')
+
+
+var.df <- error %>%
+  group_by(CP_subset, Numerosity, Task, Task_item)%>%
+  summarise(var.abs.error = var(abs.error))
+
+summary(lm(var.abs.error ~ Numerosity*CP_subset, data = subset(var.df, Task == "Parallel")))
+
+##Notes: 
+#Levene test will compare whether two variances are different with departures from normal distribution: This will tell us that variance for distributions which are centered on the median differ for a particular Task item between CP and SS knowers
+#Comparing variance? Is that the right measure of clumpiness?
+
+
+
 ```
 
