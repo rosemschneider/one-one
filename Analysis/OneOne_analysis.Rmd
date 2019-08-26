@@ -7,8 +7,6 @@ output: html_document
 ###Setup
 ```{r, include = FALSE}
 rm(list = ls())
-require("knitr")
-opts_knit$set(root.dir = "~/Documents/Projects/one-one/") #this is specific to RMS, change accordingly
 library(tidyverse)
 library(magrittr)
 library(langcog)
@@ -17,12 +15,17 @@ library(stringr)
 library(RColorBrewer)
 library(ggthemes)
 
+#filtering function
 '%!in%' <- function(x,y)!('%in%'(x,y))
+
+#set root
+require("knitr")
+# knitr::opts_knit$set(root.dir = fs::path(here::here())) #this is specific to RMS, change accordingly
 ```
 
 ###Load Data
 ```{r}
-data.raw <- read.csv("~/Documents/Projects/one-one/Data/one-one_data.csv")%>%
+data.raw <- read.csv("../Data/one-one_data.csv")%>%
   filter(SID != "CopyPasteMe")%>%
   droplevels()%>%
   mutate(Age = as.numeric(as.character(Age)), 
@@ -32,33 +35,35 @@ data.raw <- read.csv("~/Documents/Projects/one-one/Data/one-one_data.csv")%>%
 ```
 
 ###Exclusions
+How many children were tested, pre-exclusions?
 ```{r}
 #how many kids pre-exclusion
 data.raw %>% 
   distinct(SID, CP_subset)%>%
   group_by(CP_subset)%>%
-  summarise(n = n())
+  summarise(n = n())%>%
+  mutate(total.n = sum(n))
+```
 
+Why are children excluded?
+```{r}
 #why are kids excluded?
 data.raw %>%
   filter(Exclude == 1)%>%
   distinct(SID, Exclude_reason)%>%
   group_by(Exclude_reason)%>%
   summarise(n = n())
+```
 
+Exclude these children from the analysis
+```{r}
 ##exclude these kids from analysis
 all.data <- data.raw %<>%
   filter(Exclude != 1)
-
-##How many kids?
-all.data %>%
-  distinct(SID, CP_subset)%>%
-  group_by(CP_subset)%>%
-  summarise(n = n())
 ```
 
-##How many kids failed the training?
-Determining whether children did not understand the task; using failure on both Parallel training trials as a diagnostic
+###Post-hoc exclusion
+Determining whether children did not understand the task; using failure on both Parallel training trials as a diagnostic. If children really do not understand the task, they should fail both trials of the parallel condition. This is looking at children who fail at least one trial in the Parallel condition to determine whether they do not understand the task. 
 ```{r}
 #how many kids failed at least one trial in Parallel
 failed.trials <- all.data %>%
@@ -87,6 +92,7 @@ all.data %<>%
 ```
 
 ##Demographics
+Ages and ns by knower level
 ```{r}
 all.data %>%
   distinct(SID, Age, Knower_level)%>%
@@ -95,26 +101,21 @@ all.data %>%
             mean_age = mean(Age, na.rm = TRUE), 
             sd_age = sd(Age, na.rm = TRUE))%>%
   kable()
+```
 
-#age by knower level
+Ages and ns by CP/Subset-knower status
+```{r}
 all.data %>%
-  distinct(SID, Age, Knower_level)%>%
-  ggplot(aes(x = Knower_level, y = Age, fill = Knower_level)) + 
-  geom_boxplot() + 
-  theme_bw()
+  distinct(SID, CP_subset, Age)%>%
+  group_by(CP_subset)%>%
+  summarise(n = n(), 
+            mean_age = mean(Age, na.rm = TRUE), 
+            sd_age = sd(Age, na.rm = TRUE))%>%
+  kable()
+```
 
-#age by cp/subset
-all.data %>%
-  distinct(SID, Age, CP_subset)%>%
-  ggplot(aes(x = CP_subset, y = Age, fill = CP_subset)) + 
-  geom_boxplot() + 
-  theme_bw() + 
-  theme(panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank()) +
-  scale_fill_brewer(palette = "Dark2", guide = "none") + 
-  labs(x = "Knower Level")
-ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/Age.png", width = 5, height = 5)
-
+Overall age and sex information
+```{r}
 #overall mean age
 all.data %>%
   distinct(SID, Age)%>%
@@ -132,7 +133,7 @@ all.data %>%
 
 ---
 
-###Data manipulations 
+##Data manipulations 
 Get counting proficiency for each participant: 
 Foor each set (8/10), participants received a score of 3 (perfect); 2 (counted incorrectly but fixed mistake); 1 (counted only a few correctly); 0 (counted randomly)
 
@@ -152,7 +153,8 @@ ms.count <- tmp %>%
   dplyr::select(SID, count_proficiency)
 
 ##add to all.data
-all.data <- right_join(all.data, ms.count, by = "SID")
+all.data <- right_join(all.data, ms.count, by = "SID")%>%
+  dplyr::select(-X, - X.1, -X.2, -X.3, -X.4)
 ```
 
 ####Get highest count for each participant
@@ -179,32 +181,7 @@ all.data <- right_join(all.data, hc.lookup, by = "SID")
 
 ---
 
-#Set-matching tasks
-##Visualize parallel and orthogonal set-matching task
-```{r}
-all.data %>%
-  filter(Task == "Parallel" | Task == "Orthogonal") %>%
-  filter(Trial_number != "Training")%>%
-  mutate(Response = as.integer(as.character(Response)))%>%
-  mutate(Task_item = factor(Task_item)) %>%
-  ggplot(aes(x = Task_item, y = Response, colour = Correct, group = CP_subset, shape = Correct)) +
-  geom_count(stroke = 1.2, alpha =.8, show.legend = FALSE) +
-  geom_smooth(se = FALSE, colour = "black") + 
-  xlim('3', '4', '6', '8', '10') +
-  scale_y_continuous(breaks = seq(1, 15, 1)) +
-  theme_bw(base_size = 10) +
-  scale_shape_manual(values = c(4, 1))+
-  labs(x = "Set size", y = "Number given") +
-  langcog::scale_colour_solarized("Correct")+ 
-  theme(panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        legend.position = "bottom")+
-  facet_grid(factor(Task, levels = c("Parallel", "Orthogonal"))~CP_subset) + 
-  guides(n = 'legend')
-
-ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/task_corr.png", width = 7, height = 5)
-```
-
+#Set-matching tasks: Visualizations
 ##Mean performance by group
 ```{r}
 #add numerosity classification for easier-to-read graphs
@@ -218,8 +195,8 @@ all.data %<>%
 all.data %>%
   filter(Task == "Parallel" | Task == "Orthogonal", 
          Trial_number != "Training")%>%
-  mutate(Task_item = factor(Task_item, levels = c("3", "4", "5", 
-                                                  "6", "7", "8", "9", "10")))%>%
+  mutate(Task_item = factor(Task_item, levels = c("3", "4",  
+                                                  "6", "8", "10")))%>%
   group_by(Numerosity, Task, Task_item, CP_subset)%>%
  summarise(mean = mean(as.integer(as.character(Correct)), na.rm = TRUE), 
             n = n(), 
@@ -230,18 +207,181 @@ all.data %>%
   geom_line() +
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
                 width = .1) +
-  theme_bw(base_size = 13) + 
+  theme_bw(base_size = 15) + 
   facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
-  theme(legend.position = "right",  
+  theme( 
         panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank()) +
+        panel.grid.minor = element_blank(), 
+        legend.title = element_blank(), 
+        legend.position = "right") +
   labs(x = "Set size", y = "Mean accuracy") +
   scale_colour_brewer(palette = "Dark2") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
   labs(color= "Knower Level")
 
-ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/mean_accuracy.png", width = 7, height = 4)
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/mean_accuracy.png", width = 5.8, height = 3.5)
 ```
+
+##Distribution of responses for parallel set 
+Looking at variance around the requested item
+```{r}
+all.data %>%
+  filter(Task == "Parallel")%>%
+  mutate(Task_item = as.numeric(as.character(Task_item)), 
+         Response = as.numeric(as.character(Response)))%>%
+  filter(Task_item > 2)%>%
+  group_by(CP_subset, Task_item, Response)%>%
+  # summarise(n = n()) %>%
+  ggplot(aes(x = Response, fill = CP_subset)) +
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+  geom_histogram() + 
+  theme_bw(base_size = 9) +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  scale_fill_brewer(palette = "Dark2") +
+  facet_grid(CP_subset~Task_item) +
+  scale_x_continuous(breaks = seq(1, 15, 1)) + 
+  labs(x = 'Number of items given', y = 'Frequency')
+
+
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/dist_response.png", width = 7, height = 3.5)
+
+```
+
+##Trying to analyze distribution of responses
+```{r}
+#get absolute error
+error <- all.data %>%
+  filter(Task == "Parallel" | 
+           Task == "Orthogonal", 
+         Trial_number != "Training") %>%
+  mutate(error = (as.numeric(as.character(Task_item)) - as.numeric(as.character(Response))))
+
+#plot absolute error distribution - parallel
+error %>%
+  filter(Task == "Parallel")%>%
+  mutate(Task_item = as.numeric(as.character(Task_item)), 
+         Response = as.numeric(as.character(Task_item))) %>%
+  group_by(CP_subset, Task_item, error)%>%
+  ggplot(aes(x = error, fill = CP_subset)) + 
+  geom_histogram() + 
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme_bw()+
+  theme(legend.position = "none") +
+  scale_fill_brewer(palette = "Dark2") + 
+  facet_grid(CP_subset~Task_item) + 
+  labs(title = 'Error distribution for Parallel')
+
+# error %>%
+#   filter(Task == "Orthogonal")%>%
+#   mutate(Task_item = as.numeric(as.character(Task_item)), 
+#          Response = as.numeric(as.character(Task_item))) %>%
+#   group_by(CP_subset, Task_item, error)%>%
+#   ggplot(aes(x = error, fill = CP_subset)) + 
+#   geom_histogram() + 
+#   geom_vline(xintercept = 0, linetype = "dashed") +
+#   theme_bw()+
+#   theme(legend.position = "none") +
+#   scale_fill_brewer(palette = "Dark2") + 
+#   facet_grid(CP_subset~Task_item) + 
+#   labs(title = 'Error distribution for Orthogonal')
+
+#boxplot of error
+error %>%
+  filter(Task == "Parallel") %>%
+  mutate(Task_item = factor(Task_item, levels = c("3", "4", "6", "8", "10")))%>%
+  group_by(CP_subset, Task_item)%>%
+  ggplot(aes(x = Task_item, y = error, fill = CP_subset)) + 
+  geom_boxplot()+
+  scale_fill_brewer(palette = "Dark2") + 
+  labs(title = 'Error: Parallel')
+
+#leveneTest
+#3
+car::leveneTest(error ~ CP_subset, data = subset(error, Task_item == "3" & 
+                                                   Task == "Parallel"), center = "mean")
+
+#4
+car::leveneTest(error ~ CP_subset, data = subset(error, Task_item == "4" & 
+                                                   Task == "Parallel"), center = "mean")
+
+#8
+car::leveneTest(error ~ CP_subset, data = subset(error, Task_item == "8" & 
+                                                   Task == "Parallel"), center = "mean")
+
+#10
+car::leveneTest(error ~ CP_subset, data = subset(error, Task_item == "10" & 
+                                                   Task == "Parallel"), center = "mean")
+
+#linear regression 
+
+
+lm(var(error) ~  Age, data = subset(error, Task == "Parallel"))
+
+#what if we just compute the variance of the error for each group
+error %<>%
+  mutate(abs.error = abs(as.numeric(as.character(Task_item)) - as.numeric(as.character(Response))))
+
+error %>%
+  filter(Task == "Parallel") %>%
+  mutate(Task_item = factor(Task_item, levels = c("3", "4", "6", "8", "10")))%>%
+  group_by(CP_subset, Task_item)%>%
+  ggplot(aes(x = Task_item, y = abs.error, fill = CP_subset)) + 
+  geom_boxplot()+
+  scale_fill_brewer(palette = "Dark2") + 
+  labs(title = 'Error: Parallel')
+
+error %>%
+  filter(Task == "Parallel")%>%
+  mutate(Task_item = as.numeric(as.character(Task_item)), 
+         Response = as.numeric(as.character(Task_item))) %>%
+  group_by(CP_subset, Task_item, error)%>%
+  ggplot(aes(x = abs.error, fill = CP_subset)) + 
+  geom_histogram() +
+  geom_vline(xintercept = mean(abs.error), linetype = "dashed") +
+  theme_bw()+
+  theme(legend.position = "none") +
+  scale_fill_brewer(palette = "Dark2") + 
+  facet_grid(CP_subset~Task_item) + 
+  labs(title = 'Absolute Error distribution for Parallel')
+
+error %>%
+  filter(Task == "Parallel") %>%
+  mutate(Task_item = factor(Task_item, levels = c("3", "4", "6", "8", "10")))%>%
+  group_by(CP_subset, Task_item)%>%
+  ggplot(aes(x = Task_item, y = error, fill = CP_subset)) + 
+  geom_boxplot()+
+  scale_fill_brewer(palette = "Dark2") + 
+  labs(title = 'Error: Parallel')
+
+error %<>%
+  mutate(error.c = as.vector(scale(error, center = TRUE, scale = FALSE)))
+
+error %>%
+  filter(Task == "Parallel") %>%
+  mutate(Task_item = factor(Task_item, levels = c("3", "4", "6", "8", "10")))%>%
+  group_by(CP_subset, Task_item)%>%
+  ggplot(aes(x = Task_item, y = error.c, fill = CP_subset)) + 
+  geom_boxplot()+
+  scale_fill_brewer(palette = "Dark2") + 
+  labs(title = 'Error: Parallel')
+
+
+var.df <- error %>%
+  group_by(CP_subset, Numerosity, Task, Task_item)%>%
+  summarise(var.abs.error = var(abs.error))
+
+summary(lm(var.abs.error ~ Numerosity*CP_subset, data = subset(var.df, Task == "Parallel")))
+
+##Notes: 
+#Levene test will compare whether two variances are different with departures from normal distribution: This will tell us that variance for distributions which are centered on the median differ for a particular Task item between CP and SS knowers
+#Comparing variance? Is that the right measure of clumpiness?
+
+
+
+```
+
+
 
 ##Descriptives of mean performance by numerosity, Task, Condition KL
 ###Accuracy
@@ -261,8 +401,8 @@ all.data %>%
 all.data %>%
   filter(Task == "Parallel" | Task == "Orthogonal", 
          Trial_number != "Training")%>%
-  mutate(Task_item = factor(Task_item, levels = c("3", "4", "5", 
-                                                  "6", "7", "8", "9", "10")), 
+  mutate(Task_item = factor(Task_item, levels = c("3", "4", 
+                                                  "6", "8", "10")), 
          Condition = factor(Condition, levels = c("IDENTICAL", "NONIDENTICAL"), 
                             labels = c("Identical", "Nonidentical")))%>%
   group_by(Numerosity, Task, Task_item, Condition, CP_subset)%>%
@@ -275,16 +415,17 @@ all.data %>%
   geom_line() +
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
                 width = .1) +
-  theme_bw(base_size = 13) + 
+  theme_bw(base_size = 15) + 
   facet_grid(factor(Task, levels = c("Parallel", "Orthogonal"))~Condition, scale = "free_x") +
-  theme(legend.position = "right", 
-        panel.grid = element_blank()) +
+  theme(legend.position = c(0.35, 0.87), 
+        panel.grid = element_blank(), 
+        legend.title = element_blank()) +
   labs(x = "Set size", y = "Mean performance") +
   scale_colour_brewer(palette = "Dark2") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  + 
   labs(color = "Knower Level")
 
-ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/mean_accuracy_condition.png", width = 7, height = 4)
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/mean_accuracy_condition.png", width = 6, height = 4.2)
 ```
 
 ##Visualization of mean absolute error by knower-level for each task 
@@ -303,8 +444,9 @@ error.df <- all.data %>%
 ###Descriptives of absolute error
 ```{r}
 error.df %>%
-  filter(Trial_number != "Training")%>%
-  group_by(CP_subset, Condition, Task, Numerosity)%>%
+  filter(Trial_number != "Training", 
+         Task == "Parallel")%>%
+  group_by(CP_subset, Numerosity)%>%
   summarise(mean_error = mean(abs_error), 
             sd_error = sd(abs_error)) %>%
   kable()
@@ -312,8 +454,8 @@ error.df %>%
 
 ```{r}
 error.df %>%
-  mutate(Task_item = factor(Task_item, levels = c("3", "4", "5", 
-                                                  "6", "7", "8", "9", "10")))%>%
+  mutate(Task_item = factor(Task_item, levels = c("3", "4", 
+                                                  "6", "8", "10")))%>%
   group_by(Numerosity, Task, Task_item, CP_subset)%>%
  summarise(mean_error = mean(abs_error, na.rm = TRUE), 
             n = n(), 
@@ -324,20 +466,25 @@ error.df %>%
   geom_line() +
   geom_errorbar(aes(ymin = mean_error - se, ymax = mean_error + se), 
                 width = .1) +
-  theme_bw(base_size = 13) + 
+  theme_bw(base_size = 15) + 
   facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
-  theme(legend.position = "right", 
-        panel.grid = element_blank()) +
+  theme(legend.position = c(0.35, 0.85), 
+        panel.grid = element_blank(), 
+        legend.title = element_blank()) +
   labs(x = "Set size", y = "Mean absolute error") +
   scale_colour_brewer(palette = "Dark2") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  + 
   labs(color = "Knower Level")
 
-ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/mean_abs_error.png", width = 7, height = 4)
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/mean_abs_error.png", width = 5.8, height = 3.5)
 ```
 
 ##Visualization of mean absolute error by condition
 ```{r}
+error.df %<>%
+  mutate(Condition = factor(Condition, levels = c("IDENTICAL", "NONIDENTICAL"), 
+                            labels = c("Identical", "Nonidentical")))
+
 error.df %>%
   filter(Correct == "0")%>%
   mutate(Task_item = factor(Task_item, levels = c("3", "4", "5", 
@@ -352,16 +499,17 @@ error.df %>%
   geom_line() +
   geom_errorbar(aes(ymin = mean_error - se, ymax = mean_error + se), 
                 width = .1) +
-  theme_bw(base_size = 13) + 
+  theme_bw(base_size = 15) + 
   facet_grid(factor(Task, levels = c("Parallel", "Orthogonal")) ~ Condition, scale = "free_x") +
-  theme(legend.position = "right", 
-        panel.grid = element_blank()) +
+  theme(legend.position = c(0.35, 0.87), 
+        panel.grid = element_blank(), 
+        legend.title = element_blank()) +
   labs(x = "Set size", y = "Mean absolute error") +
   scale_colour_brewer(palette = "Dark2") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  + 
   labs(color = "Knower Level")
 
-ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/mean_abs_error_condition.png", width = 7, height = 4)
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/mean_abs_error_condition.png", width = 6, height = 4.2)
 ```
 
 ##Counting proficiency
@@ -428,26 +576,30 @@ set.ms %>%
  ggplot(aes(x = highest_count, y = mean, color = CP_subset)) + 
   geom_point(position = position_jitter()) +
   geom_smooth(method = "lm", se = FALSE) + 
-  theme_bw(base_size = 13) +
+  theme_bw(base_size = 15) +
   facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal"))) + 
-  theme(panel.grid = element_blank()) +
+  theme(panel.grid = element_blank(), 
+        legend.position = "top", 
+        legend.title = element_blank()) +
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Highest count", y = "Mean set-matching accuracy", color = "Knower level")
 
-ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/hc_acc.png", width = 7, height = 4)
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/hc_acc.png", width = 5.8, height = 4.2)
 
 ##count proficiency and mean performance
 set.ms %>%
  ggplot(aes(x = count_proficiency, y = mean, color = CP_subset)) + 
   geom_point(position = position_jitter()) +
   geom_smooth(method = "lm", se = FALSE) + 
-  theme_bw(base_size = 13) +
+  theme_bw(base_size = 15) +
   facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal"))) + 
   scale_color_brewer(palette = "Dark2") + 
-  theme(panel.grid = element_blank()) +
+  theme(panel.grid = element_blank(), 
+        legend.position = "top", 
+        legend.title = element_blank()) +
   labs(x = "Counting proficiency", y = "Mean set-matching accuracy", color = "Knower level")
 
-ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/counting_acc.png", width = 7, height = 4)
+ggsave("/Users/roseschneider/Documents/Projects/one-one/Analysis/Figures/counting_acc.png", width = 5.8, height = 4.2)
 ```
 
 ---
