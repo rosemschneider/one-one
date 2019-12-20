@@ -1,0 +1,225 @@
+---
+title: "Children use one-to-one correspondence to establish equality after they learn to count"
+bibliography: citations.bib
+csl: apa6.csl
+document-params: "10pt, letterpaper"
+
+author-information: > 
+    <!-- \author{{\large \bf Rose M. Schneider} $\&$ {\large \bf David Barner} -->
+    <!-- \\Department of Psychology, University of California, San Diego \\ -->
+    
+abstract: >
+    Include no author information in the initial submission, to facilitate
+    blind review.  The abstract should be one paragraph, indented 1/8 inch on both sides,
+    in 9~point font with single spacing. The heading 'Abstract'
+    should be 10~point, bold, centered, with one line of space below
+    it. This one-paragraph abstract section is required only for standard
+    six page proceedings papers. Following the abstract should be a blank
+    line, followed by the header 'Keywords' and a list of
+    descriptive keywords separated by semicolons, all in 9~point font, as
+    shown below.
+    
+keywords: >
+    Add your choice of indexing terms or keywords; kindly use a semi-colon; between each term.
+    
+output: cogsci2016::cogsci_paper
+#final-submission: \cogscifinalcopy
+---
+
+```{r setup, include = FALSE}
+rm(list = ls())
+library(tidyverse)
+library(magrittr)
+library(langcog)
+library(lme4)
+library(stringr)
+library(RColorBrewer)
+library(ggthemes)
+
+#filtering function
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+#set root
+require("knitr")
+```
+
+
+```{r load_data, include = FALSE}
+###Load Data
+data.raw <- read.csv("../../../Data/one-one_data.csv")%>%
+  filter(SID != "CopyPasteMe")%>%
+  droplevels()%>%
+  mutate(Age = as.numeric(as.character(Age)), 
+         Agegroup = cut(Age, breaks = c(3, 3.5, 4, 4.5, 5.1)))%>%
+  mutate(CP_subset = ifelse(Knower_level == "CP", "CP", "Subset"), 
+          CP_subset = factor(CP_subset))%>%
+  dplyr::select(-X, -X.1, -X.2)
+```
+
+```{r exclusions}
+###Exclusions
+#how many kids pre-exclusion
+pre.excl <- data.raw %>% 
+  distinct(SID, CP_subset)%>%
+  group_by(CP_subset)%>%
+  summarise(n = n())%>%
+  mutate(total.n = sum(n))
+
+#why are kids excluded?
+reasons.excl <- data.raw %>%
+  filter(Exclude == 1)%>%
+  distinct(SID, Exclude_reason)%>%
+  group_by(Exclude_reason)%>%
+  summarise(n = n())
+
+##exclude these kids from analysis
+all.data <- data.raw %<>%
+  filter(Exclude != 1)
+
+
+###Post-hoc exclusion
+#Determining whether children did not understand the task; using failure on both Parallel training trials as a diagnostic. If children really do not understand the task, they should fail both trials of the parallel condition. This is looking at children who fail at least one trial in the Parallel condition to determine whether they do not understand the task. 
+#how many kids failed at least one trial in Parallel
+failed.trials <- all.data %>%
+  filter(Task == "Parallel" | Task == "Orthogonal",
+         Trial_number == "Training")%>%
+  distinct(SID, CP_subset, Task, Task_item, Correct)%>%
+  filter(Correct == "0")
+
+#first look at the kids who failed both on parallel, as these are likely to not understand the task 
+# failed.trials %>%
+#   filter(Task == "Parallel")%>%
+#   group_by(SID, CP_subset)%>%
+#   summarise(n = n())%>%
+#   filter(n == 2)
+
+#021219-KT - gives max for every single trial, failed training trials even with feedback, should be excluded 
+#021919-EL - should not be excluded - failed both Parallel training (15 for both), but seemed to get it (matched for 3 and 4)
+#022519-ER - looked a little confused on training trials at the start, but seemed to get it
+#022619-JM - marginal, failed both parallel (15 for both), some variability after that, succeeded on orthogonal training, but failed on 3 and 4; should not be excluded, succeeded on Orthogonal training
+#022719-SW - marginal, seems to be performing randomly, succeeded on only one training trial
+#022819-BT - should not be excluded, failed on first two parallel, but then seemed to recover, succeeds on orthogonal training
+
+##MANUAL EXCLUSION for complete failure on set-matching
+all.data %<>%
+  filter(SID != '021219-KT')
+
+####EXCLUDE TRIALS
+all.data %<>%
+  filter(!is.na(Response))
+```
+
+
+```{r counting_proficiency, include = FALSE}
+#fix the name of the task for kids who weren't run on two trials of 10
+tmp <- all.data %>%
+  filter(Task == "How Many")%>%
+  mutate(Task_item = ifelse(Task_item == "Score", "10 - Score", as.character(Task_item)))
+
+#compute mean counting
+ms.count <- tmp %>%
+  filter(Task_item == "10 - Score" | 
+           Task_item == "8 - Score")%>%
+  distinct(SID, Task_item, Response)%>%
+  group_by(SID)%>%
+  summarise(count_proficiency = mean(as.numeric(as.character(Response, na.rm = TRUE))))%>%
+  dplyr::select(SID, count_proficiency)
+
+##add to all.data
+all.data <- right_join(all.data, ms.count, by = "SID")
+```
+
+```{r highest_count, include = FALSE}
+###highest count lookup
+hc.lookup <- all.data %>%
+  filter(Task_item == "Highest_count")%>%
+  dplyr::select(SID, Response)%>%
+  dplyr::rename(highest_count = Response)
+
+##There are several children who will not count out loud, exclude them from analyses with Highest Count
+
+all.data <- right_join(all.data, hc.lookup, by = "SID")
+```
+
+```{r numerosity_class, include = FALSE}
+#add numerosity classification for easier-to-read graphs
+all.data %<>%
+  mutate(Numerosity = ifelse((Task == "Parallel" & as.numeric(as.character(Task_item)) < 5),
+                              "Small", 
+                              ifelse((Task == "Parallel" & as.numeric(as.character(Task_item)) >5), "Large", 
+                                     ifelse((Task == "Orthogonal" & as.numeric(as.character(Task_item)) < 5), "Small", 
+                                            ifelse((Task == "Orthogonal" & as.numeric(as.character(Task_item)) > 5), "Large", "NA")))))
+```
+
+```{r}
+#counting attempts by knower level
+counting <- all.data %>%
+  filter(Task == "Parallel" | 
+           Task == "Orthogonal")%>%
+  droplevels()%>%
+  mutate(Counting_validate = as.numeric(as.character(Counting_validate)), 
+         Counting_validate = ifelse(is.na(Counting_validate), 0, Counting_validate))%>%
+  group_by(Task, CP_subset)%>%
+  summarise(count_attempts = sum(Counting_validate), 
+            total = n())%>%
+  mutate(prop = count_attempts/total)
+  
+#number language
+number <- all.data %>%
+  filter(Task == "Parallel" | 
+           Task == "Orthogonal")%>%
+  droplevels()%>%
+  mutate(Num_lang = as.numeric(as.character(Num_lang)), 
+         Num_lang = ifelse(is.na(Num_lang), 0, Num_lang))%>%
+  group_by(Task, CP_subset)%>%
+  summarise(number_language = sum(Num_lang), 
+            total = n())%>%
+  mutate(prop = number_language/total)
+```
+
+# Introduction
+
+# Experiment 1
+
+## Methods
+
+### Participants
+
+### Procedure
+
+#### Set-matching
+
+#### Counting proficiency
+
+#### Highest count
+
+#### Give-N
+
+## Results and Discussion
+
+- Accuracy
+- Error
+- COV
+
+# Experiment 2 
+
+## Methods
+
+### Participants
+
+### Procedure
+
+## Results and Discussion
+
+# General Discussion
+
+# References 
+
+```{r}
+# References will be generated automatically by Pandoc and included here.
+# The following code is some latex to format the bibliography. Do not remove it.
+```
+
+\setlength{\parindent}{-0.1in} 
+\setlength{\leftskip}{0.125in}
+\noindent
