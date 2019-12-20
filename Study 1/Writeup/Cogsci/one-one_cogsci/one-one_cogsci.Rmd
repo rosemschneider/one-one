@@ -5,9 +5,9 @@ csl: apa6.csl
 document-params: "10pt, letterpaper"
 
 author-information: > 
-    <!-- \author{{\large \bf Rose M. Schneider} $\&$ {\large \bf David Barner} -->
-    <!-- \\Department of Psychology, University of California, San Diego \\ -->
-    
+    <!-- \author{{\large \bf Rose M. Schneider},^1  {\large \bf Ashlie H. Pankonin},^2 {\large \bf Adena Schachner},^1, $\&$ {\large \bf David Barner}^1 -->
+    <!-- \\ ^1Department of Psychology, University of California, San Diego \\ -->
+    <!-- ^2 School of Speech, Language, and Hearing Sciences, San Diego State University} -->
 abstract: >
     Include no author information in the initial submission, to facilitate
     blind review.  The abstract should be one paragraph, indented 1/8 inch on both sides,
@@ -25,6 +25,12 @@ keywords: >
 output: cogsci2016::cogsci_paper
 #final-submission: \cogscifinalcopy
 ---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=3, fig.height=3, fig.crop = F, 
+                      fig.pos = "tb", fig.path='figs/',
+                      echo=F, warning=F, cache=F, 
+                      message=F, sanitize = T)
+```
 
 ```{r setup, include = FALSE}
 rm(list = ls())
@@ -45,21 +51,21 @@ require("knitr")
 
 
 ```{r load_data, include = FALSE}
-###Load Data
+# ###Load Data
 data.raw <- read.csv("../../../Data/one-one_data.csv")%>%
   filter(SID != "CopyPasteMe")%>%
   droplevels()%>%
-  mutate(Age = as.numeric(as.character(Age)), 
+  mutate(Age = as.numeric(as.character(Age)),
          Agegroup = cut(Age, breaks = c(3, 3.5, 4, 4.5, 5.1)))%>%
-  mutate(CP_subset = ifelse(Knower_level == "CP", "CP", "Subset"), 
+  mutate(CP_subset = ifelse(Knower_level == "CP", "CP", "Subset"),
           CP_subset = factor(CP_subset))%>%
   dplyr::select(-X, -X.1, -X.2)
 ```
 
-```{r exclusions}
-###Exclusions
+```{r exclusions, include = FALSE}
+# ###Exclusions
 #how many kids pre-exclusion
-pre.excl <- data.raw %>% 
+pre.excl <- data.raw %>%
   distinct(SID, CP_subset)%>%
   group_by(CP_subset)%>%
   summarise(n = n())%>%
@@ -70,7 +76,8 @@ reasons.excl <- data.raw %>%
   filter(Exclude == 1)%>%
   distinct(SID, Exclude_reason)%>%
   group_by(Exclude_reason)%>%
-  summarise(n = n())
+  summarise(n = n())%>%
+  mutate(total.n = sum(n))
 
 ##exclude these kids from analysis
 all.data <- data.raw %<>%
@@ -78,7 +85,7 @@ all.data <- data.raw %<>%
 
 
 ###Post-hoc exclusion
-#Determining whether children did not understand the task; using failure on both Parallel training trials as a diagnostic. If children really do not understand the task, they should fail both trials of the parallel condition. This is looking at children who fail at least one trial in the Parallel condition to determine whether they do not understand the task. 
+#Determining whether children did not understand the task; using failure on both Parallel training trials as a diagnostic. If children really do not understand the task, they should fail both trials of the parallel condition. This is looking at children who fail at least one trial in the Parallel condition to determine whether they do not understand the task.
 #how many kids failed at least one trial in Parallel
 failed.trials <- all.data %>%
   filter(Task == "Parallel" | Task == "Orthogonal",
@@ -86,14 +93,14 @@ failed.trials <- all.data %>%
   distinct(SID, CP_subset, Task, Task_item, Correct)%>%
   filter(Correct == "0")
 
-#first look at the kids who failed both on parallel, as these are likely to not understand the task 
+#first look at the kids who failed both on parallel, as these are likely to not understand the task
 # failed.trials %>%
 #   filter(Task == "Parallel")%>%
 #   group_by(SID, CP_subset)%>%
 #   summarise(n = n())%>%
 #   filter(n == 2)
 
-#021219-KT - gives max for every single trial, failed training trials even with feedback, should be excluded 
+#021219-KT - gives max for every single trial, failed training trials even with feedback, should be excluded
 #021919-EL - should not be excluded - failed both Parallel training (15 for both), but seemed to get it (matched for 3 and 4)
 #022519-ER - looked a little confused on training trials at the start, but seemed to get it
 #022619-JM - marginal, failed both parallel (15 for both), some variability after that, succeeded on orthogonal training, but failed on 3 and 4; should not be excluded, succeeded on Orthogonal training
@@ -118,7 +125,7 @@ tmp <- all.data %>%
 
 #compute mean counting
 ms.count <- tmp %>%
-  filter(Task_item == "10 - Score" | 
+  filter(Task_item == "10 - Score" |
            Task_item == "8 - Score")%>%
   distinct(SID, Task_item, Response)%>%
   group_by(SID)%>%
@@ -130,7 +137,7 @@ all.data <- right_join(all.data, ms.count, by = "SID")
 ```
 
 ```{r highest_count, include = FALSE}
-###highest count lookup
+# ###highest count lookup
 hc.lookup <- all.data %>%
   filter(Task_item == "Highest_count")%>%
   dplyr::select(SID, Response)%>%
@@ -145,34 +152,34 @@ all.data <- right_join(all.data, hc.lookup, by = "SID")
 #add numerosity classification for easier-to-read graphs
 all.data %<>%
   mutate(Numerosity = ifelse((Task == "Parallel" & as.numeric(as.character(Task_item)) < 5),
-                              "Small", 
-                              ifelse((Task == "Parallel" & as.numeric(as.character(Task_item)) >5), "Large", 
-                                     ifelse((Task == "Orthogonal" & as.numeric(as.character(Task_item)) < 5), "Small", 
+                              "Small",
+                              ifelse((Task == "Parallel" & as.numeric(as.character(Task_item)) >5), "Large",
+                                     ifelse((Task == "Orthogonal" & as.numeric(as.character(Task_item)) < 5), "Small",
                                             ifelse((Task == "Orthogonal" & as.numeric(as.character(Task_item)) > 5), "Large", "NA")))))
 ```
 
 ```{r}
-#counting attempts by knower level
+# #counting attempts by knower level
 counting <- all.data %>%
-  filter(Task == "Parallel" | 
+  filter(Task == "Parallel" |
            Task == "Orthogonal")%>%
   droplevels()%>%
-  mutate(Counting_validate = as.numeric(as.character(Counting_validate)), 
+  mutate(Counting_validate = as.numeric(as.character(Counting_validate)),
          Counting_validate = ifelse(is.na(Counting_validate), 0, Counting_validate))%>%
   group_by(Task, CP_subset)%>%
-  summarise(count_attempts = sum(Counting_validate), 
+  summarise(count_attempts = sum(Counting_validate),
             total = n())%>%
   mutate(prop = count_attempts/total)
-  
-#number language
+#   
+# #number language
 number <- all.data %>%
-  filter(Task == "Parallel" | 
+  filter(Task == "Parallel" |
            Task == "Orthogonal")%>%
   droplevels()%>%
-  mutate(Num_lang = as.numeric(as.character(Num_lang)), 
+  mutate(Num_lang = as.numeric(as.character(Num_lang)),
          Num_lang = ifelse(is.na(Num_lang), 0, Num_lang))%>%
   group_by(Task, CP_subset)%>%
-  summarise(number_language = sum(Num_lang), 
+  summarise(number_language = sum(Num_lang),
             total = n())%>%
   mutate(prop = number_language/total)
 ```
@@ -184,22 +191,184 @@ number <- all.data %>%
 ## Methods
 
 ### Participants
+```{r demographics, include= FALSE}
+demos <- all.data %>%
+  distinct(SID, Age, CP_subset)%>%
+  group_by(CP_subset)%>%
+  summarise(n = n(),
+            mean_age = mean(Age, na.rm = TRUE),
+            sd_age = sd(Age, na.rm = TRUE))%>%
+  group_by()%>%
+  mutate(total.n = sum(n))
+
+#min max mean sd
+min_age = min(all.data$Age, na.rm = TRUE)
+max_age = max(all.data$Age, na.rm = TRUE)
+mean_age = mean(all.data$Age, na.rm = TRUE)
+sd_age= sd(all.data$Age, na.rm = TRUE)
+```
+
+We recruited `r pre.excl$total.n[1]-2` children from a planned sample of 140. Of these children, we excluded `r (reasons.excl$total.n[1]-1)` for the following reasons: Out of age range (\emph{n} = 10); Failure to finish entire study (\emph{n} = 9); Experimenter error (\emph{n} = 6); and inability to understand directions (\emph{n} = 2). Our final analyzable sample included `r demos$total.n[1]` children ($M_{age}$ = `r round(mean_age, 2)` years, $SD_{age}$ = `r round(sd_age, 2)` years, range = `r round(min_age, 2)` - `r round(max_age, 2)` years). In this sample, `r demos$n[1]` were identified as CP-knowers, while the remaining `r demos$n[2]` were classified as subset knowers. 
 
 ### Procedure
 
 #### Set-matching
+The set-matching task was modeled on the Parallel and Orthogonal set-matching tasks used by @gordon2004, and was framed as a "matching game." Children were presented with an approximately 6"x30" rectangle of blue cardboard, and a small plastic container of 15 fish. The experimenter introduced the game by saying, "Today we are going to play a matching game. Do you know what matching is?" Regardless of how the child responded, the experimenter said, "Matching is when you make things look the same. So, in this game, you're going to be making things look like each other." The experimenter then gestured to the child's board and fish, and said, "This is your pond and these are your fish. You can put your fish in your pond. Now let me show you my pond and my fish." The experimenter then brought out a board with same dimensions and color with a plastic fish glued in the center, saying "Using your fish, can you make your pond look like my pond?" 
+
+As in @frank2008, we gave children two training trials with sets of 1 and 2, during which they received feedback. To ensure that all children were not inadvertently cued to number during this feedback, the experimenter never used number words. If a child correctly generated matching sets on these trials, the experimenter said, "That's a match! Your pond looks like my pond because there is a fish here, and a fish here!" If a child did not successfully generate a match, the experimenter said, "Hmm, I don't think that's a match. Your pond doesn't look like mine, because there is a fish here, but no fish here. Let's try it again." Children who failed a training trial were given support by the experimenter. 
+
+As in @gordon2004, in the Parallel condition the experimenter's board was was placed directly above the child's, with approximately 1.5" separation between them. In the orthogonal verson, the experimenter's board was placed perpendicularly to the right of the child's, with about 1.5" of separation.
+
+The plastic fish were either identical or non-identical to the experimenter's. In the Identical condition, all fish were perceptually similar. In the Non-identical condition, all fish within a set (i.e., the experimenter's or the child's) were identical, but the two sets were non-identical. Fish in the Non-identical condition were matched on relative size, and were roughly the same dimensions as fish in the Identical condition. 
+
+After the training trials, children received 5 test trials in both the Parallel and Orthogonal conditions with small (3, 4) and large (6, 8, and 10) sets. Trial order was fixed for the Parallel (3, 4, 10, 8, and 6) and Orthogonal (4, 3, 8, 10, and 6) conditions, and children always received the Parallel condition first. The fish on the experimenter's boards were always approximately 1" apart, regardless of the set size. Although the set of 10 was spread across the majority of the board, the maximum number of fish (15) could still be placed on the board with approximately .25" between them. 
+
+Children did not receive any feedback during these test trials. If children attempted to count, they were immediately stopped by the experimenter, who said "This isn't a counting game - this is just a matching game!" The experimenter noted when children attempted to count, or said number words out loud. Both were rare: In the Parallel condition, CP-knowers attempted to count on `r counting$count_attempts[3]`/`r counting$total[3]` trials, while subset knowers attempted counting on `r counting$count_attempts[4]`/`r counting$total[4]` trials. In the Orthogonal condition, CP-knowers attempted to count on `r counting$count_attempts[1]`/`r counting$total[1]` trials, while subset knowers attempted counting on `r counting$count_attempts[2]`/`r counting$total[2]` trials. Children were monitored by the experimenter for subvocal counting throughout the experiment.
 
 #### Counting proficiency
 
+We measured children's counting proficiency using a measure developed from @cantlon2007. After the last trial of the set-matching task, the experimente brought out the board with either 8 or 10 fish, and asked children how many fish were in the pond. Children were encouraged to count. Children were asked this question for sets of 8 and 10, with the order of presentation randomized across children.
+
+As in @cantlon2007, children received a score between 0 and 3, with 0 = counting randomly; 1 = counting at least two fish correctly (but giving an incorrect answer); 2 = counting incorrectly and then fixing; and 3 = perfect counting. Children's counting proficiency scores were averaged across both set sizes.
+
 #### Highest count
 
+We measured children's rote counting proficiency by asking them to count as high as they could. If a child stopped of their own accord, the experimenter prompted them once, saying "Do you know what comes next?" Children's highest count was the highest number counted to prior to an error. 
+TO-DO: check out HC, make sure coding criteria is ok
+
 #### Give-N
+Children's CP knowledge was assessed using an abbreviated version of a titrated Give-N [@wynn1990]. The experimenter gave child a plate and 10 plastic objects (e.g., bears, apples, buttons), and asked the child to place some number on the plate. After children put some number on the plate and indicated they were done, the experimenter asked, "Is that \emph{N}? Can you count and make sure?" If the child answered in the negative, they were permitted to fix the set. If children successfully generated a given \emph{N}, they were asked for \emph{N}+1 on the next trial; otherwise, they were asked for \emph{N}-1. 
+
+Children were considered CP-knowers is they were able to generate sets of 6 (the maximum number tested) at least 2 out of 3 times when requested. Otherwise, children were classified as subset knowers if they gave another \emph{N} correctly at least two of three times, and did not give that \emph{N} more than once for another number.  
 
 ## Results and Discussion
+```{r accuracy_df, include = FALSE}
+model.df <- all.data %>%
+  filter(Task == "Parallel" | Task == "Orthogonal", 
+         Trial_number != "Training")%>%
+  mutate(Task_item = as.numeric(as.character(Task_item)), 
+         Response = as.numeric(as.character(Response)), 
+         abs_error = abs(Task_item - Response), 
+         highest_count = as.numeric(as.character(highest_count)), 
+         age.c = as.vector(scale(Age, center = TRUE, scale=TRUE)), 
+         Task_item.c = as.vector(scale(Task_item, center = TRUE, scale=TRUE)), 
+         abs_error.c = as.vector(scale(abs_error, center = TRUE, scale=TRUE)), 
+         highest_count.c = as.vector(scale(highest_count, center = TRUE, scale = TRUE)),
+         count_proficiency.c = as.vector(scale(count_proficiency, center = TRUE, scale = TRUE)),
+         Correct = as.numeric(as.character(Correct)), 
+         CP_subset = factor(CP_subset, levels = c("Subset", "CP")))
+```
 
-- Accuracy
-- Error
-- COV
+```{r cp_overall_accuracy, include = FALSE}
+#create a base model that includes numerosity and task
+overall.acc.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
+                          family = "binomial", data = model.df, 
+                          control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+#add CP_subset-knower status
+overall.acc.kl <- glmer(Correct ~ CP_subset + Task_item.c + Task + age.c + (1|SID), 
+                          family = "binomial", data = model.df, 
+                          control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+#now add interaction
+overall.acc.kl.int <- glmer(Correct ~ CP_subset*Task_item.c + Task + age.c + (1|SID), 
+                          family = "binomial", data = model.df, 
+                          control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+#compare
+anova.cp.overall <- anova(overall.acc.base, overall.acc.kl, overall.acc.kl.int, test = 'LRT') 
+
+cp.acc.final <- summary(overall.acc.kl)
+
+
+#### ADDING IDENTITY
+#base
+overall.acc.kl <- glmer(Correct ~ CP_subset + Task_item.c + Task + age.c + (1|SID), 
+                          family = "binomial", data = model.df, 
+                          control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+ident.main.effect.kl <- glmer(Correct ~ Condition + CP_subset + Task_item.c + Task + age.c + (1|SID), 
+                          family = "binomial", data = model.df, 
+                          control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+ident.int.kl <- glmer(Correct ~ Condition*CP_subset + Task_item.c + Task + age.c + (1|SID), 
+                          family = "binomial", data = model.df, 
+                          control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=2e4)))
+
+anova.ident.acc <- anova(overall.acc.kl, ident.main.effect.kl, ident.int.kl, test = 'LRT')
+
+ident.final <- summary(ident.int.kl)
+
+
+```
+
+```{r accuracy_vis, fig.pos = "t", fig.width=3, fig.height=1.8, fig.align = "center", fig.cap = "Mean accuracy on the Parallel and Orthongal set-matching tasks, grouped by CP-knower level. Error bars represent 95\\% confidence intervals computer by nonparametric bootstrap."}
+all.data %>%
+  filter(Task == "Parallel" | Task == "Orthogonal", 
+         Trial_number != "Training")%>%
+  mutate(Task_item = factor(Task_item, levels = c("3", "4",  
+                                                  "6", "8", "10")), 
+         Correct = as.numeric(as.character(Correct)))%>%
+  group_by(Numerosity, Task, Task_item, CP_subset)%>%
+    multi_boot_standard("Correct", na.rm = TRUE)%>%
+  ggplot(aes(x = Task_item, y = mean, colour = CP_subset, group = interaction(Numerosity, CP_subset))) +
+  geom_point(size = 1) + 
+  geom_line() +
+  geom_linerange(aes(ymin = ci_lower, ymax = ci_upper), 
+                width = .1, 
+                show.legend = FALSE) +
+  theme_bw(base_size = 8) + 
+  facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
+  theme( 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        legend.title = element_blank(), 
+        legend.position = "top", 
+        legend.margin=margin(1,1,1,1),
+        legend.box.margin=margin(-7,-7,-7,-7)) +
+  labs(x = "Set size", y = "Mean accuracy") +
+  scale_colour_brewer(palette = "Dark2") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  labs(color= "Knower Level")
+```
+
+### Accuracy
+Our primary question in this work was whether CP-knowers were more likely than subset knowers to generate exact matches for both large and small set sizes. To test this, we built a generalized linear mixed effects model (GLMEM) predicting whether children exactly matched a set from CP-knower status, set size, task condition (Parallel/Orthogonal), and age, with a random effect of subject.\footnote{All mixed effects models were fit in \texttt{R} using the \texttt{lme4} package. Our pre-registered model specification was: \texttt{Correct $\sim$ CP-knower status*Set size + Task + Age + ( 1 | subject)}. Continuous predictors were scaled and centered.} Hierarchical model comparison using Likelihood Ratio Test indicated that the addition of CP-knower status improved the fit of the base model ($\chi^2$ = `r round(anova.cp.overall$Chisq[2], 2)`, \emph{p} < .0001), but that there was no interaction between CP-knowledge and set size ($\chi^2$ = `r round(anova.cp.overall$Chisq[3], 2)`, \emph{p} = .21). Thus, we found that CP-knowers were significantly more likely than subset knowers to generate exact matches in the set-matching task ($\beta$ = `r round(cp.acc.final$coefficients[2], 2)`, \emph{p} < .0001) overall (Figure \ref{fig:accuracy_vis}), even when controlling for age ($\beta$ = `r round(cp.acc.final$coefficients[5], 2)`, \emph{p} = .01). As expected, this final model indicated that accuracy decreased with increasing set size ($\beta$ = `r round(cp.acc.final$coefficients[3], 2)`, \emph{p} < .0001), and on the Orthgonal condition ($\beta$ = -`r round(cp.acc.final$coefficients[4], 2)`, \emph{p} < .0001). 
+
+We next tested whether the identity of the set affected children's ability to generate exact matches. As expected, Likelihood Ratio Tests between full and reduced models indicated a significant interaction between Condition and CP knowledge ($\chi^2$ = `r round(anova.ident.acc$Chisq[3], 2)`, \emph{p} = .003), such that CP-knowers were significantly more accurate than subset knowers in the Non-identical condition ($\beta$ = `r round(ident.final$coefficients[7], 2)`, \emph{p} = .002), which was again significant when controlling for age ($\beta$ = `r round(ident.final$coefficients[6], 2)`, \emph{p} = .007). As expected, we found lower accuracy in the Non-identical condition ($\beta$ = `r round(ident.final$coefficients[2], 2)`, \emph{p} = .006), with increasing set sizes ($\beta$ = `r round(ident.final$coefficients[4], 2)`, \emph{p} = .002), and in the Orthogonal condition ($\beta$ = -`r round(ident.final$coefficients[5], 2)`, \emph{p} < .0001). When accounting for the interaction, the main effect of CP knowledge was marginal ($\beta$ = `r round(ident.final$coefficients[3], 2)`, \emph{p} = .07).
+
+### Error
+
+```{r dist_responses, fig.env = "figure*", fig.pos = "t", fig.width = 7.5, fig.height = 2.3, fig.align = "center", set.cap.width = T, num.cols = 2, fig.cap = "Frequency of set-size response (x-axis) for each set size in the Parallel condition, grouped by CP knowledge. Dashed line indicated target set-size."}
+
+all.data %>%
+  filter(Task == "Parallel")%>%
+  mutate(Task_item = as.numeric(as.character(Task_item)), 
+         Response = as.numeric(as.character(Response)))%>%
+  filter(Task_item > 2)%>%
+  group_by(CP_subset, Task_item, Response)%>%
+  # summarise(n = n()) %>%
+  ggplot(aes(x = Response, fill = CP_subset)) +
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+  geom_histogram() + 
+  theme_bw(base_size = 8) +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 6.5), 
+        panel.grid = element_blank()) + 
+  scale_fill_brewer(palette = "Dark2") +
+  facet_grid(CP_subset ~ Task_item) +
+  scale_x_continuous(breaks = seq(1, 15, 1)) + 
+  labs(x = 'Number of items given', y = 'Frequency') 
+```
+
+
+
 
 # Experiment 2 
 
