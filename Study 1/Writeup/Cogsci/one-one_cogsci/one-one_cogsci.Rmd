@@ -133,7 +133,7 @@ ms.count <- tmp %>%
   dplyr::select(SID, count_proficiency)
 
 ##add to all.data
-all.data <- right_join(all.data, ms.count, by = "SID")
+all.data <- left_join(all.data, ms.count, by = "SID")
 ```
 
 ```{r highest_count, include = FALSE}
@@ -145,7 +145,7 @@ hc.lookup <- all.data %>%
 
 ##There are several children who will not count out loud, exclude them from analyses with Highest Count
 
-all.data <- right_join(all.data, hc.lookup, by = "SID")
+all.data <- left_join(all.data, hc.lookup, by = "SID")
 ```
 
 ```{r numerosity_class, include = FALSE}
@@ -185,6 +185,7 @@ number <- all.data %>%
 ```
 
 # Introduction
+
 
 # Experiment 1
 
@@ -369,42 +370,42 @@ all.data %>%
 ```{r ks_tests, include = FALSE}
 # ##PARALLEL
 # #3
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 3 & Task == "Parallel")$Response, 
+# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 3 & Task == "Parallel")$Response,
 #         subset(model.df, CP_subset == "Subset" & Task_item == 3 & Task == "Parallel")$Response, alternative = "two.sided") #NS, D = .11, p = .76
 # #4
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 4 & Task == "Parallel")$Response, 
+# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 4 & Task == "Parallel")$Response,
 #         subset(model.df, CP_subset == "Subset" & Task_item == 4 & Task == "Parallel")$Response, alternative = "two.sided") #sig, D = .25, p = .03
 # 
 # #6
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 6 & Task == "Parallel")$Response, 
+# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 6 & Task == "Parallel")$Response,
 #         subset(model.df, CP_subset == "Subset" & Task_item == 6 & Task == "Parallel")$Response, alternative = "two.sided") #sig, D = .26, p = .02
 # 
 # #8
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 8 & Task == "Parallel")$Response, 
+# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 8 & Task == "Parallel")$Response,
 #         subset(model.df, CP_subset == "Subset" & Task_item == 8 & Task == "Parallel")$Response, alternative = "two.sided") #Marginal, D = .22, p = .07
 # 
 # #10
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 10 & Task == "Parallel")$Response, 
+# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 10 & Task == "Parallel")$Response,
 #         subset(model.df, CP_subset == "Subset" & Task_item == 10 & Task == "Parallel")$Response, alternative = "two.sided") #NS, D = .16, p = .34
 # 
 # ### ORTHOGONAL
 # #3
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 3 & Task == "Orthogonal")$Response, 
+# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 3 & Task == "Orthogonal")$Response,
 #         subset(model.df, CP_subset == "Subset" & Task_item == 3 & Task == "Orthogonal")$Response, alternative = "two.sided") #sid, D = .27, p = .02
 # #4
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 4 & Task == "Orthogonal")$Response, 
+# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 4 & Task == "Orthogonal")$Response,
 #         subset(model.df, CP_subset == "Subset" & Task_item == 4 & Task == "Orthogonal")$Response, alternative = "two.sided") #sig, D = .26, p = .02
 # 
 # #6
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 6 & Task == "Orthogonal")$Response, 
+# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 6 & Task == "Orthogonal")$Response,
 #         subset(model.df, CP_subset == "Subset" & Task_item == 6 & Task == "Orthogonal")$Response, alternative = "two.sided") #NS, D = .18, p = .20
 # 
 # #8
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 8 & Task == "Orthogonal")$Response, 
+# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 8 & Task == "Orthogonal")$Response,
 #         subset(model.df, CP_subset == "Subset" & Task_item == 8 & Task == "Orthogonal")$Response, alternative = "two.sided") #NS, D = .11, p = .80
 # 
 # #10
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 10 & Task == "Orthogonal")$Response, 
+# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 10 & Task == "Orthogonal")$Response,
 #         subset(model.df, CP_subset == "Subset" & Task_item == 10 & Task == "Orthogonal")$Response, alternative = "two.sided") #Sig, D = .24, p = .04
 ```
 
@@ -479,9 +480,9 @@ anova.error.ident <- anova(overall.error.kl, ident.error.kl, ident.int.error.kl,
 final.ident.error <- summary(ident.int.error.kl)
 ```
 
-We next explored the pattern of children's responses on the set-matching task by analyzing their errors. First, we conducted analyses of children's absolute error (|Requested item - Response|) on incorrect trials to investigate whether CP-knowers' performance indicated that that they were attempting to implement 1-to-1, as opposed to approximating. Hierarchical model comparisons using Likelihood Ratio Tests between full and reduced linear mixed effects models\footnote{Our pre-registered model specification was: \texttt{Absolute error $\sim$ CP-knower status*Set size + Task + Age + ( 1 | subject)}. Continuous predictors were scaled and centered.} indicated a main effect of CP knowledge ($\chi^2$ = `r round(anova.error.overall$Chisq[2], 2)`, \emph{p} = .004), such that CP-knowers had significantly lower rates of absolute error ($\beta$ = `r round(final.error$coefficients[2], 2)`, \emph{p} = CONVERT), even when controlling for age ($\beta$ = `r round(final.error$coefficients[5], 2)`, \emph{p} = CONVERT), as shown in Figure \ref{fig:error_vis}. Absolute error increased with set size ($\beta$ = `r round(final.error$coefficients[3], 2)`, \emph{p} = CONVERT), and on the Orthogonal condition ($\beta$ = `r (round(final.error$coefficients[4], 2)/-1)`, \emph{p} = CONVERT). 
+We next explored the pattern of children's responses on the set-matching task by analyzing their errors. First, we conducted analyses of children's absolute error (|Requested item - Response|) on incorrect trials to investigate whether CP-knowers' performance indicated that that they were attempting to implement 1-to-1, as opposed to approximating. Hierarchical model comparisons using Likelihood Ratio Tests between full and reduced linear mixed effects models\footnote{Our pre-registered model specification was: \texttt{Absolute error $\sim$ CP-knower status*Set size + Task + Age + ( 1 | subject)}. Continuous predictors were scaled and centered.} indicated a main effect of CP knowledge ($\chi^2$ = `r round(anova.error.overall$Chisq[2], 2)`, \emph{p} = .004), such that CP-knowers had significantly lower rates of absolute error ($\beta$ = `r round(final.error$coefficients[2], 2)`, \emph{p} = .002), even when controlling for age ($\beta$ = `r round(final.error$coefficients[5], 2)`, \emph{p} = .10), as shown in Figure \ref{fig:error_vis}. Absolute error increased with set size ($\beta$ = `r round(final.error$coefficients[3], 2)`, \emph{p} < .0001), and on the Orthogonal condition ($\beta$ = `r (round(final.error$coefficients[4], 2)/-1)`, \emph{p} < .0001). 
 
-Reflecting the results of our accuracy analysis, we also found a significant interaction between CP knowledge and Condition (Idential/Non-identical) on absolute error rates ($\chi^2$ = `r round(anova.error.ident$Chisq[3], 2)`, \emph{p} = .002), such that CP-knowers had significantly lower error on Non-identical trials in comparison to subset knowers ($\beta$ = `r round(final.ident.error$coefficients[7], 2)`, \emph{p} = CONVERT).
+Reflecting the results of our accuracy analysis, we also found a significant interaction between CP knowledge and Condition (Idential/Non-identical) on absolute error rates ($\chi^2$ = `r round(anova.error.ident$Chisq[3], 2)`, \emph{p} = .002), such that CP-knowers had significantly lower error on Non-identical trials in comparison to subset knowers ($\beta$ = `r round(final.ident.error$coefficients[7], 2)`, \emph{p} = .001).
 
 ### Coefficient of Variation
 ```{r covs, include = FALSE}
@@ -498,7 +499,7 @@ tmp.cov %<>%
 
 #make classifications
 cov.group <- tmp.cov %>%
-  group_by(SID, CP_subset)%>%
+  group_by(SID, Age, CP_subset)%>%
   summarise(mean.cov = mean(single.cov, na.rm = TRUE))%>%
   mutate(cov.range = ifelse(mean.cov < .15, "one-one", 
                             ifelse((mean.cov >=.15 & mean.cov <= .3), "approximating", "other")))
@@ -514,154 +515,97 @@ cov.group.ms <- cov.data %>%
   summarise(n = n())
 
 ###are there significantly more CP knowers in one-one range than in other groups? 
-cov.group.1 <- 
-  cov.data %>%
-  filter(cov.range != "other")
+###chisq test
+cov.group.1 <-  cov.data %>%
+distinct(SID, CP_subset, cov.range)
 tbl <- table(cov.group.1$CP_subset, 
              cov.group.1$cov.range)
-chisq.test(tbl)
 
-cov.group %>%
-  group_by(cov.range, CP_subset)%>%
-  summarise(n = n()) %>%
-  ggplot(aes(x = CP_subset, y = n, fill = cov.range)) + 
-    geom_bar(stat = "identity") +
-  scale_fill_brewer(palette = "") +
-  theme_bw()
+chisq.approx <- chisq.test(tbl)
 
+###how much more likely are subset knowers to give the max for large sets?
+max.data <- all.data %>%
+  filter(Task == "Parallel", 
+         Numerosity == "Large")%>%
+  droplevels()%>%
+  mutate(max = ifelse(Response == 15, "max", "not max"))
+  
+max.data.ms <-  max.data %>%
+distinct(SID, CP_subset, max)
+tbl.2 <- table(max.data.ms$max, 
+               max.data.ms$CP_subset)
+max.chis <- chisq.test(tbl.2)
 
+###Do CP-knowers have lower COVs
 ##t-test between cp and subset-knowers
+##Parallel
 tmp.cov.ms <- tmp.cov %>%
   group_by(SID, CP_subset)%>%
   summarise(mean.cov = mean(single.cov, na.rm = TRUE))
+#summaries of means
+cp.cov.mean <- mean(subset(tmp.cov, CP_subset == "CP")$single.cov)
+cp.cov.sd <- sd(subset(tmp.cov, CP_subset == "CP")$single.cov)
+subset.cov.mean <- mean(subset(tmp.cov, CP_subset == "Subset")$single.cov)
+subset.cov.sd <- sd(subset(tmp.cov, CP_subset == "Subset")$single.cov)
 
-t.test(subset(tmp.cov.ms, CP_subset == "CP")$mean.cov, 
+cov.overall <- t.test(subset(tmp.cov.ms, CP_subset == "CP")$mean.cov, 
        subset(tmp.cov.ms, CP_subset == "Subset")$mean.cov, var.equal = TRUE)
 
-##average cov across quantities to produce a mean COV
-tmp.cov %>%
-  mutate(Task_item = factor(Task_item, levels = c(3, 4, 6, 8, 10)))%>%
-  group_by(CP_subset, Numerosity, Task_item)%>%
-  langcog::multi_boot_standard("single.cov", na.rm = TRUE)%>%
-  ggplot(aes(x = Task_item, y = mean, color = CP_subset, group = interaction(Numerosity, CP_subset))) + 
-  geom_point() +
-  geom_linerange(aes(ymin = ci_lower, ymax = ci_upper)) +
-  geom_line() +
-  scale_color_brewer(palette = "Dark2") + 
-  facet_grid(~Numerosity, scale = "free_x") + 
-  labs(y = 'Mean COV')
-
-##same as above, but filter out 15 responses
-tmp.cov %>%
-  filter(Response != 15)%>%
-  mutate(Task_item = factor(Task_item, levels = c(3, 4, 6, 8, 10)))%>%
-  group_by(CP_subset, Numerosity, Task_item)%>%
- langcog::multi_boot_standard("single.cov", na.rm = TRUE)%>%
-  ggplot(aes(x = Task_item, y = mean, color = CP_subset, group = interaction(Numerosity, CP_subset))) + 
-  geom_point() +
-  geom_linerange(aes(ymin = ci_lower, ymax = ci_upper)) +
-  geom_line() +
-  scale_color_brewer(palette = "Dark2") + 
-  facet_grid(~Numerosity, scale = "free_x") + 
-  labs(title = "COV with Max responses excluded")
-
-
-
-
-
-
-
-tmp.cov <- all.data %>%
-  filter(Task == "Parallel" | 
-           Task == "Orthogonal", 
-         Trial_number != "Training")%>%
-  mutate(Task_item = as.numeric(as.character(Task_item)), 
-         Response = as.numeric(as.character(Response)))%>%
-  mutate(single.cov = (sqrt((Task_item-Response)^2)/Task_item))
-
-hist(tmp.cov$single.cov)
-
-##average cov across quantities to produce a mean COV
-tmp.cov %>%
-  filter(Task == "Parallel")%>%
-  group_by(Task, CP_subset, Task_item)%>%
-  summarise(mean.cov = mean(single.cov, na.rm = TRUE))%>%
-  ggplot(aes(x = Task_item, y = mean.cov, color = CP_subset)) + 
-  geom_line() +
-  facet_grid(~Task)
-
-tmp.cov %>%
-  filter(Task == "Parallel")%>%
-  group_by(Task, CP_subset, Task_item)%>%
-  multi_boot_standard("single.cov", na.rm = TRUE)%>%
-  ggplot(aes(x = Task_item, y = mean, fill = CP_subset, group = CP_subset)) + 
-  geom_bar(stat = "identity", position = position_dodge(width = .9)) +
-  geom_linerange(aes(ymin = ci_lower, ymax = ci_upper), position = position_dodge(width = .9)) +
-  facet_grid(~Task) + 
-  scale_y_continuous(breaks = seq(0, 1, .1)) + 
-  scale_x_continuous(breaks = c(3, 4, 6, 8, 10))
-
-##what if we filter out the trials on which participants gave the maximum?
-tmp.cov %>%
-  filter(Response != 15)%>%
-  group_by(Task, CP_subset, Task_item)%>%
-  summarise(mean.cov = mean(single.cov, na.rm = TRUE))%>%
-  ggplot(aes(x = Task_item, y = mean.cov, color = CP_subset)) + 
-  geom_line() +
-  facet_grid(~Task)
-
-tmp.cov %>%
-  filter(Response != 15)%>%
-  filter(Task == "Parallel")%>%
-  group_by(Task, CP_subset, Task_item)%>%
-  multi_boot_standard("single.cov", na.rm = TRUE)%>%
-  ggplot(aes(x = Task_item, y = mean, fill = CP_subset, group = CP_subset)) + 
-  geom_bar(stat = "identity", position = position_dodge(width = .9)) +
-  geom_linerange(aes(ymin = ci_lower, ymax = ci_upper), position = position_dodge(width = .9)) +
-  facet_grid(~Task) + 
-  scale_y_continuous(breaks = seq(0, 1, .1)) + 
-  scale_x_continuous(breaks = c(3, 4, 6, 8, 10))
-
-#mean COV
-tmp.cov %>%
-  group_by(Task, CP_subset, Task_item)%>%
-  summarise(mean_correct = mean(as.numeric(as.character(Correct)), na.rm = TRUE), 
-            mean_cov = mean(single.cov, na.rm = TRUE))
-
-#CP cov model; parallel
-cov.model <- lm(single.cov ~ Task_item, data = subset(tmp.cov, Numerosity == "Large" & CP_subset == "CP" & Task == "Parallel"))
-summary(cov.model)
-
+# ###Linear model of COV
+# #CP cov model; parallel
+# ##Large
+cp.cov.model <- lm(single.cov ~ Task_item, data = subset(tmp.cov, Numerosity == "Large" & Task == "Parallel"))
+cp.cov.summary <- summary(cp.cov.model)
+# 
 #subset cov model; parallel
-cov.model.ss <- lm(single.cov ~ Task_item, data = subset(tmp.cov, Numerosity == "Large" & CP_subset == "Subset" & Task == "Parallel"))
-summary(cov.model.ss)
+cov.model.ss <- lm(single.cov ~ Task_item, data = subset(tmp.cov,  CP_subset == "Subset" & Task == "Parallel"))
+subset.cov.summary <- summary(cov.model.ss)
 
-##correlation between age and COV
-tmp.cov %>%
-  filter(Task == "Parallel") %>%
-  group_by(SID, Age, CP_subset)%>%
-  summarise(mean.cov = mean(single.cov, na.rm = TRUE))%>%
-  ggplot(aes(x = Age, y = mean.cov, color = CP_subset, group = CP_subset)) + 
-  geom_point() + 
-  geom_smooth(method = 'lm') + 
-  scale_color_brewer(palette = "Dark2")
 
-tmp.cov.ms <- tmp.cov %>%
-  filter(Task == "Parallel")%>%
-  group_by(SID, CP_subset)%>%
-  summarise(mean.cov = mean(single.cov, na.rm=TRUE))
-
-tmp.cov.ms %>%
-  mutate(mean.cov.bin = cut(mean.cov, breaks = seq(0, .82, .1), include.lowest = TRUE))%>%
-  group_by(CP_subset, mean.cov.bin)%>%
-  summarise(n = n()) %>%
-  ggplot(aes(x = mean.cov.bin, y = n, fill = CP_subset)) + 
-  geom_bar(stat = "identity", position = position_dodge()) +
-  facet_grid(~CP_subset)
+# ##average cov across quantities to produce a mean COV
+# tmp.cov %>%
+#   mutate(Task_item = factor(Task_item, levels = c(3, 4, 6, 8, 10)))%>%
+#   group_by(CP_subset, Numerosity, Task_item)%>%
+#   langcog::multi_boot_standard("single.cov", na.rm = TRUE)%>%
+#   ggplot(aes(x = Task_item, y = mean, color = CP_subset, group = interaction(Numerosity, CP_subset))) +
+#   geom_point() +
+#   geom_linerange(aes(ymin = ci_lower, ymax = ci_upper)) +
+#   geom_line() +
+#   scale_color_brewer(palette = "Dark2") +
+#   facet_grid(~Numerosity, scale = "free_x") +
+#   labs(y = 'Mean COV')
+# # 
 ```
-Finally, we used children's Coefficient of Variation (COV) as an indication of whether they were using a one-to-one, approximate, or other strategy to match sets. COV was approximated as in (Frank et al., 2012), with the formula (FORMULA). Due to children's low performance on the Orthogonal, we conduted this \emph{post hoc} analysis using only data from the Parallel condition. 
+Finally, we used children's Coefficient of Variation (COV) as an indication of whether they were using a one-to-one, approximate, or other strategy to match sets. COV was approximated as in (Frank et al., 2012), with the formula (FORMULA). Due to children's low performance on the Orthogonal, we conduted this \emph{post hoc} analysis using only data from the Parallel condition. First, we used mean COV as an indication of overall error on this task. Mirroring our accuracy and error analyses above, COVs were significantly lower for CP-knowers (\emph{Mean} = `r round(cp.cov.mean, 2)`) than for subset knowers (\emph{Mean} = `r round(subset.cov.mean, 2)`) on this task (\emph{t}(`r as.numeric(cov.overall$parameter)`) = `r round(cov.overall$statistic, 2)`, \emph{p} < .0001).
 
-First, we computed overall COVs for each participant, and used those COVs as an indication of their strategy. Based on previous work (CITATIONS), children with COVs <.15 were classified as "One-to-one" users; COVs between .15 and .30 were "Approximation" users; and COVs >.3 were an "Other" error-prone strategy. 
+Next, we used COV as an indication of the strategy used by participants. Based on previous work (CITATIONS), children with COVs <.15 were classified as "One-to-one" users; COVs between .15 and .30 were "Approximation" users; and COVs >.3 were an "Other" error-prone strategy. A Chi-square test indicated a relationship between CP knowledge and strategy ($\chi^2$ = `r round(chisq.approx$statistic, 2)`, \emph{p} < .0001), with the majority of CP-knowers' (73%) COVs consistent with the use of a one-to-one strategy. In contrast, only 34% of subset knowers had COVs that suggested they might have been using one-to-one correspondence. Instead, subset knowers seemed to rely more frequently (42%) on a error-prone strategy that resulted in COVs that exceeded the approximation range; this may be due to the fact that subset knowers frequently gave close to the maximum for all large quantities.
+
+Finally, we used linear regression to test the relationship between test quantity and COV for both CP and subset knowers. As in previous work (Frank et al., 2012), we interpret a flat COV as evidence that a particular group is using an approximation strategy, while a decreasing COV indicates that group is using a one-to-one strategy. An increasing COV, on the other hand, may indicate that participants are using an error-prone heuristic in addition to approximation. These linear models revealed a significant negative relationship between task quantity and COV in CP-knowers ($\beta$ = `r round(cp.cov.summary$coefficients[2],2)`, \emph{p} < .0001), again suggesting that this group is likely using one-to-one correspondence to generate set matches. On the other hand, we found a slightly increasing relationship between test quantity and COV in subset knowers ($\beta$ = `r round(subset.cov.summary$coefficients[2],2)`, \emph{p} = .001). 
+
+### Predictors of performance
+PLACEHOLDER, NOT SURE IF THIS WILL END UP IN FINAL PAPER
+```{r counting_prof, include = FALSE}
+###Subset-knowers
+#filter out the kids who don't have counting proficiency for now
+model.df %<>%
+  filter(!is.na(count_proficiency))
+
+#make base model
+count.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
+                    family = "binomial", data = subset(model.df, CP_subset == "Subset"))
+
+#add counting proficiency
+count.prof <- glmer(Correct ~ count_proficiency.c + Task_item.c + Task + age.c + (1|SID), 
+                    family = "binomial", data = subset(model.df, CP_subset == "Subset"))
+
+#add interaction
+count.int <- glmer(Correct ~ count_proficiency.c*Task_item.c + Task + age.c + (1|SID), 
+                    family = "binomial", data = subset(model.df, CP_subset == "Subset"))
+
+#compare
+anova(count.base, count.prof, count.int, test = 'LRT')
+```
+
 # Experiment 2 
 
 ## Methods
