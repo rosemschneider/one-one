@@ -9,7 +9,7 @@ author-information: >
     <!-- \\ ^1Department of Psychology, University of California, San Diego \\ -->
     <!-- ^2 School of Speech, Language, and Hearing Sciences, San Diego State University} -->
 abstract: >
-    The successor function -- a recursive function *S* which states that for every natural number *n*, *S(n)* = *n*+1 -- underlies our understanding of the natural numbers as an infinite class. Recent work has found that acquisition of this logical property is surprisingly protracted, completed several years after children master the counting procedure. While such work links successor knowledge with counting mastery, the exact processes underlying this developmental transition remain unclear. Here, we examined two possible mechanisms: (1) recursive counting knowledge, and (2) formal training with the ``+1'' rule in arithmetic. We find that while both recursive counting and arithmetic mastery predict successor knowledge, arithmetic performance is significantly lower than measures of recursive counting for all children. This dissociation suggests children do not generalize the successor function from trained mathematics; rather, we find evidence consistent with the hypothesis that successor knowledge is supported by the extraction of recursive counting rules.
+    THIS IS A FAKE ABSTRACT TO CHECK FOR LENGTH. The successor function -- a recursive function *S* which states that for every natural number *n*, *S(n)* = *n*+1 -- underlies our understanding of the natural numbers as an infinite class. Recent work has found that acquisition of this logical property is surprisingly protracted, completed several years after children master the counting procedure. While such work links successor knowledge with counting mastery, the exact processes underlying this developmental transition remain unclear. Here, we examined two possible mechanisms: (1) recursive counting knowledge, and (2) formal training with the ``+1'' rule in arithmetic. We find that while both recursive counting and arithmetic mastery predict successor knowledge, arithmetic performance is significantly lower than measures of recursive counting for all children. This dissociation suggests children do not generalize the successor function from trained mathematics; rather, we find evidence consistent with the hypothesis that successor knowledge is supported by the extraction of recursive counting rules.
     
 keywords: >
     Number; language; cognitive development; conceptual development
@@ -18,8 +18,7 @@ output: cogsci2016::cogsci_paper
 #final-submission: \cogscifinalcopy
 ---
 ```{r global_options, include=FALSE}
-knitr::opts_chunk$set(fig.width=3, fig.height=3, fig.crop = F, 
-                      fig.pos = "tb", fig.path='figs/',
+knitr::opts_chunk$set(fig.width=3, fig.height=3, fig.crop = F, fig.path='figs/',
                       echo=F, warning=F, cache=F, 
                       message=F, sanitize = T)
 ```
@@ -128,7 +127,7 @@ ms.count <- tmp %>%
 all.data <- left_join(all.data, ms.count, by = "SID")
 ```
 
-```{r highest_count, include = FALSE}
+```{r highest_count_data, include = FALSE}
 # ###highest count lookup
 hc.lookup <- all.data %>%
   filter(Task_item == "Highest_count")%>%
@@ -194,6 +193,7 @@ In the current work, we investigate knowledge of Hume's Principle in a large gro
 # Experiment 1
 
 ## Methods
+This work was pre-registered on OSF (LINK HERE), and all methodological and analytical choices were as preregistered, unless stated otherwise in-text.
 
 ### Participants
 ```{r demographics, include= FALSE}
@@ -215,10 +215,9 @@ sd_age= sd(all.data$Age, na.rm = TRUE)
 
 Our final analyzable sample included `r demos$total.n[1]` children ($M_{age}$ = `r round(mean_age, 2)` years, $SD_{age}$ = `r round(sd_age, 2)` years, range = `r round(min_age, 2)` - `r round(max_age, 2)` years). In this sample, `r demos$n[1]` were identified as CP-knowers, while the remaining `r demos$n[2]` were classified as subset knowers. 
 
-### Procedure
-This work was pre-registered on OSF (LINK HERE), and all methodological and analytical choices were as preregistered, unless stated otherwise in-text.
+### Tasks
 
-#### Set-matching
+### Set-matching.
 This task task was modeled on the set-matching tasks used by @gordon2004, and tested children's ability to use one-to-one correspondence to establish exact equality for large quantities. Here, we framed the task as a "matching game." Children were presented with a 6"x30" blue cardboard rectangle and a container with 15 fish. The experimenter introduced the game by saying, "Today we are going to play a matching game. Do you know what matching is? Matching is when you make things look the same. So, in this game, you're going to make things look like each other." The experimenter gestured to the child's board and fish, and said, "This is your pond and these are your fish. You can put your fish in your pond. Now let me show you my pond and my fish." The experimenter then brought out a board identical to the child's  with one plastic fish glued in the center and said, "Now, can you make your pond look like my pond?"  
 
 Children received two training trials with 1 and 2 fish (on the experimenter's board) during which they received feedback. To ensure that all children were not inadvertently cued to number, the experimenter never used number words during instructions or feedback. For example, if a child correctly generated matching sets on a training trial, the experimenter said, "That's a match! Your pond looks like my pond because there is a fish here, and a fish here!"
@@ -227,13 +226,13 @@ The boards were presented either in a Parallel or Orthogonal orientation, based 
 
 After training, children received 5 test trials in both the Parallel and Orthogonal conditions with small (3, 4) and large (6, 8, and 10) sets. Trial order was fixed for the Parallel (3, 4, 10, 8, and 6) and Orthogonal (4, 3, 8, 10, and 6) conditions, and children always received the Parallel condition first. The fish on the experimenter's boards were always approximately 1" apart, regardless of the set size. Although the set of 10 was spread across the majority of the board, the maximum number of fish (15) could still be placed on the board with approximately .25" between them. Children did not receive any feedback during these test trials. If children attempted to count, they were immediately stopped by the experimenter, who said "This isn't a counting game - this is just a matching game!" The experimenter noted when children attempted to count, or said number words out loud. Both were rare: In the Parallel condition, CP-knowers attempted to count on `r counting$count_attempts[3]`/`r counting$total[3]` trials, while subset knowers attempted counting on `r counting$count_attempts[4]`/`r counting$total[4]` trials.
 
-#### Counting proficiency
+### Counting proficiency
 We measured children's counting proficiency using a measure developed from @cantlon2007. After the last trial of the set-matching task, the experimenter brought out the board with either 8 or 10 fish, and asked children how many fish were in the pond. Children were encouraged to count. Children were asked this question for sets of 8 and 10, with the order of presentation randomized across children. As in @cantlon2007, children received a score between 0 and 3, with 0 = counting randomly; 1 = counting at least two fish correctly (but giving an incorrect answer); 2 = counting incorrectly and then fixing; and 3 = perfect counting. Children's counting proficiency scores were averaged across both set sizes.
 
-#### Highest count
+### Highest count
 We measured children's rote counting proficiency by asking them to count as high as they could. If a child stopped of their own accord, the experimenter prompted them once, saying "Do you know what comes next?" Children's highest count was the highest number counted to prior to an error. 
 
-#### Give-N
+### Give-N
 Children's CP knowledge was assessed using an abbreviated version of a titrated Give-N [@wynn1990]. The experimenter gave child a plate and 10 plastic objects (e.g., bears, apples, buttons), and asked the child to place some number on the plate. After children put some number on the plate and indicated they were done, the experimenter asked, "Is that \emph{N}? Can you count and make sure?" If the child answered in the negative, they were permitted to fix the set. If children successfully generated a given \emph{N}, they were asked for \emph{N}+1 on the next trial; otherwise, they were asked for \emph{N}-1. Children were considered CP-knowers is they were able to generate sets of 6 (the maximum number tested) at least 2 out of 3 times when requested. Otherwise, children were classified as subset knowers if they gave another \emph{N} correctly at least two of three times, and did not give that \emph{N} more than once for another number.  
 
 ## Results 
@@ -299,8 +298,6 @@ ident.int.kl <- glmer(Correct ~ Condition*CP_subset + Task_item.c + Task + age.c
 anova.ident.acc <- anova(overall.acc.kl, ident.main.effect.kl, ident.int.kl, test = 'LRT')
 
 ident.final <- summary(ident.int.kl)
-
-
 ```
 
 ```{r accuracy_vis, fig.pos = "t", fig.width=3, fig.height=1.8, fig.align = "center", fig.cap = "Mean accuracy on the Parallel and Orthongal set-matching tasks, grouped by CP-knower level. Error bars represent 95\\% confidence intervals computer by nonparametric bootstrap."}
@@ -333,13 +330,7 @@ all.data %>%
   labs(color= "Knower Level")
 ```
 
-### Accuracy
-Our primary question in this work was whether CP-knowers were more likely than subset knowers to generate exact matches for both large and small set sizes. To test this, we built a generalized linear mixed effects model (GLMEM) predicting whether children exactly matched a set from CP-knower status, set size, task condition (Parallel/Orthogonal), and age, with a random effect of subject.\footnote{All mixed effects models were fit in \texttt{R} using the \texttt{lme4} package. Our pre-registered model specification was: \texttt{Correct $\sim$ CP-knower status*Set size + Task + Age + ( 1 | subject)}. Continuous predictors were scaled and centered.} Hierarchical model comparison using Likelihood Ratio Test indicated that the addition of CP-knower status improved the fit of the base model ($\chi^2$ = `r round(anova.cp.overall$Chisq[2], 2)`, \emph{p} < .0001), but that there was no interaction between CP-knowledge and set size ($\chi^2$ = `r round(anova.cp.overall$Chisq[3], 2)`, \emph{p} = .21). Thus, we found that CP-knowers were significantly more likely than subset knowers to generate exact matches in the set-matching task ($\beta$ = `r round(cp.acc.final$coefficients[2], 2)`, \emph{p} < .0001) overall (Figure \ref{fig:accuracy_vis}), even when controlling for age ($\beta$ = `r round(cp.acc.final$coefficients[5], 2)`, \emph{p} = .01). As expected, this final model indicated that accuracy decreased with increasing set size ($\beta$ = `r round(cp.acc.final$coefficients[3], 2)`, \emph{p} < .0001), and on the Orthgonal condition ($\beta$ = -`r round(cp.acc.final$coefficients[4], 2)`, \emph{p} < .0001). 
-
-We next tested whether the identity of the set affected children's ability to generate exact matches. Consistent with prior work showing that subset knowers are more affected by perceptual dissimilarity [@mix1999], Likelihood Ratio Tests between full and reduced models indicated a significant interaction between Condition and CP knowledge ($\chi^2$ = `r round(anova.ident.acc$Chisq[3], 2)`, \emph{p} = .003), such that CP-knowers were significantly more accurate than subset knowers in the Non-identical condition ($\beta$ = `r round(ident.final$coefficients[7], 2)`, \emph{p} = .002), which was again significant when controlling for age ($\beta$ = `r round(ident.final$coefficients[6], 2)`, \emph{p} = .007). As expected, we found lower accuracy in the Non-identical condition ($\beta$ = `r round(ident.final$coefficients[2], 2)`, \emph{p} = .006), with increasing set sizes ($\beta$ = `r round(ident.final$coefficients[4], 2)`, \emph{p} = .002), and in the Orthogonal condition ($\beta$ = -`r round(ident.final$coefficients[5], 2)`, \emph{p} < .0001). When accounting for the interaction, the main effect of CP knowledge was marginal ($\beta$ = `r round(ident.final$coefficients[3], 2)`, \emph{p} = .07).
-
-### Error
-```{r dist_responses, fig.env = "figure*", fig.pos = "t", fig.width = 7.5, fig.height = 2, fig.align = "center", set.cap.width = T, num.cols = 2, fig.cap = "Frequency of set-size response (x-axis) for each set size in the Parallel condition, grouped by CP knowledge. Dashed line indicated target set-size."}
+```{r dist_responses, fig.env = "figure*", fig.pos = "h", fig.width = 7.5, fig.height = 2, fig.align = "center", set.cap.width = T, num.cols = 2, fig.cap = "Frequency of set-size response (x-axis) for each set size in the Parallel condition, grouped by CP knowledge. Dashed line indicated target set-size."}
 
 all.data %>%
   filter(Task == "Parallel")%>%
@@ -361,6 +352,12 @@ all.data %>%
   labs(x = 'Number of items given', y = 'Frequency') 
 ```
 
+### Accuracy
+Our primary question in this work was whether CP-knowers were more likely than subset knowers to generate exact matches for both large and small set sizes. To test this, we built a generalized linear mixed effects model (GLMEM) predicting whether children exactly matched a set from CP-knower status, set size, task condition (Parallel/Orthogonal), and age, with a random effect of subject.\footnote{All mixed effects models were fit in \texttt{R} using the \texttt{lme4} package. Our pre-registered model specification was: \texttt{Correct $\sim$ CP-knower status*Set size + Task + Age + ( 1 | subject)}. Continuous predictors were scaled and centered.} Hierarchical model comparison using Likelihood Ratio Test indicated that the addition of CP-knower status improved the fit of the base model ($\chi^2$(1) = `r round(anova.cp.overall$Chisq[2], 2)`, \emph{p} < .0001), but that there was no interaction between CP-knowledge and set size ($\chi^2$ = `r round(anova.cp.overall$Chisq[3], 2)`, \emph{p} = .21). Thus, we found that CP-knowers were significantly more likely than subset knowers to generate exact matches in the set-matching task ($\beta$ = `r round(cp.acc.final$coefficients[2], 2)`, \emph{p} < .0001) overall (Figure \ref{fig:accuracy_vis}), even when controlling for age ($\beta$ = `r round(cp.acc.final$coefficients[5], 2)`, \emph{p} = .01). As expected, this final model indicated that accuracy decreased with increasing set size ($\beta$ = `r round(cp.acc.final$coefficients[3], 2)`, \emph{p} < .0001), and on the Orthgonal condition ($\beta$ = -`r round(cp.acc.final$coefficients[4], 2)`, \emph{p} < .0001). Thus, CP-knowers were significantly more likely than subset knowers to generate exact set matches in this task when one-to-one correspondence was readily available in the Parallel condition.
+
+We next tested whether the identity of the set affected children's ability to generate exact matches. Consistent with prior work showing that subset knowers are more affected by perceptual dissimilarity [@mix1999], Likelihood Ratio Tests between full and reduced models indicated a significant interaction between Condition and CP knowledge ($\chi^2$(1) = `r round(anova.ident.acc$Chisq[3], 2)`, \emph{p} = .003), such that CP-knowers were significantly more accurate than subset knowers in the Non-identical condition ($\beta$ = `r round(ident.final$coefficients[7], 2)`, \emph{p} = .002), which was again significant when controlling for age ($\beta$ = `r round(ident.final$coefficients[6], 2)`, \emph{p} = .007). As expected, we found lower accuracy in the Non-identical condition ($\beta$ = `r round(ident.final$coefficients[2], 2)`, \emph{p} = .006), with increasing set sizes ($\beta$ = `r round(ident.final$coefficients[4], 2)`, \emph{p} = .002), and in the Orthogonal condition ($\beta$ = -`r round(ident.final$coefficients[5], 2)`, \emph{p} < .0001). When accounting for the interaction, the main effect of CP knowledge was marginal ($\beta$ = `r round(ident.final$coefficients[3], 2)`, \emph{p} = .07).
+
+### Error
 ```{r ks_tests, include = FALSE}
 # ##PARALLEL
 # #3
@@ -414,7 +411,7 @@ error.df <- all.data %>%
          abs_error = abs(Task_item-Response))
 ```
 
-```{r error_vis, fig.pos = "t", fig.width=3, fig.height=1.8, fig.align = "center", fig.cap = "Mean absolute error for incorrect trials on the Parallel and Orthongal set-matching tasks, grouped by CP-knower level. Error bars represent 95\\% confidence intervals computer by nonparametric bootstrap."}
+```{r error_vis, fig.pos = "tb", fig.width=3, fig.height=1.8, fig.align = "center", fig.cap = "Mean absolute error for incorrect trials on the Parallel and Orthongal set-matching tasks, grouped by CP-knower level. Error bars represent 95\\% confidence intervals computer by nonparametric bootstrap."}
 error.df %>%
   mutate(Task_item = factor(Task_item, levels = c("3", "4", 
                                                   "6", "8", "10")))%>%
@@ -474,9 +471,9 @@ anova.error.ident <- anova(overall.error.kl, ident.error.kl, ident.int.error.kl,
 final.ident.error <- summary(ident.int.error.kl)
 ```
 
-We next explored the pattern of children's responses on the set-matching task by analyzing their errors. First, we conducted analyses of children's absolute error (|Requested item - Response|) on incorrect trials to investigate whether CP-knowers' performance indicated that that they were attempting to implement one-to-one, as opposed to approximating. Hierarchical model comparisons using Likelihood Ratio Tests between full and reduced linear mixed effects models\footnote{Our pre-registered model specification was: \texttt{Absolute error $\sim$ CP-knower status*Set size + Task + Age + ( 1 | subject)}. Continuous predictors were scaled and centered.} indicated a main effect of CP knowledge ($\chi^2$ = `r round(anova.error.overall$Chisq[2], 2)`, \emph{p} = .004), such that CP-knowers had significantly lower rates of absolute error ($\beta$ = `r round(final.error$coefficients[2], 2)`, \emph{p} = .002), even when controlling for age ($\beta$ = `r round(final.error$coefficients[5], 2)`, \emph{p} = .10), as shown in Figure \ref{fig:error_vis}. Absolute error increased with set size ($\beta$ = `r round(final.error$coefficients[3], 2)`, \emph{p} < .0001), and on the Orthogonal condition ($\beta$ = `r (round(final.error$coefficients[4], 2)/-1)`, \emph{p} < .0001). 
+We next conducted analyses of children's absolute error (|Requested item - Response|) on incorrect trials to investigate whether CP-knowers' performance indicated that that they were attempting to implement one-to-one, as opposed to approximating, even when they did not generate an accurate match. Hierarchical model comparisons using Likelihood Ratio Tests between full and reduced linear mixed effects models\footnote{Our pre-registered model specification was: \texttt{Absolute error $\sim$ CP-knower status*Set size + Task + Age + ( 1 | subject)}. Continuous predictors were scaled and centered.} indicated a main effect of CP knowledge ($\chi^2$(1) = `r round(anova.error.overall$Chisq[2], 2)`, \emph{p} = .004), such that CP-knowers had significantly lower rates of absolute error ($\beta$ = `r round(final.error$coefficients[2], 2)`, \emph{p} = .002), even when controlling for age ($\beta$ = `r round(final.error$coefficients[5], 2)`, \emph{p} = .10), as shown in Figure \ref{fig:error_vis}. Absolute error increased with set size ($\beta$ = `r round(final.error$coefficients[3], 2)`, \emph{p} < .0001), and on the Orthogonal condition ($\beta$ = `r (round(final.error$coefficients[4], 2)/-1)`, \emph{p} < .0001). Thus, even when generating incorrect responses, CP-knowers' errors were significantly lower than subset knowers', suggesting the use of a one-to-one strategy.
 
-Reflecting the results of our accuracy analysis, we also found a significant interaction between CP knowledge and Condition (Idential/Non-identical) on absolute error rates ($\chi^2$ = `r round(anova.error.ident$Chisq[3], 2)`, \emph{p} = .002), such that CP-knowers had significantly lower error on Non-identical trials in comparison to subset knowers ($\beta$ = `r round(final.ident.error$coefficients[7], 2)`, \emph{p} = .001).
+Reflecting the results of our accuracy analysis, we also found a significant interaction between CP knowledge and Condition (Idential/Non-identical) on absolute error rates ($\chi^2$(1) = `r round(anova.error.ident$Chisq[3], 2)`, \emph{p} = .002), such that CP-knowers had significantly lower error on Non-identical trials in comparison to subset knowers ($\beta$ = `r round(final.ident.error$coefficients[7], 2)`, \emph{p} = .001).
 
 ### Coefficient of Variation
 ```{r covs, include = FALSE}
@@ -570,27 +567,20 @@ subset.cov.summary <- summary(cov.model.ss)
 #   labs(y = 'Mean COV')
 # # 
 ```
-Finally, we used children's Coefficient of Variation (COV) as an indication of whether they were using a one-to-one, approximate, or other strategy to match sets. COV was approximated as in (Frank et al., 2012), with the formula (FORMULA). Due to children's low performance on the Orthogonal, we conduted this \emph{post hoc} analysis using only data from the Parallel condition. First, we used mean COV as an indication of overall error on this task. Mirroring our accuracy and error analyses above, COVs were significantly lower for CP-knowers (\emph{Mean} = `r round(cp.cov.mean, 2)`) than for subset knowers (\emph{Mean} = `r round(subset.cov.mean, 2)`) on this task (\emph{t}(`r as.numeric(cov.overall$parameter)`) = `r round(cov.overall$statistic, 2)`, \emph{p} < .0001).
+Finally, we used children's Coefficient of Variation (COV) as an indication of whether they were using a one-to-one, approximate, or other strategy to match sets. COV was approximated as in (Frank et al., 2012), with the formula $\sqrt{(t_i - r_i)^2}/t_i$, where $t$ is the target quantity, and $r$ is the child's response. Due to children's low performance on the Orthogonal, we conduted this \emph{post hoc} analysis using only data from the Parallel condition. First, we used mean COV as an indication of overall error on this task. Mirroring our accuracy and error analyses above, COVs were significantly lower for CP-knowers (\emph{M} = `r round(cp.cov.mean, 2)`) than for subset knowers (\emph{M} = `r round(subset.cov.mean, 2)`) on this task (\emph{t}(`r as.numeric(cov.overall$parameter)`) = `r round(cov.overall$statistic, 2)`, \emph{p} < .0001).
 
-Next, we used COV as an indication of the strategy used by participants. Based on previous work (CITATIONS), children with COVs <.15 were classified as "One-to-one" users; COVs between .15 and .30 were "Approximation" users; and COVs >.3 were an "Other" error-prone strategy. A Chi-square test indicated a relationship between CP knowledge and strategy ($\chi^2$ = `r round(chisq.approx$statistic, 2)`, \emph{p} < .0001), with the majority of CP-knowers' (73%) COVs consistent with the use of a one-to-one strategy. In contrast, only 34% of subset knowers had COVs that suggested they might have been using one-to-one correspondence. Instead, subset knowers seemed to rely more frequently (42%) on a error-prone strategy that resulted in COVs that exceeded the approximation range; this may be due to the fact that subset knowers frequently gave close to the maximum for all large quantities.
+Next, we used COV as an indication of the strategy used by participants. Based on previous work (CITATIONS), children with COVs <.15 were classified as "One-to-one" users; COVs between .15 and .30 were "Approximation" users; and COVs >.3 were an "Other" error-prone strategy. A Chi-square test indicated a relationship between CP knowledge and strategy ($\chi^2$(1) = `r round(chisq.approx$statistic, 2)`, \emph{p} < .0001), with the majority of CP-knowers' (73%) COVs consistent with the use of a one-to-one strategy. In contrast, only 34% of subset knowers had COVs that suggested they might have been using one-to-one correspondence. Instead, subset knowers seemed to rely more frequently (42%) on a error-prone strategy that resulted in COVs that exceeded the approximation range; this may be due to the fact that subset knowers frequently gave close to the maximum for large quantities.
 
-Finally, we used linear regression to test the relationship between test quantity and COV for both CP and subset knowers. As in previous work (Frank et al., 2012), we interpret a flat COV as evidence that a particular group is using an approximation strategy, while a decreasing COV indicates that group is using a one-to-one strategy. An increasing COV, on the other hand, may indicate that participants are using an error-prone heuristic in addition to approximation. These linear models revealed a significant negative relationship between task quantity and COV in CP-knowers ($\beta$ = `r round(cp.cov.summary$coefficients[2],2)`, \emph{p} < .0001), again suggesting that this group is likely using one-to-one correspondence to generate set matches. On the other hand, we found a slightly increasing relationship between test quantity and COV in subset knowers ($\beta$ = `r round(subset.cov.summary$coefficients[2],2)`, \emph{p} = .001). 
+Finally, we used a linear regression to test the relationship between target quantity and COV for both CP and subset knowers\footnote{Analyses conducted separately for CP- and subset knowers. Model formula was: \texttt{COV $\sim$ Target quantity}}. As in previous work [@frank2012], we interpret a flat COV as evidence that a particular group is using an approximation strategy, while a decreasing COV indicates that group is using a one-to-one strategy. An increasing COV, on the other hand, may indicate that participants are using an error-prone heuristic in addition to approximation. These linear models revealed a significant negative relationship between task quantity and COV in CP-knowers ($\beta$ = `r round(cp.cov.summary$coefficients[2],2)`, \emph{p} < .0001), again suggesting that this group is likely using one-to-one correspondence to generate set matches. On the other hand, we found a slightly increasing relationship between test quantity and COV in subset knowers ($\beta$ = `r round(subset.cov.summary$coefficients[2],2)`, \emph{p} = .001), again suggesting the use of an error-prone strategy.
 
-## Discussion
-Broadly, our findings converge and diverge from previous work in meaningful ways. First, we broadly replicate previous findings with innumerate and semi-numerate populations that numeracy is related to the availability of exact number concepts [@gordon2004;@everett2012]: While both subset and CP-knowers were generally accurate for sets within the PI range, CP knowers were significantly more likely to attempt a one-to-one match (as opposed to approximation) for larger quantities. Importantly, this replication indicates that semi-numerate children are a valid alternative which can be leveraged to reconcile conflicting findings in this body of literature. 
-
-In contrast to the conclusions drawn by this previous work, however, we found surprisingly variable performance even amongst numerate children, suggesting that numeracy alone does not guarantee a full understanding of exact equality. While CP-knowers were more accurate than subset knowers on this task, their performance on even the Parallel condition was around 50% for large set sizes. Further, we found evidence that subset knowers had some nascent knowledge of Hume's Principle, in that they were significantly more likely to attempt one-to-one correspondence for perceptually similar sets. 
-
-Taken together, these results suggest that some understanding of exact equality may be present prior to becoming fully numerate, but that such knowledge is fragile and may not be fully numerical in nature (see @izard2014 for similar findings). Additionally, our findings indicate that neither learning a subset of number words, nor even mastering a counting system, is sufficient to furnish a complete understanding of how one-to-one correspondence relates to exact number.
-
-### Predictors of performance
-PLACEHOLDER, NOT SURE IF THIS WILL END UP IN FINAL PAPER
+### Exploring counting knowledge
 ```{r counting_prof, include = FALSE}
 ###Subset-knowers
 #filter out the kids who don't have counting proficiency for now
 model.df %<>%
   filter(!is.na(count_proficiency))
 
+###Planned, subset-knowers
 #make base model
 count.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
                     family = "binomial", data = subset(model.df, CP_subset == "Subset"))
@@ -604,20 +594,71 @@ count.int <- glmer(Correct ~ count_proficiency.c*Task_item.c + Task + age.c + (1
                     family = "binomial", data = subset(model.df, CP_subset == "Subset"))
 
 #compare
-anova(count.base, count.prof, count.int, test = 'LRT')
+anova.subset.counting_prof <- anova(count.base, count.prof, count.int, test = 'LRT')
+
+###post-hoc, CP-knowers
+#make base model
+count.base.cp <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
+                    family = "binomial", data = subset(model.df, CP_subset == "CP"))
+
+#add counting proficiency
+count.prof.cp <- glmer(Correct ~ count_proficiency.c + Task_item.c + Task + age.c + (1|SID), 
+                    family = "binomial", data = subset(model.df, CP_subset == "CP"))
+
+#add interaction
+count.int.cp <- glmer(Correct ~ count_proficiency.c*Task_item.c + Task + age.c + (1|SID), 
+                    family = "binomial", data = subset(model.df, CP_subset == "CP"))
+
+#compare
+anova(count.base.cp, count.prof.cp, count.int.cp, test = 'LRT')
 ```
 
-# Experiment 2 
+```{r highest_count, include = FALSE}
+##remove highest count NAs
+hc.df <- model.df %>%
+  filter(!is.na(highest_count))
 
-## Methods
+##cp
+#make base model
+hc.cp.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
+                    family = "binomial", data = subset(hc.df, CP_subset == "CP"))
+#add hc
+hp.cp.with.hc <- glmer(Correct ~ highest_count.c + Task_item.c + Task + age.c + (1|SID), 
+                       family = "binomial", data = subset(hc.df, CP_subset == "CP"))
 
-### Participants
+##compare
+subset.hc <- anova(hc.cp.base, hp.cp.with.hc, test = 'LRT') ##Not significant
 
-### Procedure
+##subset
+#make base model
+hc.ss.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
+                    family = "binomial", data = subset(hc.df, CP_subset == "Subset"))
+#add hc
+hp.ss.with.hc <- glmer(Correct ~ highest_count.c + Task_item.c + Task + age.c + (1|SID), 
+                       family = "binomial", data = subset(hc.df, CP_subset == "Subset"))
 
-## Results and Discussion
+##compare
+cp.hc <- anova(hc.ss.base, hp.ss.with.hc, test = 'LRT') ##Not significant
+```
+
+In our next analyses, we tested whether other numerical knowledge outside of the CP might predict performance on the set-matching task. First, we explored whether children who are more likely to implement one-to-one correspondence when deploying the count routine might have higher accuracy on the set-matching task. Because all CP-knowers should, by definition, be at ceiling in this ability, we conducted this analysis with subset knowers, by constructing a GLMEM predicting set-matching accuracy from counting proficiency score\footnote{Model specification: \texttt{Correct $\sim$ Counting proficiency + Task item + Task + Age + (1|Subject)}}. Surprisingly, we did not find that the addition of this term improved the fit of the base model ($\chi^2$(1) = `r round(anova.subset.counting_prof$Chisq[2], 2)`, \emph{p} = .41). 
+
+Next, we tested whether greater levels of number exposure, as indexed by children's Highest Count, which is generally correlated with levels of number input in young children (LeFevre cite), was related to set-matching performance. Likelihood Ratio Tests indicated that the addition of a highest count term to a GLMEM predicting set-matching accuracy\footnote{Model specification: \texttt{Correct ~ Highest Count + Task item + Task + Age + (1|Subject)}} did not improve the model fit for either subset ($\chi^2$(1) = `r round(subset.hc$Chisq[2], 2)`, \emph{p} = .70) or for CP-knowers ($\chi^2$(1) = `r round(cp.hc$Chisq[2], 2)`, \emph{p} = .69).
+
+Thus, we did not find that children's mastery of the procedures or language associated with the count routine explained significant variance in their performance, beyond knowledge of the CP.
 
 # General Discussion
+Although the concepts associated with a linguistic expression such as "\emph{eleven}" are unequivocably tied to symbolic number,  it is unknown whether other aspects of exact number -- such as exact equality -- are similarly only available through exact number language. Previous work exploring this question has produced discrepant answers, with exact number representations sometimes hinging on symbolic number [@gordon2004; @everett2012], and sometimes being available in its absence [@frank2008]. In the current work, we returned to this question with a large new sample of semi-numerate US children to explore whether one diagnostic of exact number concepts -- the ability to use one-to-one correspondence to establish equality for large number -- changed as a function of symbolic number acquisition.
+
+Broadly, our findings converge and diverge from previous work in meaningful ways. First, we broadly replicate previous findings with innumerate and semi-numerate populations that numeracy is related to the availability of exact number concepts [@gordon2004;@everett2012]: While both subset and CP-knowers were generally accurate for sets within the PI range, CP knowers were significantly more likely to attempt a one-to-one match (as opposed to approximation) for larger quantities. Importantly, this replication indicates that semi-numerate children are a valid alternative which can be leveraged to reconcile conflicting findings in this body of literature. 
+
+In contrast to the conclusions drawn by this previous work, however, we found surprisingly variable performance even amongst numerate children, suggesting that numeracy alone does not guarantee a full understanding of exact equality. While CP-knowers were more accurate than subset knowers on this task, their performance on even the Parallel condition was around 50% for large set sizes. Additionally, their performance was not appreciably different from subset knowers' on the Orthogonal condition. These results are more in line with findings from deaf Nicaraguan signers with limited counting knowledge [@flaherty2011]; apparently, living in a numerate society and even enjoying functional numeracy is not sufficient to furnish a complete understanding of how one-to-one correspondence relates to exact number. Given that numerate adults find effortlessly use one-to-one correspondence in this task, even when prevented from counting [@frank2008], one outstanding question left open by this work is when such an understanding may develop, and what implications it may have for the development of other numerical knowledge [@carey2019].  
+
+Further, we found evidence that subset knowers had some nascent knowledge of Hume's Principle, in that they were significantly more likely to attempt one-to-one correspondence for perceptually similar sets. These findings are consistent with other work showing that some understanding of exact equality may be present prior to becoming fully numerate, but that such knowledge is fragile and may not be fully numerical in nature [@izard2014;@mix1999]. Based on this work, however, it is unclear whether subset knowers are unaware of the numerical significance of one-to-one correspondence, or whether other perceptual properties of the set (such as color, shape, or length) are simply more salient in their hypothesis space for equivalence. Future work should explore whether directing subset knowers' attention to number, either explicitly or implicitly, increases the likelihood that they use one-to-one correspondence in this task. 
+
+One limitation of this work, and a criticism of the set-matching paradigm (see @izard2014), is that it does not rule out that CP-knowers' increased accuracy may be due to a more refined ANS. Children's ANS becomes more precise after acquiring the CP [@shusterman2016], which may be related to their greater performance on a nonsymbolic matching task similar to the one used here [@shusterman2017]. Thus, an alternative hypothesis to the one advanced here -- that children are more likely to spontaneously use one-to-one correspondence after acquiring the CP -- is that children are approximating on this task throughout symbolic number acquisition, and that these approximations are simply more accurate after acquiring the CP. While we used children's COVs in an effort to identify whether they were approximating, this remains an open alternative. Subsequent work should explore this possibility by explicitly disambiguating children's strategy. 
+
+(This is a sum-up paragraph!)
 
 # References 
 
