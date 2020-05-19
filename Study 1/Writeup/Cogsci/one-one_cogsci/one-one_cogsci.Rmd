@@ -107,7 +107,7 @@ Here, we address these outstanding questions in the developmental literature alo
 
 # Experiment 1
 ## Method
-This study was pre-registered on OSF, and all methodological and analytical choices were as preregistered, unless stated otherwise in-text.
+This study was pre-registered on OSF (https://osf.io/3wta2), and all methodological and analytical choices were as preregistered, unless stated otherwise in-text.
 
 ### Participants
 ```{r demographics, include= FALSE}
@@ -128,7 +128,7 @@ mean_age = mean(all.data$Age, na.rm = TRUE)
 sd_age= sd(all.data$Age, na.rm = TRUE)
 ```
 
-Our final analyzable sample included `r demos$total.n[1]` children ($M_{age}$ = `r round(mean_age, 2)` years, $SD_{age}$ = `r round(sd_age, 2)` years, range = `r round(min_age, 2)` - `r round(max_age, 2)` years). In this sample, `r demos$n[1]` were identified as CP-knowers, while the remaining `r demos$n[2]` were classified as subset knowers. 
+Our final analyzable sample included `r demos$total.n[1]` children ($M_{age}$ = `r round(mean_age, 2)` years, $SD_{age}$ = `r round(sd_age, 2)` years, range = `r round(min_age, 2)` - `r round(max_age, 2)` years) recruited from local preschools and the surround community in San Diego, California, USA. In this sample, `r demos$n[1]` were identified as CP-knowers, while the remaining `r demos$n[2]` were classified as subset knowers. 
 
 ## Procedure
 ### Set-matching
@@ -216,7 +216,7 @@ three_way.full <- glmer(Correct ~  CP_subset*Task*Task_item.c + age.c + (1|SID),
                           family = "binomial", data = model.df, 
                           control=glmerControl(optimizer="bobyqa",
                           optCtrl=list(maxfun=2e4)))
-anova(three_way.cp, three_way.full, test= 'lrt') # significant interaction between set size, task, and cp knower status
+anova(three_way.base.full, three_way.full, test= 'lrt') # significant interaction between set size, task, and cp knower status
 
 #### IDENTITY ANALYSES - FINAL REPORTED MODEL ####
 #base
@@ -328,60 +328,25 @@ all.data %>%
   labs(x = 'Number of items given', y = 'Frequency') 
 ```
 
-Our primary question was whether CP-knowers were more likely than subset knowers to generate exact matches for both large and small set sizes. To test this, we built a generalized linear mixed effects model (GLMM) predicting exact matches from CP-knower status, set size, orientation (Parallel/Orthogonal), and age, with a random effect of subject.\footnote{All mixed effects models were fit in \texttt{R} using the \texttt{lme4} package. The final model specification was: \texttt{Correct $\sim$ CP-knower status + Set size + Orientation + Age + ( 1 | subject)}. Although we pre-registered a model containing a CP-knower status x Set size interaction, a Likelihood Ratio Test indicated that this interaction did not improve the fit of the main effects model ($\chi^2$ = `r round(anova.cp.overall$Chisq[3], 2)`, \emph{p} = .21); thus, we pruned this term from our final model}. This model indicated that CP-knowers generated exact matches significantly more often than subset knowers overall ($\beta$ = `r round(cp.acc.final$coefficients[2], 2)`, \emph{p} < .0001; Figure \ref{fig:accuracy_vis}), even when controlling for age ($\beta$ = `r round(cp.acc.final$coefficients[5], 2)`, \emph{p} = .01). This final model also revealed decreased accuracy with increasing set sizes ($\beta$ = `r round(cp.acc.final$coefficients[3], 2)`, \emph{p} < .0001), and for Orthogonal trials ($\beta$ = -`r round(cp.acc.final$coefficients[4], 2)`, \emph{p} < .0001). Follow-up analyses found no interaction between set size and orientation ($\chi^2$ = 0.99, *p* = 0.32), but did indicate there a significant 3-way interaction between set size, orientation, and CP-knower status ($\chi^2$ = 12.5, *p* = 0.006), such that the difference in performance between subset and CP-knowers for increasing set sizes was greatest in the Parallel, as opposed to Orthogonal, conditions ($\beta$ = 0.98, *p* = .002).   
+Our primary question was whether CP-knowers were more likely than subset knowers to generate exact matches for both large and small set sizes. To test this, we built a generalized linear mixed effects model (GLMM) predicting exact matches from CP-knower status, set size, orientation (Parallel/Orthogonal), and age, with a random effect of subject.\footnote{All mixed effects models were fit in \texttt{R} using the \texttt{lme4} package. The final model specification was: \texttt{Correct $\sim$ CP-knower status + Set size + Orientation + Age + ( 1 | subject)}. Although we pre-registered a model containing a CP-knower status x Set size interaction, a Likelihood Ratio Test indicated that this interaction did not improve the fit of the main effects model ($\chi^2$ = `r round(anova.cp.overall$Chisq[3], 2)`, \emph{p} = .21).} This model indicated that CP-knowers generated exact matches significantly more often than subset knowers overall ($\beta$ = `r round(cp.acc.final$coefficients[2], 2)`, \emph{p} < .0001; Figure \ref{fig:accuracy_vis}), even when controlling for age ($\beta$ = `r round(cp.acc.final$coefficients[5], 2)`, \emph{p} = .01). This final model also revealed decreased accuracy with increasing set sizes ($\beta$ = `r round(cp.acc.final$coefficients[3], 2)`, \emph{p} < .0001), and for Orthogonal trials ($\beta$ = -`r round(cp.acc.final$coefficients[4], 2)`, \emph{p} < .0001). Follow-up analyses found no interaction between set size and orientation ($\chi^2$ = 0.99, *p* = 0.32); however, there was a significant 3-way interaction between set size, orientation, and CP-knower status ($\chi^2$ = 12.5, *p* = 0.006), such that the difference in performance between subset and CP-knowers for increasing set sizes was greatest in the Parallel, as opposed to Orthogonal, conditions ($\beta$ = 0.98, *p* = .002).   
 
-We next tested whether, consistent with prior work [@mix1999], CP-knowers were more likely than subset knowers to overcome perceptual dissimilarities in this task by constructing another GLMM predicting an exact match from an interaction between CP-knower status and identity condition (Identical/Non-identical), Orientation (Parallel/Orthogonal), set size, and controlling for age, with a random effect of subject. This model indicated a significant interaction between set-identity and CP knowledge, with CP-knowers significantly more accurate than subset knowers in the Non-identical condition ($\beta$ = `r round(ident.final$coefficients[7], 2)`, \emph{p} = .002), which was again significant when controlling for age ($\beta$ = `r round(ident.final$coefficients[6], 2)`, \emph{p} = .007). In addition to these effects, this model also showed a significant 
+We next tested whether, consistent with prior work [@mix1999], CP-knowers were more likely than subset knowers to overcome perceptual dissimilarities in this task by constructing another GLMM predicting an exact match from an interaction between CP-knower status and identity condition (Identical/Non-identical), orientation (Parallel/Orthogonal), set size, controlling for age, and with a random effect of subject. This model indicated a significant interaction between set-identity and CP knowledge, with CP-knowers significantly more accurate than subset knowers in the Non-identical condition ($\beta$ = `r round(ident.final$coefficients[7], 2)`, \emph{p} = .002), which was again significant when controlling for age ($\beta$ = `r round(ident.final$coefficients[6], 2)`, \emph{p} = .007). In addition to these effects, this model again indicated decreased accuracy when boards were presented in the Orthogonal orientation ($\beta$ = -0.86, *p* < .0001) and with increasing set size ($\beta$ = -1.24, *p* < .0001). The main effect of CP knowledge was marginal in this model ($\beta$ = 0.52, *p* = .05).
 
-These results indicate that CP-knowers were significantly more likely than subset knowers to generate exact set matches in this task when one-to-one correspondence was readily available, even when the two sets were perceptually dissimilar. On the other hand, CP-knowers' performance for large set sizes was not appreciably different from subset knowers' in the Orthogonal condition, and their overall accuracy for large set sizes was only 42%, which is far below adult-like levels [@frank2008]. CP-knowers' surprisingly variable performance (Figure \ref{fig:dist_responses}) indicates that acquisition of the CP alone may not guarantee an understanding of exact equality.
-
-<!-- As expected, we found lower accuracy in the Non-identical condition ($\beta$ = `r round(ident.final$coefficients[2], 2)`, \emph{p} = .006), with increasing set sizes ($\beta$ = `r round(ident.final$coefficients[4], 2)`, \emph{p} = .002), and in the Orthogonal condition ($\beta$ = -`r round(ident.final$coefficients[5], 2)`, \emph{p} < .0001). When accounting for the interaction, the main effect of CP knowledge was marginal ($\beta$ = `r round(ident.final$coefficients[3], 2)`, \emph{p} = .07). -->
-
-```{r ks_tests, include = FALSE}
-# ##PARALLEL
-# #3
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 3 & Task == "Parallel")$Response,
-#         subset(model.df, CP_subset == "Subset" & Task_item == 3 & Task == "Parallel")$Response, alternative = "two.sided") #NS, D = .11, p = .76
-# #4
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 4 & Task == "Parallel")$Response,
-#         subset(model.df, CP_subset == "Subset" & Task_item == 4 & Task == "Parallel")$Response, alternative = "two.sided") #sig, D = .25, p = .03
-# 
-# #6
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 6 & Task == "Parallel")$Response,
-#         subset(model.df, CP_subset == "Subset" & Task_item == 6 & Task == "Parallel")$Response, alternative = "two.sided") #sig, D = .26, p = .02
-# 
-# #8
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 8 & Task == "Parallel")$Response,
-#         subset(model.df, CP_subset == "Subset" & Task_item == 8 & Task == "Parallel")$Response, alternative = "two.sided") #Marginal, D = .22, p = .07
-# 
-# #10
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 10 & Task == "Parallel")$Response,
-#         subset(model.df, CP_subset == "Subset" & Task_item == 10 & Task == "Parallel")$Response, alternative = "two.sided") #NS, D = .16, p = .34
-# 
-# ### ORTHOGONAL
-# #3
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 3 & Task == "Orthogonal")$Response,
-#         subset(model.df, CP_subset == "Subset" & Task_item == 3 & Task == "Orthogonal")$Response, alternative = "two.sided") #sid, D = .27, p = .02
-# #4
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 4 & Task == "Orthogonal")$Response,
-#         subset(model.df, CP_subset == "Subset" & Task_item == 4 & Task == "Orthogonal")$Response, alternative = "two.sided") #sig, D = .26, p = .02
-# 
-# #6
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 6 & Task == "Orthogonal")$Response,
-#         subset(model.df, CP_subset == "Subset" & Task_item == 6 & Task == "Orthogonal")$Response, alternative = "two.sided") #NS, D = .18, p = .20
-# 
-# #8
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 8 & Task == "Orthogonal")$Response,
-#         subset(model.df, CP_subset == "Subset" & Task_item == 8 & Task == "Orthogonal")$Response, alternative = "two.sided") #NS, D = .11, p = .80
-# 
-# #10
-# ks.test(subset(model.df, CP_subset == "CP" & Task_item == 10 & Task == "Orthogonal")$Response,
-#         subset(model.df, CP_subset == "Subset" & Task_item == 10 & Task == "Orthogonal")$Response, alternative = "two.sided") #Sig, D = .24, p = .04
-```
+These analyses reveal that, when one-to-one correspondence was a readily available strategy for matching sets, CP-knowers were more likely than subset knowers to capitalize on this relationship in order to generate numerically equal matches, even when the two sets were perceptually dissimilar. When the boards were presented in an orthogonal orientation, and one-to-one correspondence was less easily implemented, however, CP-knowers' performance for large numerosities was not appreciably different from subset knowers'. However, despite CP-knowers' increased accuracy for boards in the Parallel orientation, their knowledge of one-to-one's significance was strikingly limited, with overall accuracy for large set sizes only 42% and far below adult-like levels [@frank2008]. This surprisingly variable performance (Figure \ref{fig:dist_responses}) suggests that acquisition of the CP alone may not guarantee an understanding of exact equality and its relationship to one-to-one correspondence.
 
 ```{r error_model, include = FALSE}
+#### MAIN REPORTED MODEL ####
 #do CP-knowers have lower rates of absolute error?
 error.model.df <- model.df %>%
   filter(Correct == 0)
+
+#descriptives
+## descriptive of error
+error.model.df %>%
+  group_by(CP_subset, Numerosity, Task)%>%
+  summarise(mean_error = mean(abs_error), 
+            sd_error = sd(abs_error), 
+            median_error = median(abs_error))
 
 #base model
 overall.error.base <- lmer(abs_error ~ Task_item.c + Task + age.c + (1|SID), 
@@ -400,6 +365,30 @@ anova.error.overall <- anova(overall.error.base, overall.error.kl, overall.error
 
 final.error <- summary(overall.error.kl)
 car::Anova(overall.error.kl)
+
+### FOLLOW UP 3 WAY INTERACTION ####
+## first test for interaction between task item and task
+two.error.base <- lmer(abs_error ~ Task_item.c*Task + age.c + (1|SID), 
+                           data = error.model.df)
+anova(overall.error.base, two.error.base, test = 'lrt') #significant interaction between task and task item
+
+#add CP knowledge
+two.error.cp<- lmer(abs_error ~ CP_subset + Task_item.c*Task + age.c + (1|SID), 
+                           data = error.model.df)
+anova(two.error.base, two.error.cp, test = 'lrt') #cp knowledge adds to this model
+summary(two.error.cp)
+##get p values
+two.cp.z = -3.09
+2*pnorm(abs(two.cp.z), lower.tail = F)
+
+two.int.z = 2.15
+2*pnorm(abs(two.int.z), lower.tail = F)
+
+#three way interaction
+three.error.full<- lmer(abs_error ~ CP_subset*Task_item.c*Task + age.c + (1|SID), 
+                           data = error.model.df)
+anova(two.error.cp, three.error.full, test = 'lrt') #no significant three-way interaction
+
 ##get p values
 cp.z = -3.12
 2*pnorm(abs(cp.z), lower.tail = F)
@@ -426,58 +415,14 @@ final.ident.error <- summary(ident.int.error.kl)
 
 Next, we also investigated errors in children's matching as a less conservative signal for whether they were attempting a one-to-one match, even if they were not accurate. For these analyses, we specifically investigated differences between subset and CP-knowers' absolute error (|Requested item - Response|) on incorrect trials, as well as their Coefficient of Variation (CoV). If children are attempting a one-to-one match, we should find that their responses are only 1 or 2 off from the target set, resulting in lower rates of absolute error and lower CoVs.
 
-We first analyzed differences between subset and CP-knowers' absolute error on incorrect trials with a linear  mixed effects model predicting absolute error from CP-knower status, set size, task, and age, with a random effect of subject. Likelihood Ratio Tests indicated a main effect of CP knowledge ($\chi^2$(1) = `r round(anova.error.overall$Chisq[2], 2)`, \emph{p} = .004), with lower absolute error for CP-knowers' in comparison to subset knowers ($\beta$ = `r round(final.error$coefficients[2], 2)`, \emph{p} = .002), even when controlling for age ($\beta$ = `r round(final.error$coefficients[5], 2)`, \emph{p} = .10; Figure \ref{fig:error_vis}). Absolute error increased with set size ($\beta$ = `r round(final.error$coefficients[3], 2)`, \emph{p} < .0001), and in the Orthogonal condition ($\beta$ = `r (round(final.error$coefficients[4], 2)/-1)`, \emph{p} < .0001). We again found a significant interaction between CP knowledge and Condition (Identical/Non-identical) on absolute error ($\chi^2$(1) = `r round(anova.error.ident$Chisq[3], 2)`, \emph{p} = .002), such that CP-knowers had significantly lower error on Non-identical trials in comparison to subset knowers ($\beta$ = `r round(final.ident.error$coefficients[7], 2)`, \emph{p} = .001). Thus, even when generating incorrect responses, CP-knowers' errors were significantly lower than subset knowers'. While this pattern of results may be consistent with the deployment of a one-to-one strategy, it could also reflect the use of other strategies (such as approximation) that improve over development [@shusterman2016]. 
+We first analyzed differences between subset and CP-knowers' absolute error on incorrect trials with a linear mixed effects model predicting absolute error from CP-knower status, set size, orientation, and age, with a random effect of subject.\footnote{The final model specification was: \texttt{Absolute error $\sim$ CP-knower status + Set size + Orientation + Age + ( 1 | subject)}. Although we again pre-registered a model containing a CP-knower status x Set size interaction, we pruned this interaction after finding it did not improve the fit of the model ($\chi^2$ = 2.74, \emph{p} = .10).} Likelihood Ratio Tests indicated a main effect of CP knowledge ($\chi^2$(1) = `r round(anova.error.overall$Chisq[2], 2)`, \emph{p} = .004), with lower absolute error for CP-knowers' in comparison to subset knowers ($\beta$ = `r round(final.error$coefficients[2], 2)`, \emph{p} = .002), even when controlling for age ($\beta$ = `r round(final.error$coefficients[5], 2)`, \emph{p} = .10; Figure \ref{fig:error_vis}). Absolute error increased with set size ($\beta$ = `r round(final.error$coefficients[3], 2)`, \emph{p} < .0001), and in the Orthogonal orientation ($\beta$ = `r (round(final.error$coefficients[4], 2)/-1)`, \emph{p} < .0001). 
 
-```{r dist_responses_2, fig.env = "figure*", fig.pos = "h", fig.width = 7, fig.height = 1.5 , fig.align = "center", set.cap.width = T, num.cols = 2, fig.cap = "Frequency of set-size response (x-axis) for each target size in Experiment 2.", include = FALSE}
-
-# all.data.2 %>%
-#   filter(Task == "Set-matching", 
-#          Trial_number != "Training")%>%
-#   mutate(Task_item = as.numeric(as.character(Task_item)), 
-#          Response = as.numeric(as.character(Response)))%>%
-#   group_by(Task_item, Response)%>%
-#   # summarise(n = n()) %>%
-#   ggplot(aes(x = Response, fill = CP_subset)) +
-#   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
-#   geom_histogram() + 
-#   theme_bw(base_size = 8) +
-#   theme(legend.position = "none", 
-#         axis.text.x = element_text(angle = 45, hjust = 1, size = 6.5), 
-#         panel.grid = element_blank()) + 
-#   scale_fill_brewer(palette = "Dark2") +
-#   facet_grid(~Task_item) +
-#   scale_x_continuous(breaks = seq(1, 15, 1)) + 
-#   labs(x = 'Number of items given', y = 'Frequency') 
-
-# all.data.2 %>%
-#   filter(Task == "Set-matching",
-#          Trial_number != "Training")%>%
-#   mutate(Task_item = factor(Task_item)) %>%
-#   mutate(Response = as.numeric(as.character(Response)))%>%
-#   group_by(CP_subset, Task_item, Response)%>%
-#   summarise(n = n())%>%
-#   mutate(n = ifelse(is.na(n), 0, as.numeric(n)))%>%
-#   ggplot(aes(x = Task_item, y = Response, fill = CP_subset, alpha = n)) +
-#   geom_tile() +
-#   # geom_text(aes(label = as.character(round(prop, 2))), 
-#   #           size = 2.5) +
-#   coord_fixed(ratio = 15/30)+
-#   scale_fill_manual(values = c(CP = "#1B9E77")) + 
-#   theme_bw(base_size = 10) + 
-#   labs(x = "Set size", y = "Response") + 
-#   scale_y_continuous(breaks = seq(1, 15, 1)) + 
-#   xlim("3", "4", "6", "8", "10") +
-#   theme(axis.text.x = element_text(angle = 45, hjust = 1), 
-#         legend.position = "none", 
-#         panel.grid.major = element_blank(), 
-#         panel.grid.minor = element_blank(), 
-#         legend.title = element_text(size = 11))
-```
-
+Once again, we found evidence that CP-knowers are less affected by perceptual dissimilarities when establishing numerical equality; a second linear mixed effects model predicting absolute error from an interaction of CP knowledge and Identity condition, set size, orientation, and age, with a random effect of participant showed a significant interaction between CP knowledge and Identity ($\chi^2$(1) = `r round(anova.error.ident$Chisq[3], 2)`, \emph{p} = .002), such that CP-knowers had significantly lower error on Non-identical trials in comparison to subset knowers ($\beta$ = `r round(final.ident.error$coefficients[7], 2)`, \emph{p} = .001). Thus, even when generating incorrect responses, CP-knowers' errors were significantly lower than subset knowers'. 
 
 ```{r covs, include = FALSE}
+##Let's try comparing between parallel and orthogonal
 tmp.cov <- all.data %>%
-  filter(Task == "Parallel",  
+  filter(Task == "Parallel" | Task == "Orthogonal", 
          Trial_number != "Training")%>%
   mutate(Task_item = as.numeric(as.character(Task_item)), 
          Response = as.numeric(as.character(Response)))%>%
@@ -487,169 +432,52 @@ tmp.cov <- all.data %>%
 tmp.cov %<>%
   mutate(Numerosity = factor(Numerosity, levels = c("Small", "Large")))
 
-#make classifications
-cov.group <- tmp.cov %>%
-  group_by(SID, Age, CP_subset)%>%
-  summarise(mean.cov = mean(single.cov, na.rm = TRUE))%>%
-  mutate(cov.range = ifelse(mean.cov < .15, "one-one", 
-                            ifelse((mean.cov >=.15 & mean.cov <= .3), "approximating", "other")))
+#add absolute error
+tmp.cov %<>%
+  mutate(abs.error = abs(Task_item - Response))
 
-##add this to tmp
-cov.data <- right_join(tmp.cov, cov.group, by = c("SID", "CP_subset"))
+cor.test(tmp.cov$single.cov, tmp.cov$abs.error)
 
-##What are the numbers for the parallel condition? 
-cov.group.ms <- cov.data %>%
-  filter(Task == "Parallel")%>%
-  distinct(SID, CP_subset, cov.range)%>%
-  group_by(CP_subset, cov.range)%>%
-  summarise(n = n())
+tmp.cov %>%
+  ggplot(aes(x = single.cov, y = abs.error, color = CP_subset, group = CP_subset)) + 
+  geom_point() + 
+  geom_smooth(method = 'lm')
 
-###are there significantly more CP knowers in one-one range than in other groups? 
-###chisq test
-cov.group.1 <-  cov.data %>%
-distinct(SID, CP_subset, cov.range)
-tbl <- table(cov.group.1$CP_subset, 
-             cov.group.1$cov.range)
-
-chisq.approx <- chisq.test(tbl)
-
-###how much more likely are subset knowers to give the max for large sets?
-max.data <- all.data %>%
-  filter(Task == "Parallel", 
-         Numerosity == "Large")%>%
-  droplevels()%>%
-  mutate(max = ifelse(Response == 15, "max", "not max"))
-  
-max.data.ms <-  max.data %>%
-distinct(SID, CP_subset, max)
-tbl.2 <- table(max.data.ms$max, 
-               max.data.ms$CP_subset)
-max.chis <- chisq.test(tbl.2)
-
-###Do CP-knowers have lower COVs
-##t-test between cp and subset-knowers
-##Parallel
-tmp.cov.ms <- tmp.cov %>%
-  group_by(SID, CP_subset)%>%
+##descriptive
+tmp.cov %>%
+  group_by(CP_subset, Task)%>%
   summarise(mean.cov = mean(single.cov, na.rm = TRUE))
-#summaries of means
-cp.cov.mean <- mean(subset(tmp.cov, CP_subset == "CP")$single.cov)
-cp.cov.sd <- sd(subset(tmp.cov, CP_subset == "CP")$single.cov)
-subset.cov.mean <- mean(subset(tmp.cov, CP_subset == "Subset")$single.cov)
-subset.cov.sd <- sd(subset(tmp.cov, CP_subset == "Subset")$single.cov)
 
-cov.overall <- t.test(subset(tmp.cov.ms, CP_subset == "CP")$mean.cov, 
-       subset(tmp.cov.ms, CP_subset == "Subset")$mean.cov, var.equal = TRUE)
+## t-test between Orthogonal and parallel for CP and subset knowers
+cov.ms <- tmp.cov %>%
+  filter(Task == "Parallel")%>%
+  group_by(SID, CP_subset)%>%
+  summarise(mean.cov = mean(single.cov))
 
-# ###Linear model of COV
-# #CP cov model; parallel
-# ##Large
-cp.cov.model <- lm(single.cov ~ Task_item, data = subset(tmp.cov, CP_subset == "CP" & Task == "Parallel"))
-cp.cov.summary <- summary(cp.cov.model)
-# 
-#subset cov model; parallel
-cov.model.ss <- lm(single.cov ~ Task_item, data = subset(tmp.cov,  CP_subset == "Subset" & Task == "Parallel"))
-subset.cov.summary <- summary(cov.model.ss)
+# t.test(subset(cov.ms, CP_subset == "CP" & Task == "Parallel")$mean.cov, 
+#        subset(cov.ms, CP_subset == "CP" & Task == "Orthogonal")$mean.cov, var.equal = TRUE)
 
+t.test(subset(cov.ms, CP_subset == "CP")$mean.cov, 
+       subset(cov.ms, CP_subset == "Subset")$mean.cov, var.equal = TRUE)
 
-# ##average cov across quantities to produce a mean COV
+# t.test(subset(cov.ms, CP_subset == "Subset" & Task == "Parallel")$mean.cov, 
+#        subset(cov.ms, CP_subset == "Subset" & Task == "Orthogonal")$mean.cov, var.equal = TRUE)
 
-# # 
 ```
 
-Finally, we also used children's CoV, which captures noise in participants' responses to a given set size\footnote{CoV was approximated as in Frank et al. (2012), with the formula $\sqrt{(t_i - r_i)^2}/t_i$, where $t$ is the target quantity, and $r$ is the child's response.}, as an indication of children's matching strategies. Due to low performance on the Orthogonal condition, we conducted this \emph{post hoc} analysis with data from the Parallel condition. Based on previous work [@frank2012; @whalen1999; @huntleyfenner2001], we classified children into three user categories: "One-to-one" (CoV <.15); "Approximation" (<.15 CoV <.30); and "Other" (CoV >.3).
+Finally, we also used children's CoV, which captures noise in participants' responses to a given set size\footnote{CoV was approximated as in Frank et al. (2012), with the formula $\sqrt{(t_i - r_i)^2}/t_i$, where $t$ is the target quantity, and $r$ is the child's response.} as an additional measure of error in this task. Mirroring our accuracy and error analyses above, CoVs were significantly lower for CP-knowers in comparison to subset knowers for trials in both the parallel (*t*(142) = -5.73, *p* < .0001) and orthogonal orientations (*t*(141) = -4.99, *p* < .0001). While the slope of CoV relative to target quantity has been used to identify whether participants are deploying a one-to-one or approximation strategy in previous set-matching work [@everett2012; @frank2012], this analysis is not appropriate for our dataset for several reasons. First, unlike in previous work, both the number of items that participants could use to match sets, as well the area in which they could be matched, were bounded, which truncated the full distribution of responses for larger sets and affected CoV approximations. Prior work has shown that these kinds of bounds preclude assessments of the kind of scalar variability associated with ANS [@wagner2019]. Second, accuracy in our task was much lower than in previous work, and more children seemed to default to error-prone heuristics to solve this task (e.g., many subset knowers gave the maximum number of fish for large sets), yielding noisier CoV estimates. Due to these considerations, we cannot use CoV to make inferences about whether children were using one-to-one correspondence or approximation to solve this task.
 
-<!-- First, we used mean COV as an indication of overall error on this task. Mirroring our accuracy and error analyses above, COVs were significantly lower for CP-knowers (\emph{M} = `r round(cp.cov.mean, 2)`) than for subset knowers (\emph{M} = `r round(subset.cov.mean, 2)`) on this task (\emph{t}(`r as.numeric(cov.overall$parameter)`) = `r round(cov.overall$statistic, 2)`, \emph{p} < .0001). -->
-
-A $\chi^2$ test indicated a relationship between CP knowledge and strategy ($\chi^2$(1) = `r round(chisq.approx$statistic, 2)`, \emph{p} < .0001), with the majority of CP-knowers' (73%) CoVs consistent with the use of a one-to-one strategy (CoV <.15). In contrast, only 34% of subset knowers had CoVs that suggested they might have been using one-to-one correspondence. Instead, subset knowers seemed to rely more frequently (42%) on error-prone strategies, with CoVs exceeding the approximation range (>.3). CoVs in this range are thought to reflect a combination of approximation and other heuristics [@frank2012]; in the current study, subset knowers' high CoVs may be due to the fact that they frequently gave close to the maximum for large quantities.
-
-The results of our accuracy and error analyses broadly replicate the finding that numeracy is significantly related to the availability of exact number concepts. Similar to the Pirahã, and consistent with developmental work showing set-matching failures prior to CP acquisition, we found that although subset knowers were generally accurate for sets within their PI range, they were more likely to approximate or deploy an error-prone strategy for larger numerosities. In contrast, CP-knowers were significantly more accurate in comparison to subset knowers for these larger numerosities, with their pattern of errors suggesting that a majority of children in this group were likely attempting to deploy one-to-one correspondence. CP-knowers' performance was far from ceiling, however, and reflected some striking limitations. We return to this novel finding in the General Discussion.
-
-<!-- We further explored differences in children's set-matching strategies by building a linear regression predicting COV from target quantity for both CP and subset knowers\footnote{Analyses conducted separately for CP- and subset knowers. As in previous work [@frank2012], we interpret a flat COV as evidence that a particular group is using an approximation strategy (i.e., errors scale with target set size in accordance with Weber's law), while a decreasing COV indicates that group is using a one-to-one strategy (i.e., errors are consistently close to target set size, and do not scale). Once again, an increasing COV may indicate an error-prone strategy. These linear models revealed a significant negative relationship between task quantity and COV in CP-knowers ($\beta$ = `r round(cp.cov.summary$coefficients[2],2)`, \emph{p} < .0001), again suggesting that this group is likely using one-to-one correspondence to generate set matches. On the other hand, we found a slightly increasing relationship between test quantity and COV in subset knowers ($\beta$ = `r round(subset.cov.summary$coefficients[2],2)`, \emph{p} = .001), again suggesting the use of an error-prone heuristic in addition to approximation. -->
-
-<!-- ## Counting profiency and set-matching -->
-```{r counting_prof, include = FALSE}
-###Subset-knowers
-#filter out the kids who don't have counting proficiency for now
-model.df %<>%
-  filter(!is.na(count_proficiency))
-
-###Planned, subset-knowers
-#make base model
-count.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
-                    family = "binomial", data = subset(model.df, CP_subset == "Subset"))
-
-#add counting proficiency
-count.prof <- glmer(Correct ~ count_proficiency.c + Task_item.c + Task + age.c + (1|SID), 
-                    family = "binomial", data = subset(model.df, CP_subset == "Subset"))
-
-#add interaction
-count.int <- glmer(Correct ~ count_proficiency.c*Task_item.c + Task + age.c + (1|SID), 
-                    family = "binomial", data = subset(model.df, CP_subset == "Subset"))
-
-#compare
-anova.subset.counting_prof <- anova(count.base, count.prof, count.int, test = 'LRT')
-
-###post-hoc, CP-knowers
-#make base model
-count.base.cp <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
-                    family = "binomial", data = subset(model.df, CP_subset == "CP"))
-
-#add counting proficiency
-count.prof.cp <- glmer(Correct ~ count_proficiency.c + Task_item.c + Task + age.c + (1|SID), 
-                    family = "binomial", data = subset(model.df, CP_subset == "CP"))
-
-#add interaction
-count.int.cp <- glmer(Correct ~ count_proficiency.c*Task_item.c + Task + age.c + (1|SID), 
-                    family = "binomial", data = subset(model.df, CP_subset == "CP"))
-
-#compare
-anova(count.base.cp, count.prof.cp, count.int.cp, test = 'LRT')
-```
-
-```{r highest_count, include = FALSE}
-##remove highest count NAs
-hc.df <- model.df %>%
-  filter(!is.na(highest_count))
-
-##cp
-#make base model
-hc.cp.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
-                    family = "binomial", data = subset(hc.df, CP_subset == "CP"))
-#add hc
-hp.cp.with.hc <- glmer(Correct ~ highest_count.c + Task_item.c + Task + age.c + (1|SID), 
-                       family = "binomial", data = subset(hc.df, CP_subset == "CP"))
-
-##compare
-cp.hc <- anova(hc.cp.base, hp.cp.with.hc, test = 'LRT') ##Not significant
-
-##subset
-#make base model
-hc.ss.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID), 
-                    family = "binomial", data = subset(hc.df, CP_subset == "Subset"))
-#add hc
-hp.ss.with.hc <- glmer(Correct ~ highest_count.c + Task_item.c + Task + age.c + (1|SID), 
-                       family = "binomial", data = subset(hc.df, CP_subset == "Subset"))
-
-##compare
-subset.hc <- anova(hc.ss.base, hp.ss.with.hc, test = 'LRT') ##Not significant
-```
-
-<!-- We also tested whether other numerical knowledge beyond the CP might predict performance on the set-matching task. First, we explored whether children who are more likely to implement one-to-one correspondence when deploying the count routine have higher accuracy on the set-matching task. Because all CP-knowers should, by definition, be at ceiling in this ability, we conducted this analysis with subset knowers, by constructing a GLMEM predicting set-matching accuracy from counting proficiency score\footnote{Model specification: \texttt{Correct $\sim$ Counting proficiency + Task item + Task + Age + (1|Subject)}}. Although we found substantial variability in subset knowers' counting proficiency, we did not find that the ability to deploy one-to-one correspondence in the count routine was related to set-matching accuracy ($\chi^2$(1) = `r round(anova.subset.counting_prof$Chisq[2], 2)`, \emph{p} = .41).  -->
-
-<!-- Next, we tested whether greater levels of number exposure, as indexed by children's Highest Count, which is generally correlated with levels of number input in young children (@lefevre2002), was predictive of set-matching performance. Here we included CP knowers because they are known to show variability in their rote counting ability [@davidson2012;@cheung2017], and because this counting ability is correlated with other forms of numerical understanding [@lecorre2014;@cheung2017;@schneider2020]. Likelihood Ratio Tests indicated that the addition of a highest count term to a GLMEM predicting set-matching accuracy\footnote{Model specification: \texttt{Correct $\sim$ Highest Count + Task item + Task + Age + (1|Subject)}} did not improve the model fit for either subset ($\chi^2$(1) = `r round(subset.hc$Chisq[2], 2)`, \emph{p} = .70) or for CP-knowers ($\chi^2$(1) = `r round(cp.hc$Chisq[2], 2)`, \emph{p} = .69), however. -->
-
-<!-- Taken together, these results suggest that children's mastery of neither the procedures nor the language associated with the count routine explained significant variance in their performance, beyond knowledge of the CP.  -->
+The results of our accuracy and error analyses broadly replicate the finding that numeracy is significantly related to the availability of exact number concepts. Similar to the Pirahã, and consistent with developmental work showing set-matching failures prior to CP acquisition, we found that although subset knowers were generally accurate for sets within their PI range, they were more less likely to generate an exact match for large numerosities. In contrast, CP-knowers were significantly more accurate in comparison to subset knowers for these larger numerosities, with their pattern of errors suggesting that a majority of children in this group were likely attempting to deploy one-to-one correspondence. CP-knowers' performance was far from ceiling, however, and reflected some striking limitations. 
 
 # Experiment 2
 In Experiment 1, we found that CP-knowers were much more likely than subset knowers to use one-to-one correspondence to establish exact equality between two large quantities. One possible reason for CP-knowers outperforming subset knowers in this task, however, is that they might have subvocally counted the experimenter's set and used it to generate a match. Experiment 2 was designed to test for this possibility.
 
 ## Method
-This study was pre-registered on OSF, and all methodological and analytical choices were as preregistered, unless stated otherwise in-text.
+This study was pre-registered on OSF (https://osf.io/pj4zy), and all methodological and analytical choices were as preregistered, unless stated otherwise in-text.
 
 ```{r study_2_participants, include = FALSE}
 #study 2
-demos.2 <- all.data.2 %>%
+demos.2 <- all.data.study2 %>%
   distinct(SID, Age, CP_subset)%>%
   group_by(CP_subset)%>%
   summarise(n = n(),
@@ -658,66 +486,86 @@ demos.2 <- all.data.2 %>%
   group_by()%>%
   mutate(total.n = sum(n))
 
-min_age.2 = min(all.data.2$Age, na.rm = TRUE)
-max_age.2 = max(all.data.2$Age, na.rm = TRUE)
-mean_age.2 = mean(all.data.2$Age, na.rm = TRUE)
-sd_age.2 = sd(all.data.2$Age, na.rm = TRUE)
+min_age.2 = min(all.data.study2$Age, na.rm = TRUE)
+max_age.2 = max(all.data.study2$Age, na.rm = TRUE)
+mean_age.2 = mean(all.data.study2$Age, na.rm = TRUE)
+sd_age.2 = sd(all.data.study2$Age, na.rm = TRUE)
 ```
 
 
 ### Participants
-Our current sample includes `r demos.2$total.n[1]` children of out of a planned sample of 40 ($M_{age}$ = `r round(mean_age.2, 2)` years, $SD_{age}$ = `r round(sd_age.2, 2)` years, range = `r round(min_age.2, 2)` - `r round(max_age.2, 2)` years). All children were classified as CP-knowers by the Give-N task.
+Our current sample includes `r demos.2$total.n[1]` children out of a planned sample of 40 ($M_{age}$ = `r round(mean_age.2, 2)` years, $SD_{age}$ = `r round(sd_age.2, 2)` years, range = `r round(min_age.2, 2)` - `r round(max_age.2, 2)` years). All children were classified as CP-knowers by the Give-N task.
 
 ## Procedures
 Procedures and tasks were identical to Experiment 1 with two exceptions in the set-matching task. First, due to poor performance in the Orthogonal condition, boards were only presented in a Parallel orientation, with trial order for larger sets counterbalanced across participants. Second, to test whether CP-knowers' performance could be explained by subvocal counting, after the last trial of set-matching (8 or 10 fish) the experimenter covered both boards and asked the child, "How many fish are in my pond?" If the child did not know, they were prompted to guess. The logic of this follow-up question was that, if the child had succeeded by counting, then they should provide an accurate answer when asked to report the target set's cardinality. To test whether children were capable of remembering a recently counted set, the experimenter let the child count the board, covered it again, and then asked, "How many fish are in my pond?" 
 
 ## Results and Discussion
 ```{r idk_study2, include = FALSE}
-#how many children answered IDK first
-idk.ms <- all.data.2 %>%
-  filter(Task_item == "IDK first?")%>%
-  group_by(Response)%>%
-  summarise(n = n())%>%
-  mutate(total.n = sum(n))
+##make a df for this
+idk.first <- counting.check.df %>%
+  filter(Task_item == "Neutral-Final Question")%>%
+  mutate(IDK.first = ifelse(str_detect(Response, "IDK", negate = FALSE), 1, 0))%>%
+  dplyr::select(SID, IDK.first, Response)%>%
+  dplyr::rename(Final_q = Response)
 
-##make a graph 
-all.data.2 %>%
-  filter(Task_item == "IDK first?")%>%
-  mutate(Response = ifelse(Response == 0, "Numeric response", "I don't know"))%>%
-  group_by(Response)%>%
-  summarise(n= n())%>%
-  ggplot(aes(x = Response, y = n, fill = Response)) + 
-  geom_bar(stat = 'identity') + 
-  theme_bw(base_size = 10) + 
-  theme(panel.grid = element_blank(), 
-        legend.position = "none") + 
-  langcog::scale_fill_solarized()
+##get the last trial for each kid
+last.trial <- counting.check.df %>%
+  filter(Trial_number == "5")%>%
+  dplyr::select(SID, Task_item, Response)%>%
+  dplyr::rename(Num_given = Response)
 
-#for children who did respond, how often did they get it right?
-idk.ms.right <- all.data.2 %>%
-  filter(Task_item == "IDK first?" | 
-         Task_item == "Neutral-Final Question")%>%
-  mutate(idk.check = ifelse((Task_item == "IDK first?" & Response == 0), "Numeric-response", "IDK"))%>%
-  distinct(SID, idk.check, Correct)%>%
-  group_by(idk.check, Correct)%>%
-  summarise(n = n())
-
-idk.correct <- left_join(all.data.2, idk.ms.right, by = "SID")
-
-idk.correct.ms <- idk.correct %>%
-  filter(idk.check == 1, 
-         Task_item == "Neutral-Final Question")%>%
-  group_by(Correct)%>%
-  summarise(n = n())%>%
-  mutate(total.n = sum(n))
-
-##how many children pass memory check?
-mem.check <- all.data.2 %>%
+##now get memory check 
+memory.check <- counting.check.df %>%
   filter(Task_item == "Memory_check_answer")%>%
-  summarise(mean = mean(as.numeric(as.character(Correct)), na.rm = TRUE))
+  dplyr::select(SID, Response)%>%
+  dplyr::rename("Memory_check" = Response)
+
+##bind all this together
+full.check <- left_join(last.trial, idk.first, by = "SID")
+full.check <- left_join(full.check, memory.check, by = "SID")
+
+##how many kids passed memory check 
+full.check %<>%
+  mutate(Task_item = as.character(Task_item), 
+         Memory_check = as.character(Memory_check))%>%
+  mutate(memory.check.correct = ifelse(Memory_check == Task_item, 1, 0))
+
+mean(full.check$memory.check.correct)
+  
+## how many said IDK first
+sum(full.check$IDK.first)
+
+## of children who did not give IDK response first, how many were correct
+numeric.responses <- full.check %>%
+  filter(IDK.first != 1)%>%
+  mutate(Final_q = as.character(Final_q), 
+         correct.verbal.response = ifelse(Final_q == Task_item, 1, 0), 
+         delta = abs(as.numeric(Task_item) - as.numeric(Final_q)), 
+         delta.given = abs(as.numeric(Final_q) - as.numeric(as.character(Num_given))))
+
+sum(numeric.responses$correct.verbal.response)
+
+## of children who did not give IDK first responses, how far off were they?
+mean(numeric.responses$delta)
+sd(numeric.responses$delta)
+
+## of children who did not give IDK first responses, how far off were their responses from the number given?
+mean(numeric.responses$delta.given)
+sd(numeric.responses$delta.given)
+
+## finally, group IDKs and numeric together and look at accuracy 
+all.data.study2 <- left_join(all.data.study2, idk.first, by = "SID")
+
+acc.ms <- all.data.study2 %>%
+  group_by(SID, IDK.first)%>%
+  summarise(mean = mean(Correct, na.rm = TRUE))
+
+t.test(subset(acc.ms, IDK.first == 1)$mean, 
+       subset(acc.ms, IDK.first == 0)$mean, var.equal = TRUE)
+
 ```
 
-The majority of children (`r 100*round(mem.check$mean[1], 2)`%) were able to remember the cardinality of a recently counted set. Of the `r idk.ms$total.n[1]` children currently included in this dataset, `r idk.ms$n[2]` first responded "I don't know." Of the `r idk.ms$n[1]` children who offered a numeric response, only `r idk.correct.ms$n[2]` gave a correct response. Together, these results suggest that the greater accuracy CP-knowers demonstrated in Experiment 1 was likely not due to subvocal counting. 
+The majority of children (93%) were able to remember the cardinality of a recently counted set. Of the 28 children currently included in this dataset, 15 first responded "I don't know." Of the 13 children who offered a numeric response, only 2 gave a correct response. Children who were able to provide a numeric response gave verbal estimates that were, on average, about 4 numbers off from the correct response (*Min* = 1, *Max* = 18, *SD* = 5.5). Additionally, these children did not show evidence of having counted as they were generating their sets, as their verbal responses were almost 5 numbers off from the size of the set they had generated (*M* = 4.92, *SD* = 3.7). Finally, children who gave a numeric response did not have higher overall mean performance in comparison to children who were unable to provide a numeric response (*t*(26) = 0.37, *p* = 0.72).Together, these results suggest that the greater accuracy CP-knowers demonstrated in Experiment 1 was likely not due to subvocal counting. 
 
 ```{r}
 ##overall accuracy for large and small numerosities
@@ -731,7 +579,7 @@ num.ms.1 <- all.data %>%
             sd = sd(as.numeric(as.character(Correct)), na.rm = TRUE))
 
 #study 2
-num.ms.2 <- all.data.2 %>%
+num.ms.2 <- all.data.study2 %>%
   filter(Task == "Set-matching", 
          Trial_number != "Training")%>%
   group_by(Numerosity)%>%
