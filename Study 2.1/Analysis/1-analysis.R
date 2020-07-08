@@ -184,6 +184,7 @@ numeric.responses %>%
             mean.delta.verbal = mean(delta), 
             mean.delta.given = mean(delta.given))
 
+##now look at kids who said IDK first for # correct and mean number off from correct response
 full.check %>%
   filter(IDK.first == 1)%>%
   mutate(Num_given = as.numeric(as.character(Num_given)), 
@@ -201,5 +202,6 @@ acc.ms <- all.data.study2 %>%
   group_by(SID, IDK.first)%>%
   summarise(mean = mean(Correct, na.rm = TRUE))
 
+#finally, t-test for accuracy
 t.test(subset(acc.ms, IDK.first == 1)$mean, 
        subset(acc.ms, IDK.first == 0)$mean, var.equal = TRUE)
