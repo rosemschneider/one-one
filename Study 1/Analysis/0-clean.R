@@ -12,9 +12,7 @@ library(stringr)
 '%!in%' <- function(x,y)!('%in%'(x,y))
 
 # Read in data ----
-data.raw <- read.csv('../Data/one-one_data.csv', na.strings = c("NA", 
-                                                                "NA ", "", " ", 
-                                                                "NR", "#VALUE!"))%>%
+data.raw <- read.csv(here::here('../Data/one-one_data.csv'))%>%
   filter(SID != "CopyPasteMe")
 
 #change factor level names for prettier graphs
@@ -87,12 +85,20 @@ data.raw %<>%
   mutate(CP_subset = factor(ifelse(Knower_level == "CP", "CP", "Subset")))
 
 # Exclusions ----
+##How many kids before exclusions?
+data.raw %>%
+  distinct(SID, Age)%>%
+  group_by()%>%
+  summarise(n = n())
+
 #Table of exclusions
 data.raw %>%
   filter(Exclude == 1)%>%
   distinct(SID, Exclude_reason)%>%
   group_by(Exclude_reason)%>%
-  summarise(n = n())
+  summarise(n = n())%>%
+  group_by()%>%
+  mutate(total = sum(n))
 
 #Exclude these participants
 data.raw %<>%
