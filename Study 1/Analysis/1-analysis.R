@@ -3,9 +3,9 @@
 
 # SETUP ----
 rm(list = ls())
-source("0-clean.R") # data cleaning script, produces cleaned data 
+source("Study 1/Analysis/0-clean.R") # data cleaning script, produces cleaned data 
 # Load cleaned data - 2 dfs
-load(here::here("../Data/one-one_cleaned.RData")) #study 1 data
+load(here::here("Study 1/Data/one-one_cleaned.RData")) #study 1 data
 
 # load packages ----
 library(tidyverse)
@@ -192,6 +192,37 @@ para / orth
 ggsave("Figures/dist_response_both.png", width = 14, 
        height = 10)
 
+# ...accuracy by age ----
+ms.accuracy <- all.data %>%
+  filter(Task == "Parallel", 
+         Trial_number != "Training")%>%
+  group_by(SID)%>%
+  summarise(mean = mean(Correct, na.rm = TRUE))
+
+ms.age.acc <- all.data %>%
+  filter(Task == "Parallel", 
+         Trial_number != "Training")%>%
+  left_join(ms.accuracy, by = "SID")
+
+ms.age.acc %>%
+  ggplot(aes(x = Age, y = mean, color = CP_subset, group = CP_subset)) + 
+  geom_point(position = position_jitter(height = .01), 
+             alpha = .3) +
+  geom_smooth(method = "lm", se = FALSE) + 
+  theme(legend.position = "none")+
+  facet_grid(~CP_subset)
+
+##histogram
+ms.age.acc %>%
+  distinct(SID, CP_subset, mean)%>%
+  mutate(mean = factor(as.character(mean)))%>%
+  group_by(CP_subset, mean)%>%
+  summarise(n = n())%>%
+  ggplot(aes(x = mean, y = n, fill = CP_subset)) + 
+  geom_bar(stat = 'identity', position = position_dodge(width = .9)) +
+  facet_grid(~CP_subset) + 
+  theme(legend.position = "none")
+  
 # ...accuracy by condition ----
 ##NB: We have two conditions: Identical (all items identical) and Non-identical
 ## We have pre-registered comparisons looking at interaction between CP status and identity
@@ -223,6 +254,11 @@ model.df <- all.data %>%
   mutate(Task_item.c = as.vector(scale(Task_item, center = TRUE, scale=TRUE)),
          count_proficiency.c = as.vector(scale(count_proficiency, center = TRUE, scale = TRUE)),
          CP_subset = factor(CP_subset, levels = c("Subset", "CP")))
+
+summary(glmer(Correct ~ Task_item.c + age.c + (1|SID), 
+        family = "binomial", 
+        data = subset(model.df, CP_subset == "CP" && Task == "Parallel")))
+
 
 # Do CP-knowers perform better overall?
 #create a base model that includes numerosity and task

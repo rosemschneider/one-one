@@ -12,7 +12,7 @@ library(stringr)
 '%!in%' <- function(x,y)!('%in%'(x,y))
 
 # Read in data ----
-data.raw <- read.csv(here::here('../Data/one-one_data.csv'))%>%
+data.raw <- read.csv(here::here('Study 1/Data/one-one_data.csv'))%>%
   filter(SID != "CopyPasteMe")
 
 #change factor level names for prettier graphs
@@ -139,6 +139,6 @@ data.raw %<>%
 ##rename 
 all.data <- data.raw 
 
-save(all.data, file="../Data/one-one_cleaned.RData")
+save(all.data, file="Study 1/Data/one-one_cleaned.RData")
 
-write.csv(all.data, file="../Data/one-one_cleaned.csv")
+write.csv(all.data, file="Study 1/Data/one-one_cleaned.csv")
