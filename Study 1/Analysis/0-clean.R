@@ -8,19 +8,22 @@ library(magrittr)
 library(tidylog)
 library(stringr)
 
+setwd("/Users/erikbrockbank/web/one-one/")
+
 #filtering function
 '%!in%' <- function(x,y)!('%in%'(x,y))
 
 # Read in data ----
-data.raw <- read.csv(here::here('Study 1/Data/one-one_data.csv'))%>%
+# data.raw <- read.csv(here::here('Study 1/Data/one-one_data.csv'))%>%
+data.raw <- read.csv('Study 1/Data/one-one_data.csv')%>%
   filter(SID != "CopyPasteMe")
 
 #change factor level names for prettier graphs
 #change some factor to numeric types
 data.raw %<>%
-  mutate(Condition = ifelse(Condition == "IDENTICAL", "Identical", "Non-identical"), 
-         Correct = as.numeric(as.character(Correct)), 
-         Counting.Number.language = ifelse(is.na(Counting.Number.language), NA, 
+  mutate(Condition = ifelse(Condition == "IDENTICAL", "Identical", "Non-identical"),
+         Correct = as.numeric(as.character(Correct)),
+         Counting.Number.language = ifelse(is.na(Counting.Number.language), NA,
                                            ifelse(Counting.Number.language == "0", 0, 1)))
 
 # Validation ----
@@ -29,8 +32,8 @@ data.raw %<>%
 set.match.validate <- data.raw %>%
   filter(Task == "Parallel" | Task == "Orthogonal")%>%
   droplevels()%>%
-  mutate(Task_item = as.numeric(as.character(Task_item)), 
-         Response = as.numeric(as.character(Response)), 
+  mutate(Task_item = as.numeric(as.character(Task_item)),
+         Response = as.numeric(as.character(Response)),
          check.correct = ifelse(Response == Task_item, 1, 0))%>%
   filter(Correct != check.correct)
 
@@ -49,7 +52,7 @@ count.prof <- data.raw %>%
 
 #compute mean counting
 ms.count <- count.prof %>%
-  filter(Task_item == "10 - Score" | 
+  filter(Task_item == "10 - Score" |
            Task_item == "8 - Score")%>%
   distinct(SID, Task_item, Response)%>%
   group_by(SID)%>%
@@ -75,9 +78,9 @@ data.raw %<>%
 
 #Numerosity: Small (<5) or large, for set-matching
 data.raw %<>%
-  mutate(Numerosity = factor(ifelse(((Task == "Parallel" | Task == "Orthogonal") & 
-                                as.numeric(as.character(Task_item)) < 5), "Small", 
-                             ifelse(((Task == "Parallel" | Task == "Orthogonal") & 
+  mutate(Numerosity = factor(ifelse(((Task == "Parallel" | Task == "Orthogonal") &
+                                as.numeric(as.character(Task_item)) < 5), "Small",
+                             ifelse(((Task == "Parallel" | Task == "Orthogonal") &
                                        as.numeric(as.character(Task_item)) > 5), "Large", NA))))
 
 #CP/subset
@@ -113,14 +116,14 @@ failed.trials <- data.raw %>%
   distinct(SID, Task, Task_item, Correct)%>%
   filter(Correct == 0)
 
-#first look at the kids who failed both on parallel, as these are likely to not understand the task 
+#first look at the kids who failed both on parallel, as these are likely to not understand the task
 failed.trials %>%
   filter(Task == "Parallel")%>%
   group_by(SID)%>%
   summarise(n = n())%>%
   filter(n == 2)
 
-#one-one_48 - gives max for every single trial, failed training trials even with feedback, should be excluded 
+#one-one_48 - gives max for every single trial, failed training trials even with feedback, should be excluded
 #one-one_62 - should not be excluded - failed both Parallel training (15 for both), but seemed to get it (matched for 3 and 4)
 #one-one_92 - looked a little confused on training trials at the start, but seemed to get it
 #one-one_112 - marginal, failed both parallel (15 for both), some variability after that, succeeded on orthogonal training, but failed on 3 and 4; should not be excluded, succeeded on Orthogonal training
@@ -136,8 +139,8 @@ data.raw %<>%
   filter(Trial_number != "Training")
 
 # Save and export ----
-##rename 
-all.data <- data.raw 
+##rename
+all.data <- data.raw
 
 save(all.data, file="Study 1/Data/one-one_cleaned.RData")
 
