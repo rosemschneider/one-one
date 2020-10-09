@@ -2,7 +2,7 @@
 
 # SETUP ----
 rm(list = ls())
-setwd("/Users/erikbrockbank/web/one-one/")
+# setwd("/Users/erikbrockbank/web/one-one/")
 
 source("Study 1/Analysis/0-clean.R") # data cleaning script, produces cleaned data
 # Load cleaned data - 2 dfs
@@ -14,13 +14,9 @@ library(tidyverse)
 library(magrittr)
 library(car)
 library(lme4)
-library(ggpubr)
-library(broom)
 library(broom.mixed)
 library(tidylog)
-library(lmerTest)
 library(emmeans)
-library(patchwork)
 
 # # Custom global variables
 cp.sub.palette <- c("#1ECCE3", "#FF7C00")
@@ -49,45 +45,33 @@ error.df <- all.data %>%
   filter(Correct == 0)%>% ##only interested in incorrect responses
   mutate(abs.error = abs(Task_item - Response))
 
-# ...response distribution: Parallel ----
-parallel_dist_plot = all.data %>%
-  filter(Task == "Parallel")%>%
-  filter(Task_item > 2)%>%
-  group_by(CP_subset, Task_item, Response)%>%
-  # summarise(n = n()) %>%
-  ggplot(aes(x = Response, fill = CP_subset)) +
-  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
-  geom_histogram(color = 'black', binwidth = 1) +
-  theme_bw(base_size = 18) +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
-        panel.grid = element_blank()) +
-  scale_fill_manual(values = cp.sub.palette) +
-  facet_grid(CP_subset ~ Task_item) +
-  scale_x_continuous(breaks = seq(1, 15, 1)) +
-  labs(x = 'Number of items given', y = 'Frequency',
-       title = 'a) Parallel trials')
-parallel_dist_plot
+# ...response distribution ----
+## function for generating response plots
+make_dist_plot <- function(df, task, numbers) { #numbers should be a vector
+  p <- df %>% 
+    filter(Task == task, 
+           Task_item %in% numbers)%>%
+    group_by(CP_subset, Task_item, Response)%>%
+    ggplot(aes(x = Response, fill= CP_subset)) +
+    geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+    geom_histogram(color = 'black', binwidth = 1) +
+    theme_bw(base_size = 18) +
+    theme(legend.position = "none",
+          axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+          panel.grid = element_blank()) +
+    scale_fill_manual(values = cp.sub.palette) +
+    facet_grid(CP_subset ~ Task_item) +
+    scale_x_continuous(breaks = seq(1, 15, 1)) +
+    labs(x = 'Number of items given', y = 'Frequency', 
+         title = paste0(as.character(task), " Task"))
+  print(p)
+}
 
-# ...response distribution: Orthogonal ----
-orth_dist_plot = all.data %>%
-  filter(Task == "Orthogonal")%>%
-  filter(Task_item > 2)%>%
-  group_by(CP_subset, Task_item, Response)%>%
-  # summarise(n = n()) %>%
-  ggplot(aes(x = Response, fill = CP_subset)) +
-  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
-  geom_histogram(binwidth = 1, color = 'black') +
-  theme_bw(base_size = 18) +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
-        panel.grid = element_blank()) +
-  scale_fill_manual(values = cp.sub.palette) +
-  facet_grid(CP_subset ~ Task_item) +
-  scale_x_continuous(breaks = seq(1, 15, 1)) +
-  labs(x = 'Number of items given', y = 'Frequency',
-       title = 'b) Orthogonal trials')
-orth_dist_plot
+
+parallel_dist_plot <- make_dist_plot(all.data, "Parallel", c(3, 4, 6, 8, 10))
+orthogonal_dist_plot <- make_dist_plot(all.data, "Orthogonal", c(3, 4, 6, 8, 10))
+
+
 
 
 # Estimate ~ N(cov(0.64), sigma)  based on Wagner et al. 2018
