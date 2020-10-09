@@ -104,6 +104,10 @@ orth_dist_plot
 
 glimpse(all.data)
 subjects = unique(all.data$SID)
+trials = unique(all.data$Trial_number)
+task = "Parallel"
+task_item = unique(all.data$Task_item)
+
 
 simulation_data = data.frame(
   SID = character(),
