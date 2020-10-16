@@ -48,8 +48,8 @@ error.df <- all.data %>%
 # ...response distribution ----
 ## function for generating response plots
 make_dist_plot <- function(df, task, numbers) { #numbers should be a vector
-  p <- df %>% 
-    filter(Task == task, 
+  p <- df %>%
+    filter(Task == task,
            Task_item %in% numbers)%>%
     group_by(CP_subset, Task_item, Response)%>%
     ggplot(aes(x = Response, fill= CP_subset)) +
@@ -62,7 +62,7 @@ make_dist_plot <- function(df, task, numbers) { #numbers should be a vector
     scale_fill_manual(values = cp.sub.palette) +
     facet_grid(CP_subset ~ Task_item) +
     scale_x_continuous(breaks = seq(1, 15, 1)) +
-    labs(x = 'Number of items given', y = 'Frequency', 
+    labs(x = 'Number of items given', y = 'Frequency',
          title = paste0(as.character(task), " Task"))
   print(p)
 }
@@ -86,11 +86,21 @@ orthogonal_dist_plot <- make_dist_plot(all.data, "Orthogonal", c(3, 4, 6, 8, 10)
 #' at higher magnitudes
 #' -> Show that this "approximation waterfall" fits the CP knower data better
 
+
+# Basic approximation function: generates integer estimate by drawing from
+# normal distribution centered at `number` with
+get_approximate_estimate = function(number, CoV) {
+  round(rnorm(1, number, number * CoV), 0)
+}
+
+
+
+
 glimpse(all.data)
 subjects = unique(all.data$SID)
-trials = unique(all.data$Trial_number)
+trials = as.numeric(unique(all.data$Trial_number))
 task = "Parallel"
-task_item = unique(all.data$Task_item)
+task_item = sort(unique(all.data$Task_item))
 
 
 simulation_data = data.frame(
@@ -103,10 +113,13 @@ simulation_data = data.frame(
 )
 
 
-CoV = 0.64 # sd(estimates) / mean(estimates)
+CoV = 0.64 # sd(estimates) / mean(estimates); chosen based on Wagner et al. 2018
 number = 3
-# Here's basic approximation
-round(rnorm(1, number, number * CoV), 0) # TODO confirm that this is legit?
+
+
+# Simulate experiment by getting approximate estimate for each subject on each trial
+# Then plot as above
+get_approximate_estimate(number, CoV)
 # TODO may need to handle possibility of exact matching on 3 (even for approximators) because of PI
 # For CP knowers, may have stable label for 3 so similar to above concern
 
