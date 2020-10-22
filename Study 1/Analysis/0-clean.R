@@ -8,8 +8,6 @@ library(magrittr)
 library(tidylog)
 library(stringr)
 
-setwd("/Users/erikbrockbank/web/one-one/")
-
 #filtering function
 '%!in%' <- function(x,y)!('%in%'(x,y))
 
