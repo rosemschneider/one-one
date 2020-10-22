@@ -17,6 +17,8 @@ library(lme4)
 library(broom.mixed)
 library(tidylog)
 library(emmeans)
+library(stats4)
+
 
 # # Custom global variables
 cp.sub.palette <- c("#1ECCE3", "#FF7C00")
@@ -47,12 +49,13 @@ error.df <- all.data %>%
 
 # ...response distribution ----
 ## function for generating response plots
-make_dist_plot <- function(df, task, numbers) { #numbers should be a vector
+make_dist_plot <- function(df, task, numbers, title) { #numbers should be a vector
   p <- df %>%
     filter(Task == task,
            Task_item %in% numbers)%>%
     group_by(CP_subset, Task_item, Response)%>%
-    ggplot(aes(x = Response, fill= CP_subset)) +
+    # ggplot(aes(x = Response, fill= CP_subset)) + # Plot user data
+    ggplot(aes(x = approximate_estimate_med, fill= CP_subset)) + # Plot model simulation
     geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
     geom_histogram(color = 'black', binwidth = 1) +
     theme_bw(base_size = 18) +
@@ -61,15 +64,16 @@ make_dist_plot <- function(df, task, numbers) { #numbers should be a vector
           panel.grid = element_blank()) +
     scale_fill_manual(values = cp.sub.palette) +
     facet_grid(CP_subset ~ Task_item) +
-    scale_x_continuous(breaks = seq(1, 15, 1)) +
+    # scale_x_continuous(breaks = seq(1, 15, 1)) +
     labs(x = 'Number of items given', y = 'Frequency',
-         title = paste0(as.character(task), " Task"))
+         # title = paste0(as.character(task), " Task"))
+         title = title)
   print(p)
 }
 
 
-parallel_dist_plot <- make_dist_plot(all.data, "Parallel", c(3, 4, 6, 8, 10))
-orthogonal_dist_plot <- make_dist_plot(all.data, "Orthogonal", c(3, 4, 6, 8, 10))
+parallel_dist_plot <- make_dist_plot(all.data, "Parallel", c(3, 4, 6, 8, 10), "Parallel Task")
+orthogonal_dist_plot <- make_dist_plot(all.data, "Orthogonal", c(3, 4, 6, 8, 10), "Orthogonal Task")
 
 
 
@@ -90,10 +94,19 @@ orthogonal_dist_plot <- make_dist_plot(all.data, "Orthogonal", c(3, 4, 6, 8, 10)
 # Basic approximation function: generates integer estimate by drawing from
 # normal distribution centered at `number` with
 get_approximate_estimate = function(number, CoV) {
-  round(rnorm(1, number, number * CoV), 0)
+  est = rnorm(1, number, number * 10^CoV)
+  if (is.na(est)) {
+    print("NA aaaaagh: ")
+    #print(number)
+    print(CoV)
+  }
+  max(round(est, 0), 1) # don't allow returning 0 as an option
 }
 
 
+
+
+# 1. Manual CoV analysis =======================================================
 
 
 glimpse(all.data)
@@ -101,33 +114,91 @@ subjects = unique(all.data$SID)
 trials = as.numeric(unique(all.data$Trial_number))
 task = "Parallel"
 task_item = sort(unique(all.data$Task_item))
+# baseline
+low_cov = log10(0.16)
+med_cov = log10(0.32)
+high_cov = log10(0.64)
 
 
-simulation_data = data.frame(
-  SID = character(),
-  Trial_number = numeric(), # 1-5
-  Task = character(), # "Parallel", filter all.data to match this
-  Task_item = numeric(), # {3, 4, 6, 8, 10}
-  Response = numeric(),
-  CP_subset = character() # {"CP", "Subset"}
-)
 
+# Generate simulated matching data
+simulation_data = all.data %>%
+  filter(Task == "Parallel",
+         CP_subset == "CP") %>%
+  rowwise() %>%
+  mutate(approximate_estimate_low = get_approximate_estimate(Task_item, low_cov),
+         approximate_estimate_med = get_approximate_estimate(Task_item, med_cov),
+         approximate_estimate_high = get_approximate_estimate(Task_item, high_cov))
 
-CoV = 0.64 # sd(estimates) / mean(estimates); chosen based on Wagner et al. 2018
-number = 3
-
-
-# Simulate experiment by getting approximate estimate for each subject on each trial
-# Then plot as above
-get_approximate_estimate(number, CoV)
-# TODO may need to handle possibility of exact matching on 3 (even for approximators) because of PI
-# For CP knowers, may have stable label for 3 so similar to above concern
-
-
-# With above, can try first just simulating and seeing how it looks
-# Then fit a CoV with function above and see how things look
+# Plot results
+simulated_plot_low <- make_dist_plot(simulation_data, "Parallel", task_item, paste("Model (CoV = ", 10^low_cov,")"))
+simulated_plot_med <- make_dist_plot(simulation_data, "Parallel", task_item, paste("Model (CoV = ", 10^med_cov,")"))
+simulated_plot_high <- make_dist_plot(simulation_data, "Parallel", task_item, paste("Model (CoV = ", 10^high_cov,")"))
 
 
 
 
+# 2. Fitted CoV analysis =======================================================
 
+# Fit CoV instead of using values manually generated above
+# Then generate model data with fitted CoV (but use process above)
+
+# log likelihood function
+# Returns (log) probability of sampling the *difference* between
+# the subject's response and the generated response (via approximation)
+# from a normal distribution centered at 0 with sd = s
+loglik = function(task_item, subj_resp, approx_fxn, cov_val, s) {
+  sum(
+    pmax(-6, dnorm(log10(subj_resp) - log10(approx_fxn(task_item, cov_val)), 0, s, log = T))
+  )
+}
+
+# fit function
+# `tmp` is data
+brutefit = function(data, usefx) {
+  nLL = function(cov_fitted, s) {
+    -loglik(data$Task_item, data$Response, usefx, cov_fitted, 10^s) +
+      priors[[1]](cov_fitted) +
+      priors[[2]](s)
+  }
+  
+  iter = 0
+  fits = NULL
+  fit = NULL
+  while (is.null(fits)) {
+    try(fit <- summary(mle(nLL,
+                           start = list(cov_fitted = -0.8, # 10^-0.8 = .15ish
+                                        # errors range between about log10(5) - log10(10) and log10(15) - log10(10)
+                                        s = -1))), 
+        TRUE) 
+    iter = iter + 1
+    
+    if (!is.null(fit)) {
+      # TODO what's up with this 0.5??
+      fits = c(-0.5*fit@m2logL, length(data$Task_item), fit@coef[,"Estimate"])
+    } else {
+      if (iter > 500) {
+        fits = c(-9999, 0, 0, 0)
+      }
+    }
+  }
+  names(fits) = c("logL", "n", "fitted_cov", "s")
+  return(fits)
+}
+
+priors = list()
+priors[[1]] = function(x) {-dnorm(x, -0.8, 0.2, log = T)} # priors for (log) cov value
+priors[[2]] = function(x) {-dnorm(x, -0.1, 0.01, log = T)} # priors for s value
+
+
+brutefit(simulation_data, get_approximate_estimate)
+# TODO this seems to allow positively insane cov values;
+# our approximation function sometimes produces NAs because
+# the fitted CoV values are in the 100s, 1000s, ...
+# Does this mean the data isn't easy to fit or we did something wrong?
+# If we don't include priors, the fitted values are insane for both CoV and s...
+
+
+#' Notes
+#' may need to handle possibility of exact matching on 3 (even for approximators) because of PI
+#' For CP knowers, may have stable label for 3 so similar to above concern

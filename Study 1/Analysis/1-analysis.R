@@ -3,7 +3,6 @@
 
 # SETUP ----
 rm(list = ls())
-setwd("/Users/erikbrockbank/web/one-one/")
 source("Study 1/Analysis/0-clean.R") # data cleaning script, produces cleaned data
 # Load cleaned data - 2 dfs
 load(here::here("Study 1/Data/one-one_cleaned.RData")) #study 1 data
