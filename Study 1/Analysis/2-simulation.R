@@ -49,13 +49,13 @@ error.df <- all.data %>%
 
 # ...response distribution ----
 ## function for generating response plots
-make_dist_plot <- function(df, task, numbers, title) { #numbers should be a vector
+make_dist_plot_default <- function(df, task, numbers, title) { #numbers should be a vector
   p <- df %>%
     filter(Task == task,
            Task_item %in% numbers)%>%
     group_by(CP_subset, Task_item, Response)%>%
-    # ggplot(aes(x = Response, fill= CP_subset)) + # Plot user data
-    ggplot(aes(x = approximate_estimate_med, fill= CP_subset)) + # Plot model simulation
+    ggplot(aes(x = Response, fill= CP_subset)) + # Plot user data
+    # ggplot(aes(x = approximate_estimate_med, fill= CP_subset)) + # Plot model simulation
     geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
     geom_histogram(color = 'black', binwidth = 1) +
     theme_bw(base_size = 18) +
@@ -72,8 +72,8 @@ make_dist_plot <- function(df, task, numbers, title) { #numbers should be a vect
 }
 
 
-parallel_dist_plot <- make_dist_plot(all.data, "Parallel", c(3, 4, 6, 8, 10), "Parallel Task")
-orthogonal_dist_plot <- make_dist_plot(all.data, "Orthogonal", c(3, 4, 6, 8, 10), "Orthogonal Task")
+parallel_dist_plot  <- make_dist_plot_default(all.data, "Parallel", c(3, 4, 6, 8, 10), "Parallel Task")
+orthogonal_dist_plot <- make_dist_plot_default(all.data, "Orthogonal", c(3, 4, 6, 8, 10), "Orthogonal Task")
 
 
 
@@ -128,12 +128,41 @@ simulation_data = all.data %>%
   rowwise() %>%
   mutate(approximate_estimate_low = get_approximate_estimate(Task_item, low_cov),
          approximate_estimate_med = get_approximate_estimate(Task_item, med_cov),
-         approximate_estimate_high = get_approximate_estimate(Task_item, high_cov))
+         approximate_estimate_high = get_approximate_estimate(Task_item, high_cov))%>%
+  pivot_longer(cols = c(approximate_estimate_low, approximate_estimate_med,
+                        approximate_estimate_high), 
+               names_to = "approximation_level", 
+               values_to = "approximation_response")%>%
+  mutate(COV_level = ifelse(approximation_level == "approximate_estimate_low", "0.16", 
+                            ifelse(approximation_level == "approximate_estimate_med", "0.32", "0.64")))
+
+##plot this
+make_dist_plot <- function(df, task, numbers, title) { #numbers should be a vector
+  p <- df %>%
+    filter(Task == task,
+           Task_item %in% numbers)%>%
+    group_by(CP_subset, Task_item, Response)%>%
+    ggplot(aes(x = approximation_response, fill= COV_level)) + # Plot model simulation
+    geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+    geom_histogram(color = 'black', binwidth = 1) +
+    theme_bw(base_size = 18) +
+    theme(legend.position = "none",
+          axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+          panel.grid = element_blank()) +
+    langcog::scale_fill_solarized("COV levels") +
+    facet_grid(COV_level ~ Task_item) +
+    # scale_x_continuous(breaks = seq(1, 15, 1)) +
+    labs(x = 'Number of items given', y = 'Frequency',
+         # title = paste0(as.character(task), " Task"))
+         title = title)
+  print(p)
+}
+
 
 # Plot results
-simulated_plot_low <- make_dist_plot(simulation_data, "Parallel", task_item, paste("Model (CoV = ", 10^low_cov,")"))
-simulated_plot_med <- make_dist_plot(simulation_data, "Parallel", task_item, paste("Model (CoV = ", 10^med_cov,")"))
-simulated_plot_high <- make_dist_plot(simulation_data, "Parallel", task_item, paste("Model (CoV = ", 10^high_cov,")"))
+simulated_plot <- make_dist_plot(simulation_data, "Parallel", task_item, "Simulated data: Low, med., high COV")
+# simulated_plot_med <- make_dist_plot(simulation_data, "Parallel", task_item, paste("Model (CoV = ", 10^med_cov,")"))
+# simulated_plot_high <- make_dist_plot(simulation_data, "Parallel", task_item, paste("Model (CoV = ", 10^high_cov,")"))
 
 
 
