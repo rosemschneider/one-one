@@ -115,9 +115,9 @@ trials = as.numeric(unique(all.data$Trial_number))
 task = "Parallel"
 task_item = sort(unique(all.data$Task_item))
 # baseline
-low_cov = log10(0.16)
-med_cov = log10(0.32)
-high_cov = log10(0.64)
+low_cov = log10(0.1)
+med_cov = log10(0.25)
+high_cov = log10(0.5)
 
 
 
@@ -151,7 +151,7 @@ make_dist_plot <- function(df, task, numbers, title) { #numbers should be a vect
           panel.grid = element_blank()) +
     langcog::scale_fill_solarized("COV levels") +
     facet_grid(COV_level ~ Task_item) +
-    # scale_x_continuous(breaks = seq(1, 15, 1)) +
+    xlim(c(1, 15)) +
     labs(x = 'Number of items given', y = 'Frequency',
          # title = paste0(as.character(task), " Task"))
          title = title)
@@ -161,9 +161,91 @@ make_dist_plot <- function(df, task, numbers, title) { #numbers should be a vect
 
 # Plot results
 simulated_plot <- make_dist_plot(simulation_data, "Parallel", task_item, "Simulated data: Low, med., high COV")
-# simulated_plot_med <- make_dist_plot(simulation_data, "Parallel", task_item, paste("Model (CoV = ", 10^med_cov,")"))
-# simulated_plot_high <- make_dist_plot(simulation_data, "Parallel", task_item, paste("Model (CoV = ", 10^high_cov,")"))
 
+
+
+# 1.5. Modify simulations above to include exact match
+# TODO: how to propagate error here? Seems we don't need to
+# TODO: how to handle estimates of 3-4 by CP knowers Ignore it...
+
+# Globals for CP simulation
+cov_cp = log10(0.3) # CoV to use for this population
+exact_match_prop = 0.25 # Proportion of people using exact match
+
+# Simulate the data
+simulation_data_cp = all.data %>%
+  filter(Task == "Parallel",
+         CP_subset == "CP") %>%
+  group_by(SID) %>%
+  mutate(category = ifelse(rbinom(1, 1, exact_match_prop),
+                           "exact", "approximate")) %>%
+  ungroup() %>%
+  rowwise() %>%
+  mutate(simulation_est = ifelse(
+    category == "exact", Task_item,
+    get_approximate_estimate(Task_item, cov_cp)
+  ))
+
+table(simulation_data_cp$simulation_est) # sanity check
+
+# Plot
+simulation_data_cp %>%
+  group_by(Task_item, Response) %>%
+  ggplot(aes(x = simulation_est)) + # Plot model simulation
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+  geom_histogram(color = 'black', binwidth = 1) +
+  theme_bw(base_size = 18) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+        panel.grid = element_blank()) +
+  facet_grid(~Task_item) +
+  scale_x_continuous(breaks = seq(0, 15, 5),
+                     labels = seq(0, 15, 5),
+                     limits = c(0, 16)) +
+  ylim(c(0, 65)) + # TODO set a fixed height for this plot and empirical plots
+  labs(x = 'Number of items given', y = 'Frequency',
+       title = paste0("Simulated CP data, CoV=", round(10^cov_cp, 2), ", Match pct ", exact_match_prop))
+  
+
+# Globals for Subset simulation
+cov_sub = log10(0.3)
+give_all_prop = 0.1
+give_all_max = 15
+
+# Simulate the data
+simulation_data_sub = all.data %>%
+  filter(Task == "Parallel",
+         CP_subset == "Subset") %>%
+  group_by(SID) %>%
+  mutate(category = ifelse(rbinom(1, 1, give_all_prop),
+                           "give-all", "approximate")) %>%
+  ungroup() %>%
+  rowwise() %>%
+  mutate(simulation_est = ifelse(
+    category == "give-all", give_all_max,
+    get_approximate_estimate(Task_item, cov_sub)
+  ))
+
+table(simulation_data_sub$category) # sanity check
+table(simulation_data_sub$simulation_est) # sanity check
+
+# Plot
+simulation_data_sub %>%
+  group_by(Task_item, Response) %>%
+  ggplot(aes(x = simulation_est)) + # Plot model simulation
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+  geom_histogram(color = 'black', binwidth = 1) +
+  theme_bw(base_size = 18) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+        panel.grid = element_blank()) +
+  facet_grid(~Task_item) +
+  scale_x_continuous(breaks = seq(0, 15, 5),
+                     labels = seq(0, 15, 5),
+                     limits = c(0, 16)) +
+  ylim(c(0, 65)) +
+  labs(x = 'Number of items given', y = 'Frequency',
+       title = paste0("Simulated Subset data, CoV=", round(10^cov_sub, 2), ", Give-all pct ", give_all_prop))
 
 
 
@@ -227,7 +309,3 @@ brutefit(simulation_data, get_approximate_estimate)
 # Does this mean the data isn't easy to fit or we did something wrong?
 # If we don't include priors, the fitted values are insane for both CoV and s...
 
-
-#' Notes
-#' may need to handle possibility of exact matching on 3 (even for approximators) because of PI
-#' For CP knowers, may have stable label for 3 so similar to above concern
