@@ -94,12 +94,8 @@ orthogonal_dist_plot <- make_dist_plot_default(all.data, "Orthogonal", c(3, 4, 6
 # Basic approximation function: generates integer estimate by drawing from
 # normal distribution centered at `number` with
 get_approximate_estimate = function(number, CoV) {
+  # est = max(rnorm(1, number, number * 10^CoV), 0, na.rm = T) # if rnorm is NaN, choose 0
   est = rnorm(1, number, number * 10^CoV)
-  if (is.na(est)) {
-    print("NA aaaaagh: ")
-    #print(number)
-    print(CoV)
-  }
   max(round(est, 0), 1) # don't allow returning 0 as an option
 }
 
@@ -208,16 +204,34 @@ simulation_data_cp %>%
   
 
 # Globals for Subset simulation
-cov_sub = log10(0.3)
-give_all_prop = 0.1
 give_all_max = 15
+# What percent of people are maximizing? (best estimate)
+subset_data = all.data %>%
+  filter(CP_subset == "Subset",
+         Task == "Parallel",
+         Task_item %in% c(6, 8, 10)) %>%
+  mutate(is_max = Response == give_all_max)
+
+give_all_prop = subset_data %>%
+  #group_by(Task_item) %>%
+  summarize(participants = n(),
+            maximizers = sum(is_max),
+            max_pct = maximizers / participants) %>%
+  select(max_pct)
+
+
+
+cov_sub = log10(0.3) # TODO make an informed choice here...
+
+
+
 
 # Simulate the data
 simulation_data_sub = all.data %>%
   filter(Task == "Parallel",
          CP_subset == "Subset") %>%
   group_by(SID) %>%
-  mutate(category = ifelse(rbinom(1, 1, give_all_prop),
+  mutate(category = ifelse(rbinom(1, 1, give_all_prop$max_pct),
                            "give-all", "approximate")) %>%
   ungroup() %>%
   rowwise() %>%
@@ -245,7 +259,7 @@ simulation_data_sub %>%
                      limits = c(0, 16)) +
   ylim(c(0, 65)) +
   labs(x = 'Number of items given', y = 'Frequency',
-       title = paste0("Simulated Subset data, CoV=", round(10^cov_sub, 2), ", Give-all pct ", give_all_prop))
+       title = paste0("Simulated Subset data, CoV=", round(10^cov_sub, 2), ", Give-all pct ", round(give_all_prop, 2)))
 
 
 
@@ -278,9 +292,9 @@ brutefit = function(data, usefx) {
   fit = NULL
   while (is.null(fits)) {
     try(fit <- summary(mle(nLL,
-                           start = list(cov_fitted = -0.8, # 10^-0.8 = .15ish
+                           start = list(cov_fitted = -0.5, # 10^-0.5 = .3ish
                                         # errors range between about log10(5) - log10(10) and log10(15) - log10(10)
-                                        s = -1))), 
+                                        s = -0.1))), 
         TRUE) 
     iter = iter + 1
     
@@ -298,14 +312,21 @@ brutefit = function(data, usefx) {
 }
 
 priors = list()
-priors[[1]] = function(x) {-dnorm(x, -0.8, 0.2, log = T)} # priors for (log) cov value
-priors[[2]] = function(x) {-dnorm(x, -0.1, 0.01, log = T)} # priors for s value
+priors[[1]] = function(x){0} # function(x) {-dnorm(x, -0.5, 0.2, log = T)} # priors for (log) cov value
+priors[[2]] = function(x){0} # function(x) {-dnorm(x, -0.1, 0.01, log = T)} # priors for s value
 
 
-brutefit(simulation_data, get_approximate_estimate)
+
+
+# Do MLE fit for CoV
+brutefit(subset_data, get_approximate_estimate)
 # TODO this seems to allow positively insane cov values;
 # our approximation function sometimes produces NAs because
 # the fitted CoV values are in the 100s, 1000s, ...
 # Does this mean the data isn't easy to fit or we did something wrong?
-# If we don't include priors, the fitted values are insane for both CoV and s...
+# If we don't include priors, the fitted values fluctuate widely for both CoV and s...
+
+
+
+
 
