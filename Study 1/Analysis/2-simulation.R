@@ -1,8 +1,7 @@
-#one-to-one simulation
+# one-to-one simulation
 
 # SETUP ----
 rm(list = ls())
-# setwd("/Users/erikbrockbank/web/one-one/")
 
 source("Study 1/Analysis/0-clean.R") # data cleaning script, produces cleaned data
 # Load cleaned data - 2 dfs
@@ -77,60 +76,43 @@ orthogonal_dist_plot <- make_dist_plot_default(all.data, "Orthogonal", c(3, 4, 6
 
 
 
+# 1. Manual CoV analysis =======================================================
 
-# Estimate ~ N(cov(0.64), sigma)  based on Wagner et al. 2018
-# Or fit one CoV; this might be silly since we know that's not necessarily appropriate here...
-
-
-#' Simulation goals:
-#' 1. H0 is that people are approximating across the board
-#' -> Try to show that the approximation process doesn't accurately capture CP knowers 3-10
-#' -> Additionally, show taht this *does* capture Subset knowers 3-10 pretty well
-#' 2. H1 is that people are doing some exact matching and they become approximators
-#' at higher magnitudes
-#' -> Show that this "approximation waterfall" fits the CP knower data better
-
+GIVE_ALL_MAX = 15
+TASK_ITEMS = sort(unique(all.data$Task_item))
 
 # Basic approximation function: generates integer estimate by drawing from
-# normal distribution centered at `number` with
+# normal distribution centered at number with sd = number * CoV
 get_approximate_estimate = function(number, CoV) {
-  # est = max(rnorm(1, number, number * 10^CoV), 0, na.rm = T) # if rnorm is NaN, choose 0
-  est = rnorm(1, number, number * 10^CoV)
-  max(round(est, 0), 1) # don't allow returning 0 as an option
+  # sample from normal distribution: return 0 if sample < 0, 15 if sample > 15
+  min(max(round(rnorm(1, number, number * CoV), 0), 0), GIVE_ALL_MAX)
 }
 
 
-
-
-# 1. Manual CoV analysis =======================================================
-
-
-glimpse(all.data)
-subjects = unique(all.data$SID)
-trials = as.numeric(unique(all.data$Trial_number))
-task = "Parallel"
-task_item = sort(unique(all.data$Task_item))
-# baseline
-low_cov = log10(0.1)
-med_cov = log10(0.25)
-high_cov = log10(0.5)
+# baseline values (globals)
+LOW_COV_SIM = 0.1
+MED_COV_SIM = 0.25
+HIGH_COV_SIM = 0.5
 
 
 
 # Generate simulated matching data
-simulation_data = all.data %>%
+simulation_data_manual = all.data %>%
   filter(Task == "Parallel",
          CP_subset == "CP") %>%
   rowwise() %>%
-  mutate(approximate_estimate_low = get_approximate_estimate(Task_item, low_cov),
-         approximate_estimate_med = get_approximate_estimate(Task_item, med_cov),
-         approximate_estimate_high = get_approximate_estimate(Task_item, high_cov))%>%
+  mutate(approximate_estimate_low = get_approximate_estimate(Task_item, LOW_COV_SIM),
+         approximate_estimate_med = get_approximate_estimate(Task_item, MED_COV_SIM),
+         approximate_estimate_high = get_approximate_estimate(Task_item, HIGH_COV_SIM))%>%
   pivot_longer(cols = c(approximate_estimate_low, approximate_estimate_med,
                         approximate_estimate_high), 
                names_to = "approximation_level", 
                values_to = "approximation_response")%>%
-  mutate(COV_level = ifelse(approximation_level == "approximate_estimate_low", "0.16", 
-                            ifelse(approximation_level == "approximate_estimate_med", "0.32", "0.64")))
+  mutate(COV_level = ifelse(approximation_level == "approximate_estimate_low", "0.1", 
+                            ifelse(approximation_level == "approximate_estimate_med", "0.25", "0.5")))
+# sanity check
+table(simulation_data_manual$approximation_response) 
+
 
 ##plot this
 make_dist_plot <- function(df, task, numbers, title) { #numbers should be a vector
@@ -147,46 +129,41 @@ make_dist_plot <- function(df, task, numbers, title) { #numbers should be a vect
           panel.grid = element_blank()) +
     langcog::scale_fill_solarized("COV levels") +
     facet_grid(COV_level ~ Task_item) +
-    xlim(c(1, 15)) +
+    # xlim(c(1, 15)) +
     labs(x = 'Number of items given', y = 'Frequency',
          # title = paste0(as.character(task), " Task"))
          title = title)
   print(p)
 }
 
-
 # Plot results
-simulated_plot <- make_dist_plot(simulation_data, "Parallel", task_item, "Simulated data: Low, med., high COV")
+make_dist_plot(simulation_data_manual, "Parallel", TASK_ITEMS, "Simulated approx. data: Low, med., high COV")
 
 
 
 # 1.5. Modify simulations above to include exact match
-# TODO: how to propagate error here? Seems we don't need to
-# TODO: how to handle estimates of 3-4 by CP knowers Ignore it...
-
 # Globals for CP simulation
-cov_cp = log10(0.3) # CoV to use for this population
-exact_match_prop = 0.25 # Proportion of people using exact match
+COV_CP = 0.3 # CoV to use for this population
+EXACT_MATCH_PROP = 0.25 # Proportion of people using exact match
 
 # Simulate the data
 simulation_data_cp = all.data %>%
   filter(Task == "Parallel",
          CP_subset == "CP") %>%
   group_by(SID) %>%
-  mutate(category = ifelse(rbinom(1, 1, exact_match_prop),
+  mutate(category = ifelse(rbinom(1, 1, EXACT_MATCH_PROP),
                            "exact", "approximate")) %>%
   ungroup() %>%
   rowwise() %>%
   mutate(simulation_est = ifelse(
     category == "exact", Task_item,
-    get_approximate_estimate(Task_item, cov_cp)
+    get_approximate_estimate(Task_item, COV_CP)
   ))
-
-table(simulation_data_cp$simulation_est) # sanity check
+# sanity check
+table(simulation_data_cp$simulation_est) 
 
 # Plot
 simulation_data_cp %>%
-  group_by(Task_item, Response) %>%
   ggplot(aes(x = simulation_est)) + # Plot model simulation
   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
   geom_histogram(color = 'black', binwidth = 1) +
@@ -195,36 +172,26 @@ simulation_data_cp %>%
         axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
         panel.grid = element_blank()) +
   facet_grid(~Task_item) +
-  scale_x_continuous(breaks = seq(0, 15, 5),
-                     labels = seq(0, 15, 5),
-                     limits = c(0, 16)) +
   ylim(c(0, 65)) + # TODO set a fixed height for this plot and empirical plots
   labs(x = 'Number of items given', y = 'Frequency',
-       title = paste0("Simulated CP data, CoV=", round(10^cov_cp, 2), ", Match pct ", exact_match_prop))
+       title = paste0("Simulated CP data, CoV=", round(COV_CP, 2), ", Match pct ", EXACT_MATCH_PROP))
   
 
 # Globals for Subset simulation
-give_all_max = 15
-# What percent of people are maximizing? (best estimate)
+COV_SUB = 0.3
+# Pull out data we want
 subset_data = all.data %>%
   filter(CP_subset == "Subset",
          Task == "Parallel",
          Task_item %in% c(6, 8, 10)) %>%
-  mutate(is_max = Response == give_all_max)
-
+  mutate(is_max = Response == GIVE_ALL_MAX)
+# What percent of people are maximizing? (best estimate)
 give_all_prop = subset_data %>%
   #group_by(Task_item) %>%
   summarize(participants = n(),
             maximizers = sum(is_max),
             max_pct = maximizers / participants) %>%
   select(max_pct)
-
-
-
-cov_sub = log10(0.3) # TODO make an informed choice here...
-
-
-
 
 # Simulate the data
 simulation_data_sub = all.data %>%
@@ -236,8 +203,8 @@ simulation_data_sub = all.data %>%
   ungroup() %>%
   rowwise() %>%
   mutate(simulation_est = ifelse(
-    category == "give-all", give_all_max,
-    get_approximate_estimate(Task_item, cov_sub)
+    category == "give-all", GIVE_ALL_MAX,
+    get_approximate_estimate(Task_item, COV_SUB)
   ))
 
 table(simulation_data_sub$category) # sanity check
@@ -245,7 +212,6 @@ table(simulation_data_sub$simulation_est) # sanity check
 
 # Plot
 simulation_data_sub %>%
-  group_by(Task_item, Response) %>%
   ggplot(aes(x = simulation_est)) + # Plot model simulation
   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
   geom_histogram(color = 'black', binwidth = 1) +
@@ -254,47 +220,149 @@ simulation_data_sub %>%
         axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
         panel.grid = element_blank()) +
   facet_grid(~Task_item) +
-  scale_x_continuous(breaks = seq(0, 15, 5),
-                     labels = seq(0, 15, 5),
-                     limits = c(0, 16)) +
   ylim(c(0, 65)) +
   labs(x = 'Number of items given', y = 'Frequency',
-       title = paste0("Simulated Subset data, CoV=", round(10^cov_sub, 2), ", Give-all pct ", round(give_all_prop, 2)))
+       title = paste0("Simulated Subset data, CoV=", round(COV_SUB, 2), ", Give-all pct ", round(give_all_prop, 2)))
 
 
 
-# 2. Fitted CoV analysis =======================================================
-
+# 2. Fitted CoV analysis: Subset ===============================================
 # Fit CoV instead of using values manually generated above
-# Then generate model data with fitted CoV (but use process above)
+# Then generate model data with fitted CoV
 
-# log likelihood function
-# Returns (log) probability of sampling the *difference* between
-# the subject's response and the generated response (via approximation)
-# from a normal distribution centered at 0 with sd = s
-loglik = function(task_item, subj_resp, approx_fxn, cov_val, s) {
+
+# log likelihood function: find MLE for CoV
+# Returns probability of sampling the subject's response 
+# from a normal distribution centered at the prompted value, with sd = prompted value * cov
+loglik_subset = function(task_item, subj_resp, cov_val) {
   sum(
-    pmax(-6, dnorm(log10(subj_resp) - log10(approx_fxn(task_item, cov_val)), 0, s, log = T))
+    # give-all version 
+    ifelse(subj_resp == GIVE_ALL_MAX, 
+           # subject response was maximum: return probability of value >= 15
+           log(1 - pnorm(subj_resp - 1, mean = task_item, sd = cov_val * task_item)),
+           # subject response was < maximum
+           log(pnorm(subj_resp + 0.5, mean = task_item, sd = cov_val * task_item) -
+                   pnorm(subj_resp - 0.5, mean = task_item, sd = cov_val * task_item)))
   )
 }
 
+
 # fit function
-# `tmp` is data
-brutefit = function(data, usefx) {
-  nLL = function(cov_fitted, s) {
-    -loglik(data$Task_item, data$Response, usefx, cov_fitted, 10^s) +
-      priors[[1]](cov_fitted) +
-      priors[[2]](s)
+mle_fit_subset = function(data, fit_params) {
+  nLL = function(cov_fitted) {
+    -loglik_subset(data$Task_item, data$Response, cov_fitted) +
+      priors[[1]](cov_fitted)
   }
-  
   iter = 0
   fits = NULL
   fit = NULL
   while (is.null(fits)) {
     try(fit <- summary(mle(nLL,
-                           start = list(cov_fitted = -0.5, # 10^-0.5 = .3ish
-                                        # errors range between about log10(5) - log10(10) and log10(15) - log10(10)
-                                        s = -0.1))), 
+                           start = list(cov_fitted = 0.2))), 
+        TRUE) 
+    iter = iter + 1
+    
+    if (!is.null(fit)) {
+      # TODO what's up with this 0.5??
+      fits = c(-0.5*fit@m2logL, length(data$Task_item), fit@coef[,"Estimate"])
+    } else {
+      if (iter > 500) {
+        fits = c(-9999, 0, 0)
+      }
+    }
+  }
+  names(fits) = fit_params
+  return(fits)
+}
+
+
+
+## Analysis
+fit_params_subset = c("logL", "n", "cov_fitted")
+priors = list()
+priors[[1]] =  function(x) {-dnorm(x, 0.2, 0.1, log = T)} # priors for cov value
+# priors[[1]] = function(x){0}
+
+# Pull out data to fit
+subset_data = all.data %>%
+  filter(CP_subset == "Subset",
+         Task == "Parallel",
+         Task_item %in% c(6, 8, 10))
+
+# Do MLE fit for CoV
+subset_vars = mle_fit_subset(subset_data, fit_params_subset)
+subset_vars
+
+# simulate
+# TODO these simulations seem highly variable, maybe we do 1000s of runs?
+subset_data = subset_data %>%
+  rowwise() %>%
+  mutate(simulation_est = get_approximate_estimate(Task_item, 
+                                                   subset_vars['cov_fitted']))
+# sanity check
+table(subset_data$simulation_est)
+
+
+# plot simulated data
+subset_data %>%
+  ggplot(aes(x = simulation_est)) + # Plot model simulation
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+  geom_histogram(color = 'black', binwidth = 1) +
+  theme_bw(base_size = 18) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+        panel.grid = element_blank()) +
+  facet_grid(~Task_item) +
+  ylim(c(0, 65)) +
+  labs(x = 'Number of items given', y = 'Frequency',
+       title = paste0("Simulated Subset data, (fitted) CoV=", round(subset_vars['cov_fitted'], 2)))
+
+
+
+# 3. Fitted CoV analysis: CP ===================================================
+# Fit CoV instead of using values manually generated above
+# Then generate model data with fitted CoV
+
+# log likelihood function: find MLE for CoV and exact match percent
+# match_pct of the time, returns probability of sampling the subject's response
+# from a normal distribution centered at the prompted value, with sd -> 0
+# (1-match_pct) of the time, returns probability of sampling the subject's response 
+# from a normal distribution centered at the prompted value, with sd = prompted value * cov
+loglik_cp = function(task_item, subj_resp, cov_val, match_pct) {
+  sum(
+    log(
+      # match_pct of the time, subject's value is basically spot on
+      (match_pct * (
+        pnorm(subj_resp + 0.5, mean = task_item, sd = 0.01) -
+          pnorm(subj_resp - 0.5, mean = task_item, sd = 0.01))) +
+      # (1 - match_pct) of the time, subject's value is approximation
+      (1 - match_pct) * (
+        # this logic copied directly from loglik_subset above
+        ifelse(subj_resp == GIVE_ALL_MAX, 
+               # subject response was maximum: return probability of value >= 15
+               log(1 - pnorm(subj_resp - 1, mean = task_item, sd = cov_val * task_item)),
+               # subject response was < maximum
+               log(pnorm(subj_resp + 0.5, mean = task_item, sd = cov_val * task_item) -
+                     pnorm(subj_resp - 0.5, mean = task_item, sd = cov_val * task_item))))
+    )
+  )
+}
+
+
+# fit function
+mle_fit_cp = function(data, fit_params) {
+  nLL = function(cov_fitted) {
+    -loglik_cp(data$Task_item, data$Response, cov_fitted, match_pct_fitted) +
+      priors[[1]](cov_fitted) +
+      priors[[2]](match_pct_fitted)
+  }
+  iter = 0
+  fits = NULL
+  fit = NULL
+  while (is.null(fits)) {
+    try(fit <- summary(mle(nLL,
+                           start = list(cov_fitted = 0.2,
+                                        match_pct_fitted = 0.25))), 
         TRUE) 
     iter = iter + 1
     
@@ -307,26 +375,27 @@ brutefit = function(data, usefx) {
       }
     }
   }
-  names(fits) = c("logL", "n", "fitted_cov", "s")
+  names(fits) = fit_params
   return(fits)
 }
 
+
+
+## Analysis
+fit_params_cp = c("logL", "n", "cov_fitted", "match_pct_fitted")
 priors = list()
-priors[[1]] = function(x){0} # function(x) {-dnorm(x, -0.5, 0.2, log = T)} # priors for (log) cov value
-priors[[2]] = function(x){0} # function(x) {-dnorm(x, -0.1, 0.01, log = T)} # priors for s value
+priors[[1]] =  function(x) {-dnorm(x, 0.2, 0.1, log = T)} # priors for cov value
+# priors[[1]] = function(x){0}
+priors[[2]] =  function(x) {-dnorm(x, 0.25, 0.1, log = T)} # priors for match pct value
+# priors[[2]] = function(x){0}
 
-
-
+# Pull out data to fit
+cp_data = all.data %>%
+  filter(CP_subset == "CP",
+         Task == "Parallel",
+         Task_item %in% c(6, 8, 10))
 
 # Do MLE fit for CoV
-brutefit(subset_data, get_approximate_estimate)
-# TODO this seems to allow positively insane cov values;
-# our approximation function sometimes produces NAs because
-# the fitted CoV values are in the 100s, 1000s, ...
-# Does this mean the data isn't easy to fit or we did something wrong?
-# If we don't include priors, the fitted values fluctuate widely for both CoV and s...
-
-
-
-
+cp_vars = mle_fit_cp(cp_data, fit_params_cp)
+cp_vars
 
