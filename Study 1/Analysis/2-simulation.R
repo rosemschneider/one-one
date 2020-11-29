@@ -236,13 +236,18 @@ simulation_data_sub %>%
 # from a normal distribution centered at the prompted value, with sd = prompted value * cov
 loglik_subset = function(task_item, subj_resp, cov_val) {
   sum(
-    # give-all version 
     ifelse(subj_resp == GIVE_ALL_MAX, 
            # subject response was maximum: return probability of value >= 15
-           log(1 - pnorm(subj_resp - 1, mean = task_item, sd = cov_val * task_item)),
+           log(
+             (1 - pnorm(subj_resp - 0.5, mean = task_item, sd = cov_val * task_item)) / 
+               # normalize by probability of response > 0
+               (1 - pnorm(0, mean = task_item, sd = cov_val * task_item))),
            # subject response was < maximum
-           log(pnorm(subj_resp + 0.5, mean = task_item, sd = cov_val * task_item) -
-                   pnorm(subj_resp - 0.5, mean = task_item, sd = cov_val * task_item)))
+           log(
+             (pnorm(subj_resp + 0.5, mean = task_item, sd = cov_val * task_item) -
+                   pnorm(subj_resp - 0.5, mean = task_item, sd = cov_val * task_item)) /
+               # normalize by probability of response > 0
+               (1 - pnorm(0, mean = task_item, sd = cov_val * task_item))))
   )
 }
 
@@ -288,6 +293,8 @@ subset_data = all.data %>%
   filter(CP_subset == "Subset",
          Task == "Parallel",
          Task_item %in% c(6, 8, 10))
+         # compare to fitting 3, 4 as well
+         # Task_item %in% c(3, 4, 6, 8, 10))
 
 # Do MLE fit for CoV
 subset_vars = mle_fit_subset(subset_data, fit_params_subset)
@@ -319,6 +326,81 @@ subset_data %>%
 
 
 
+# 2.5 Fitted CoV analysis with log normal: Subset ==============================
+# log likelihood function: find MLE for CoV
+# Returns probability of sampling the subject's response 
+# from a normal distribution centered at the prompted value, with sd = prompted value * cov
+loglik_subset_lnorm = function(task_item, subj_resp, cov_val) {
+  sum(
+    ifelse(subj_resp == GIVE_ALL_MAX, 
+           # subject response was maximum: return probability of value >= 15
+           log(1 - plnorm(subj_resp, meanlog = task_item, sdlog = cov_val * task_item)),
+           # subject response was < maximum
+           dlnorm(subj_resp, meanlog = task_item, sdlog = cov_val * task_item, log = T))
+  )
+}
+
+
+# fit function
+mle_fit_subset_lnorm = function(data, fit_params) {
+  nLL = function(cov_fitted) {
+    -loglik_subset_lnorm(data$Task_item, data$Response, cov_fitted) +
+      priors_lnorm[[1]](cov_fitted)
+  }
+  iter = 0
+  fits = NULL
+  fit = NULL
+  while (is.null(fits)) {
+    try(fit <- summary(mle(nLL,
+                           start = list(cov_fitted = 0.2))), 
+        TRUE) 
+    iter = iter + 1
+    
+    if (!is.null(fit)) {
+      # TODO what's up with this 0.5??
+      fits = c(-0.5*fit@m2logL, length(data$Task_item), fit@coef[,"Estimate"])
+    } else {
+      if (iter > 500) {
+        fits = c(-9999, 0, 0)
+      }
+    }
+  }
+  names(fits) = fit_params
+  return(fits)
+}
+
+
+
+## Analysis
+fit_params_subset_lnorm = c("logL", "n", "cov_fitted")
+priors_lnorm = list()
+priors_lnorm[[1]] =  function(x) {-dlnorm(x, 0.2, 0.1, log = T)} # priors for cov value
+# priors[[1]] = function(x){0}
+
+# Pull out data to fit
+subset_data = all.data %>%
+  filter(CP_subset == "Subset",
+         Task == "Parallel",
+         Task_item %in% c(6, 8, 10))
+# compare to fitting 3, 4 as well
+# Task_item %in% c(3, 4, 6, 8, 10))
+
+# Do MLE fit for CoV from log normal
+subset_vars_lnorm = mle_fit_subset_lnorm(subset_data, fit_params_subset_lnorm)
+subset_vars_lnorm
+
+
+#' Options
+#' 1. complicated mixture model, different things happening at different numbers (15, CoV)
+#' -  may want to do log normal anyway to avoid these things
+#' 2. shape of dist. isn't Gaussian and has heavier tails: t distribution
+#' - error distributed according to t
+#' or do log t
+#' hist(pmin(15, pmax(0, round(exp(rt(1000, 100)*0.2 + log(3)), 0))), breaks = seq(-0.5, 15.5, by=1))
+#' 
+
+
+
 # 3. Fitted CoV analysis: CP ===================================================
 # Fit CoV instead of using values manually generated above
 # Then generate model data with fitted CoV
@@ -333,14 +415,14 @@ loglik_cp = function(task_item, subj_resp, cov_val, match_pct) {
     log(
       # match_pct of the time, subject's value is basically spot on
       (match_pct * (
-        pnorm(subj_resp + 0.5, mean = task_item, sd = 0.01) -
+        pnorm(subj_resp + 0.5, mean = task_item, sd = 0.01) - # this sd chosen to be super low
           pnorm(subj_resp - 0.5, mean = task_item, sd = 0.01))) +
       # (1 - match_pct) of the time, subject's value is approximation
       (1 - match_pct) * (
         # this logic copied directly from loglik_subset above
         ifelse(subj_resp == GIVE_ALL_MAX, 
                # subject response was maximum: return probability of value >= 15
-               log(1 - pnorm(subj_resp - 1, mean = task_item, sd = cov_val * task_item)),
+               log(1 - pnorm(subj_resp - 0.5, mean = task_item, sd = cov_val * task_item)),
                # subject response was < maximum
                log(pnorm(subj_resp + 0.5, mean = task_item, sd = cov_val * task_item) -
                      pnorm(subj_resp - 0.5, mean = task_item, sd = cov_val * task_item))))
@@ -351,9 +433,9 @@ loglik_cp = function(task_item, subj_resp, cov_val, match_pct) {
 
 # fit function
 mle_fit_cp = function(data, fit_params) {
-  nLL = function(cov_fitted) {
+  nLL = function(cov_fitted, match_pct_fitted) {
     -loglik_cp(data$Task_item, data$Response, cov_fitted, match_pct_fitted) +
-      priors[[1]](cov_fitted) +
+      priors[[1]](cov_fitted)
       priors[[2]](match_pct_fitted)
   }
   iter = 0
@@ -371,7 +453,7 @@ mle_fit_cp = function(data, fit_params) {
       fits = c(-0.5*fit@m2logL, length(data$Task_item), fit@coef[,"Estimate"])
     } else {
       if (iter > 500) {
-        fits = c(-9999, 0, 0, 0)
+        fits = c(-9999, length(data$Task_item), 0, 0)
       }
     }
   }
@@ -398,4 +480,11 @@ cp_data = all.data %>%
 # Do MLE fit for CoV
 cp_vars = mle_fit_cp(cp_data, fit_params_cp)
 cp_vars
+
+
+
+
+
+
+
 
