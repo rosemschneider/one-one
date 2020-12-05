@@ -17,6 +17,7 @@ library(broom.mixed)
 library(tidylog)
 library(emmeans)
 library(stats4)
+library(psych) # used for logit and logistic transformations
 
 
 # # Custom global variables
@@ -227,35 +228,36 @@ simulation_data_sub %>%
 
 
 # 2. Fitted CoV analysis: Subset ===============================================
-# Fit CoV instead of using values manually generated above
+# Fit CoV to subset knower data
 # Then generate model data with fitted CoV
 
 
 # log likelihood function: find MLE for CoV
 # Returns probability of sampling the subject's response 
 # from a normal distribution centered at the prompted value, with sd = prompted value * cov
-loglik_subset = function(task_item, subj_resp, cov_val) {
+# NB we fit a value for cov_val in log space to avoid a negative sd in pnorm calls below
+loglik_approx = function(task_item, subj_resp, cov_val) {
   sum(
     ifelse(subj_resp == GIVE_ALL_MAX, 
            # subject response was maximum: return probability of value >= 15
            log(
-             (1 - pnorm(subj_resp - 0.5, mean = task_item, sd = cov_val * task_item)) / 
+             (1 - pnorm(subj_resp - 0.5, mean = task_item, sd = exp(cov_val) * task_item)) / 
                # normalize by probability of response > 0
-               (1 - pnorm(0, mean = task_item, sd = cov_val * task_item))),
+               (1 - pnorm(0, mean = task_item, sd = exp(cov_val) * task_item))),
            # subject response was < maximum
            log(
-             (pnorm(subj_resp + 0.5, mean = task_item, sd = cov_val * task_item) -
-                   pnorm(subj_resp - 0.5, mean = task_item, sd = cov_val * task_item)) /
+             (pnorm(subj_resp + 0.5, mean = task_item, sd = exp(cov_val) * task_item) -
+                   pnorm(subj_resp - 0.5, mean = task_item, sd = exp(cov_val) * task_item)) /
                # normalize by probability of response > 0
-               (1 - pnorm(0, mean = task_item, sd = cov_val * task_item))))
+               (1 - pnorm(0, mean = task_item, sd = exp(cov_val) * task_item))))
   )
 }
 
 
 # fit function
-mle_fit_subset = function(data, fit_params) {
+mle_fit_approx = function(data, fit_params) {
   nLL = function(cov_fitted) {
-    -loglik_subset(data$Task_item, data$Response, cov_fitted) +
+    -loglik_approx(data$Task_item, data$Response, cov_fitted) +
       priors[[1]](cov_fitted)
   }
   iter = 0
@@ -263,12 +265,12 @@ mle_fit_subset = function(data, fit_params) {
   fit = NULL
   while (is.null(fits)) {
     try(fit <- summary(mle(nLL,
-                           start = list(cov_fitted = 0.2))), 
+                           start = list(cov_fitted = log(0.2)))), # fitting log value here: exp(-1.6) =~ 0.2
         TRUE) 
     iter = iter + 1
     
     if (!is.null(fit)) {
-      # TODO what's up with this 0.5??
+      # m2logL is deviance (-2x LL)
       fits = c(-0.5*fit@m2logL, length(data$Task_item), fit@coef[,"Estimate"])
     } else {
       if (iter > 500) {
@@ -285,8 +287,8 @@ mle_fit_subset = function(data, fit_params) {
 ## Analysis
 fit_params_subset = c("logL", "n", "cov_fitted")
 priors = list()
-priors[[1]] =  function(x) {-dnorm(x, 0.2, 0.1, log = T)} # priors for cov value
-# priors[[1]] = function(x){0}
+priors[[1]] =  function(x) {-dnorm(x, log(0.3), 0.1, log = T)} # priors for cov value in log space
+# priors[[1]] = function(x){0} # NB: without prior, this fits really high CoV (~.7)
 
 # Pull out data to fit
 subset_data = all.data %>%
@@ -297,24 +299,50 @@ subset_data = all.data %>%
          # Task_item %in% c(3, 4, 6, 8, 10))
 
 # Do MLE fit for CoV
-subset_vars = mle_fit_subset(subset_data, fit_params_subset)
+subset_vars = mle_fit_approx(subset_data, fit_params_subset)
 subset_vars
+exp(subset_vars['cov_fitted'])
 
 # simulate
 # TODO these simulations seem highly variable, maybe we do 1000s of runs?
-subset_data = subset_data %>%
+# subset_data = subset_data %>%
+#   rowwise() %>%
+#   mutate(simulation_est = get_approximate_estimate(Task_item, 
+#                                                    exp(subset_vars['cov_fitted'])))
+# # sanity check
+# table(subset_data$simulation_est)
+# # plot simulated data
+# subset_data %>%
+#   ggplot(aes(x = simulation_est)) + # Plot model simulation
+#   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+#   geom_histogram(color = 'black', binwidth = 1) +
+#   theme_bw(base_size = 18) +
+#   theme(legend.position = "none",
+#         axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+#         panel.grid = element_blank()) +
+#   facet_grid(~Task_item) +
+#   ylim(c(0, 65)) +
+#   labs(x = 'Number of items given', y = 'Frequency',
+#        title = paste0("Simulated Subset data, (fitted) CoV=", round(exp(subset_vars['cov_fitted']), 2)))
+# 
+
+
+# large scale simulation
+SAMPLES = 10000
+obs = length(subset_data$Task_item)
+subset_simulation_data = data.frame(
+  Task_item = rep(unique(subset_data$Task_item), SAMPLES)
+)
+subset_simulation_data = subset_simulation_data %>%
   rowwise() %>%
   mutate(simulation_est = get_approximate_estimate(Task_item, 
-                                                   subset_vars['cov_fitted']))
-# sanity check
-table(subset_data$simulation_est)
+                                                   exp(subset_vars['cov_fitted'])))
 
-
-# plot simulated data
-subset_data %>%
+scale_factor = obs / SAMPLES
+subset_simulation_data %>%
   ggplot(aes(x = simulation_est)) + # Plot model simulation
   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
-  geom_histogram(color = 'black', binwidth = 1) +
+  geom_histogram(aes(y = ..count.. * scale_factor),color = 'black', binwidth = 1) +
   theme_bw(base_size = 18) +
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
@@ -322,21 +350,31 @@ subset_data %>%
   facet_grid(~Task_item) +
   ylim(c(0, 65)) +
   labs(x = 'Number of items given', y = 'Frequency',
-       title = paste0("Simulated Subset data, (fitted) CoV=", round(subset_vars['cov_fitted'], 2)))
+       title = paste0("Simulated Subset data, (fitted) CoV=", round(exp(subset_vars['cov_fitted']), 2)))
 
 
 
 # 2.5 Fitted CoV analysis with log normal: Subset ==============================
+
+# NB: this seems not to work because it's not able to exponentiate (log) CoV
+# during the fitting process
+
+
 # log likelihood function: find MLE for CoV
 # Returns probability of sampling the subject's response 
-# from a normal distribution centered at the prompted value, with sd = prompted value * cov
+# from a log normal distribution centered at the prompted value, with sd = log(cov)
 loglik_subset_lnorm = function(task_item, subj_resp, cov_val) {
   sum(
     ifelse(subj_resp == GIVE_ALL_MAX, 
            # subject response was maximum: return probability of value >= 15
-           log(1 - plnorm(subj_resp, meanlog = task_item, sdlog = cov_val * task_item)),
+           log(
+             1 - plnorm(subj_resp, meanlog = log(task_item), sdlog = cov_val)
+           ),
            # subject response was < maximum
-           dlnorm(subj_resp, meanlog = task_item, sdlog = cov_val * task_item, log = T))
+           log(
+             plnorm(subj_resp + 0.5, meanlog = log(task_item), sdlog = cov_val, log.p = T) -
+               plnorm(subj_resp - 0.5, meanlog = log(task_item), sdlog = cov_val, log.p = T)
+           ))
   )
 }
 
@@ -352,12 +390,13 @@ mle_fit_subset_lnorm = function(data, fit_params) {
   fit = NULL
   while (is.null(fits)) {
     try(fit <- summary(mle(nLL,
-                           start = list(cov_fitted = 0.2))), 
+                           # start = list(cov_fitted = 0.2))),
+                           start = list(cov_fitted = log(0.2)))), # log CoV
         TRUE) 
     iter = iter + 1
     
     if (!is.null(fit)) {
-      # TODO what's up with this 0.5??
+      # m2logL is deviance (-2x LL)
       fits = c(-0.5*fit@m2logL, length(data$Task_item), fit@coef[,"Estimate"])
     } else {
       if (iter > 500) {
@@ -374,8 +413,9 @@ mle_fit_subset_lnorm = function(data, fit_params) {
 ## Analysis
 fit_params_subset_lnorm = c("logL", "n", "cov_fitted")
 priors_lnorm = list()
-priors_lnorm[[1]] =  function(x) {-dlnorm(x, 0.2, 0.1, log = T)} # priors for cov value
-# priors[[1]] = function(x){0}
+# priors_lnorm[[1]] =  function(x) {-dlnorm(x, 0.2, 0.1, log = T)} # priors for cov value
+# priors_lnorm[[1]] =  function(x) {-dlnorm(x, log(0.2), 0.1, log = T)} # priors for cov value in log space
+priors_lnorm[[1]] = function(x){0}
 
 # Pull out data to fit
 subset_data = all.data %>%
@@ -400,32 +440,115 @@ subset_vars_lnorm
 #' 
 
 
-
 # 3. Fitted CoV analysis: CP ===================================================
+# Fit CoV to CP knower data
+# Then generate model data with fitted CoV
+
+## Analysis
+fit_params_cp = c("logL", "n", "cov_fitted")
+priors = list()
+priors[[1]] =  function(x) {-dnorm(x, subset_vars['cov_fitted'], 0.1, log = T)} # priors for cov value in log space
+# priors[[1]] = function(x){0} # NB: without prior, this fits really high CoV (~.7)
+
+# Pull out data to fit
+cp_data = all.data %>%
+  filter(CP_subset == "CP",
+         Task == "Parallel",
+         Task_item %in% c(6, 8, 10))
+         # compare to fitting 3, 4 as well
+         # Task_item %in% c(3, 4, 6, 8, 10))
+
+# Do MLE fit for CoV
+cp_vars = mle_fit_approx(cp_data, fit_params_cp)
+cp_vars
+exp(cp_vars['cov_fitted'])
+
+
+# simulate
+# TODO these simulations seem highly variable, maybe we do 1000s of runs?
+cp_data = subset_data %>%
+  rowwise() %>%
+  mutate(simulation_est = get_approximate_estimate(Task_item,
+                                                   exp(cp_vars['cov_fitted'])))
+# sanity check
+# table(cp_data$simulation_est)
+# plot simulated data
+# cp_data %>%
+#   ggplot(aes(x = simulation_est)) + # Plot model simulation
+#   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+#   geom_histogram(color = 'black', binwidth = 1) +
+#   theme_bw(base_size = 18) +
+#   theme(legend.position = "none",
+#         axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+#         panel.grid = element_blank()) +
+#   facet_grid(~Task_item) +
+#   ylim(c(0, 65)) +
+#   labs(x = 'Number of items given', y = 'Frequency',
+#        title = paste0("Simulated Subset data, (fitted) CoV=", round(exp(cp_vars['cov_fitted']), 2)))
+
+
+
+# large scale simulation
+SAMPLES = 10000
+obs = length(cp_data$Task_item)
+cp_simulation_data = data.frame(
+  Task_item = rep(unique(cp_data$Task_item), SAMPLES)
+)
+cp_simulation_data = cp_simulation_data %>%
+  rowwise() %>%
+  mutate(simulation_est = get_approximate_estimate(Task_item, 
+                                                   exp(cp_vars['cov_fitted'])))
+
+scale_factor = obs / SAMPLES
+cp_simulation_data %>%
+  ggplot(aes(x = simulation_est)) + # Plot model simulation
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+  geom_histogram(aes(y = ..count.. * scale_factor),color = 'black', binwidth = 1) +
+  theme_bw(base_size = 18) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+        panel.grid = element_blank()) +
+  facet_grid(~Task_item) +
+  ylim(c(0, 65)) +
+  labs(x = 'Number of items given', y = 'Frequency',
+       title = paste0("Simulated CP data, (fitted) CoV=", round(exp(cp_vars['cov_fitted']), 2)))
+
+
+
+
+
+# 4. Fitted CoV analysis: CP with exact match percent ==========================
 # Fit CoV instead of using values manually generated above
 # Then generate model data with fitted CoV
+
 
 # log likelihood function: find MLE for CoV and exact match percent
 # match_pct of the time, returns probability of sampling the subject's response
 # from a normal distribution centered at the prompted value, with sd -> 0
 # (1-match_pct) of the time, returns probability of sampling the subject's response 
 # from a normal distribution centered at the prompted value, with sd = prompted value * cov
-loglik_cp = function(task_item, subj_resp, cov_val, match_pct) {
+loglik_cp = function(task_item, subj_resp, cov_val, match_log_odds) {
+  print(paste("p:",logistic(match_log_odds)))
+  print(paste("cov:",exp(cov_val)))
   sum(
     log(
       # match_pct of the time, subject's value is basically spot on
-      (match_pct * (
-        pnorm(subj_resp + 0.5, mean = task_item, sd = 0.01) - # this sd chosen to be super low
-          pnorm(subj_resp - 0.5, mean = task_item, sd = 0.01))) +
+      (logistic(match_log_odds) * (
+        subj_resp == task_item)) +
       # (1 - match_pct) of the time, subject's value is approximation
-      (1 - match_pct) * (
-        # this logic copied directly from loglik_subset above
+      (1 - logistic(match_log_odds)) * (
+        # this logic copied from loglik_approx above
         ifelse(subj_resp == GIVE_ALL_MAX, 
                # subject response was maximum: return probability of value >= 15
-               log(1 - pnorm(subj_resp - 0.5, mean = task_item, sd = cov_val * task_item)),
+               (1 - pnorm(subj_resp - 0.5, mean = task_item, sd = exp(cov_val) * task_item)) /
+                 # normalize by probability of response > 0
+                 (1 - pnorm(0, mean = task_item, sd = exp(cov_val) * task_item)),
                # subject response was < maximum
-               log(pnorm(subj_resp + 0.5, mean = task_item, sd = cov_val * task_item) -
-                     pnorm(subj_resp - 0.5, mean = task_item, sd = cov_val * task_item))))
+               (pnorm(subj_resp + 0.5, mean = task_item, sd = exp(cov_val) * task_item) -
+                     pnorm(subj_resp - 0.5, mean = task_item, sd = exp(cov_val) * task_item)) /
+                 (1 - pnorm(0, mean = task_item, sd = exp(cov_val) * task_item))
+        )
+      )
     )
   )
 }
@@ -433,26 +556,26 @@ loglik_cp = function(task_item, subj_resp, cov_val, match_pct) {
 
 # fit function
 mle_fit_cp = function(data, fit_params) {
-  nLL = function(cov_fitted, match_pct_fitted) {
-    -loglik_cp(data$Task_item, data$Response, cov_fitted, match_pct_fitted) +
+  nLL = function(cov_fitted, match_log_odds_fitted) {
+    -loglik_cp(data$Task_item, data$Response, cov_fitted, match_log_odds_fitted) +
       priors[[1]](cov_fitted)
-      priors[[2]](match_pct_fitted)
+      priors[[2]](match_log_odds_fitted)
   }
   iter = 0
   fits = NULL
   fit = NULL
   while (is.null(fits)) {
     try(fit <- summary(mle(nLL,
-                           start = list(cov_fitted = 0.2,
-                                        match_pct_fitted = 0.25))), 
+                           start = list(cov_fitted = log(0.2),
+                                        match_log_odds_fitted = logit(0.25)))), # convert starting probability to log odds
         TRUE) 
     iter = iter + 1
     
     if (!is.null(fit)) {
-      # TODO what's up with this 0.5??
+      # m2logL is deviance (-2x LL)
       fits = c(-0.5*fit@m2logL, length(data$Task_item), fit@coef[,"Estimate"])
     } else {
-      if (iter > 500) {
+      if (iter > 1000) {
         fits = c(-9999, length(data$Task_item), 0, 0)
       }
     }
@@ -464,23 +587,27 @@ mle_fit_cp = function(data, fit_params) {
 
 
 ## Analysis
-fit_params_cp = c("logL", "n", "cov_fitted", "match_pct_fitted")
+fit_params_cp = c("logL", "n", "cov_fitted", "match_log_odds_fitted")
 priors = list()
-priors[[1]] =  function(x) {-dnorm(x, 0.2, 0.1, log = T)} # priors for cov value
+priors[[1]] = function(x) {-dnorm(x, log(0.2), 0.1, log = T)} # priors for cov value in log space
 # priors[[1]] = function(x){0}
-priors[[2]] =  function(x) {-dnorm(x, 0.25, 0.1, log = T)} # priors for match pct value
+priors[[2]] =  function(x) {-dnorm(logistic(x), 0.75, 0.1, log = T)} # priors for match pct log odds
 # priors[[2]] = function(x){0}
+
 
 # Pull out data to fit
 cp_data = all.data %>%
   filter(CP_subset == "CP",
          Task == "Parallel",
          Task_item %in% c(6, 8, 10))
+         # check fit with all values
+         # Task_item %in% c(3, 4, 6, 8, 10))
 
 # Do MLE fit for CoV
 cp_vars = mle_fit_cp(cp_data, fit_params_cp)
 cp_vars
-
+exp(cp_vars['cov_fitted'])
+logistic(cp_vars['match_log_odds_fitted'])
 
 
 
