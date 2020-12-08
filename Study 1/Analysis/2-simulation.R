@@ -527,9 +527,8 @@ cp_simulation_data %>%
 # from a normal distribution centered at the prompted value, with sd -> 0
 # (1-match_pct) of the time, returns probability of sampling the subject's response 
 # from a normal distribution centered at the prompted value, with sd = prompted value * cov
+# TODO clean this up, move logic to separate functions, etc.
 loglik_cp = function(task_item, subj_resp, cov_val, match_log_odds) {
-  print(paste("p:",logistic(match_log_odds)))
-  print(paste("cov:",exp(cov_val)))
   sum(
     log(
       # match_pct of the time, subject's value is basically spot on
@@ -553,12 +552,11 @@ loglik_cp = function(task_item, subj_resp, cov_val, match_log_odds) {
   )
 }
 
-
 # fit function
 mle_fit_cp = function(data, fit_params) {
   nLL = function(cov_fitted, match_log_odds_fitted) {
     -loglik_cp(data$Task_item, data$Response, cov_fitted, match_log_odds_fitted) +
-      priors[[1]](cov_fitted)
+      priors[[1]](cov_fitted) +
       priors[[2]](match_log_odds_fitted)
   }
   iter = 0
@@ -585,15 +583,29 @@ mle_fit_cp = function(data, fit_params) {
 }
 
 
+# Approximation function: generates integer estimate by drawing from
+# normal distribution centered at number with sd = number * CoV
+get_mixture_cp_estimate = function(number, CoV, match_percent) {
+  if (rbinom(1, 1, match_percent)) {
+    # match_percent of the time, return exact match
+    return(number)
+  } else {
+    # sample from normal distribution: return 0 if sample < 0, 15 if sample > 15
+    return(
+      min(max(round(rnorm(1, number, number * CoV), 0), 0), GIVE_ALL_MAX)
+    )
+  }
+}
 
-## Analysis
+
+
+# Fit CoV and match percent 
 fit_params_cp = c("logL", "n", "cov_fitted", "match_log_odds_fitted")
 priors = list()
 priors[[1]] = function(x) {-dnorm(x, log(0.2), 0.1, log = T)} # priors for cov value in log space
 # priors[[1]] = function(x){0}
-priors[[2]] =  function(x) {-dnorm(logistic(x), 0.75, 0.1, log = T)} # priors for match pct log odds
+priors[[2]] =  function(x) {-dnorm(logistic(x), 0.25, 0.1, log = T)} # priors for match pct log odds
 # priors[[2]] = function(x){0}
-
 
 # Pull out data to fit
 cp_data = all.data %>%
@@ -603,11 +615,46 @@ cp_data = all.data %>%
          # check fit with all values
          # Task_item %in% c(3, 4, 6, 8, 10))
 
-# Do MLE fit for CoV
+# MLE fit for CoV
+# TODO fit this as a percent of subjects rather than responses
 cp_vars = mle_fit_cp(cp_data, fit_params_cp)
 cp_vars
 exp(cp_vars['cov_fitted'])
 logistic(cp_vars['match_log_odds_fitted'])
+
+
+
+
+# Simulate responses based on fitted CoV and match percent
+SAMPLES = 10000
+obs = length(cp_data$Task_item)
+cp_simulation_data = data.frame(
+  Task_item = rep(unique(cp_data$Task_item), SAMPLES)
+)
+cp_simulation_data = cp_simulation_data %>%
+  rowwise() %>%
+  mutate(simulation_est = get_mixture_cp_estimate(Task_item, 
+                                                  exp(cp_vars['cov_fitted']), 
+                                                  logistic(cp_vars['match_log_odds_fitted'])))
+# sanity check
+table(cp_simulation_data$simulation_est)
+
+scale_factor = obs / SAMPLES
+cp_simulation_data %>%
+  ggplot(aes(x = simulation_est)) + # Plot model simulation
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+  geom_histogram(aes(y = ..count.. * scale_factor), color = 'black', binwidth = 1) +
+  theme_bw(base_size = 18) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+        panel.grid = element_blank()) +
+  facet_grid(~Task_item) +
+  #ylim(c(0, 65)) +
+  labs(x = 'Number of items given', y = 'Frequency',
+       title = paste0("Simulated CP data, (fitted) CoV=", 
+                      round(exp(cp_vars['cov_fitted']), 2),
+                      ", (fitted) match pct.=", 
+                      round(logistic(cp_vars['match_log_odds_fitted']), 2)))
 
 
 
