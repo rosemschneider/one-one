@@ -145,7 +145,7 @@ make_dist_plot(approximation_sim, "Parallel", TASK_ITEMS, "Simulated approx. dat
 # 1.5. Modify simulations above to include exact match
 # Globals for CP simulation
 COV_CP = 0.3 # CoV to use for this population
-EXACT_MATCH_PROP = 0.25 # Proportion of people using exact match
+EXACT_MATCH_PROP = 0.25 # Proportion *of subjects* using exact match
 
 # Simulate the data
 approximation_sim_exact_match = all.data %>%
@@ -186,7 +186,7 @@ subset_data = all.data %>%
          Task == "Parallel",
          Task_item %in% c(6, 8, 10)) %>%
   mutate(is_max = Response == GIVE_ALL_MAX)
-# What percent of people are maximizing? (best estimate)
+# What percent *of subjects* are maximizing? (best estimate)
 give_all_prop = subset_data %>%
   #group_by(Task_item) %>%
   summarize(participants = n(),
@@ -336,7 +336,7 @@ subset_simulation_data_approx = data.frame(
 subset_simulation_data_approx = subset_simulation_data_approx %>%
   rowwise() %>%
   mutate(simulation_est = get_approximate_estimate(Task_item, 
-                                                   exp(subset_vars['cov_fitted'])))
+                                                   exp(subset_vars_approx['cov_fitted'])))
 
 scale_factor = obs / SAMPLES
 subset_simulation_data_approx %>%
@@ -350,7 +350,7 @@ subset_simulation_data_approx %>%
   facet_grid(~Task_item) +
   ylim(c(0, 65)) +
   labs(x = 'Number of items given', y = 'Frequency',
-       title = paste0("Simulated Subset data, (fitted) CoV=", round(exp(subset_vars['cov_fitted']), 2)))
+       title = paste0("Simulated Subset data, (fitted) CoV=", round(exp(subset_vars_approx['cov_fitted']), 2)))
 
 
 
@@ -447,7 +447,7 @@ subset_simulation_data_approx %>%
 ## Analysis
 fit_params_cp_approx = c("logL", "n", "cov_fitted")
 priors = list()
-priors[[1]] =  function(x) {-dnorm(x, subset_vars['cov_fitted'], 0.1, log = T)} # priors for cov value in log space
+priors[[1]] =  function(x) {-dnorm(x, subset_vars_approx['cov_fitted'], 0.1, log = T)} # priors for cov value in log space
 # priors[[1]] = function(x){0} # NB: without prior, this fits really high CoV (~.7)
 
 # Pull out data to fit
