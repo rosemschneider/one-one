@@ -98,9 +98,9 @@ HIGH_COV_SIM = 0.5
 
 
 # Generate simulated matching data
-simulation_data_manual = all.data %>%
+approximation_sim = all.data %>%
   filter(Task == "Parallel",
-         CP_subset == "CP") %>%
+         CP_subset == "CP") %>% # this doesn't actually matter, just need to match a condition
   rowwise() %>%
   mutate(approximate_estimate_low = get_approximate_estimate(Task_item, LOW_COV_SIM),
          approximate_estimate_med = get_approximate_estimate(Task_item, MED_COV_SIM),
@@ -112,7 +112,7 @@ simulation_data_manual = all.data %>%
   mutate(COV_level = ifelse(approximation_level == "approximate_estimate_low", "0.1", 
                             ifelse(approximation_level == "approximate_estimate_med", "0.25", "0.5")))
 # sanity check
-table(simulation_data_manual$approximation_response) 
+table(approximation_sim$approximation_response) 
 
 
 ##plot this
@@ -138,7 +138,7 @@ make_dist_plot <- function(df, task, numbers, title) { #numbers should be a vect
 }
 
 # Plot results
-make_dist_plot(simulation_data_manual, "Parallel", TASK_ITEMS, "Simulated approx. data: Low, med., high COV")
+make_dist_plot(approximation_sim, "Parallel", TASK_ITEMS, "Simulated approx. data: Low, med., high COV")
 
 
 
@@ -148,7 +148,7 @@ COV_CP = 0.3 # CoV to use for this population
 EXACT_MATCH_PROP = 0.25 # Proportion of people using exact match
 
 # Simulate the data
-simulation_data_cp = all.data %>%
+approximation_sim_exact_match = all.data %>%
   filter(Task == "Parallel",
          CP_subset == "CP") %>%
   group_by(SID) %>%
@@ -161,10 +161,10 @@ simulation_data_cp = all.data %>%
     get_approximate_estimate(Task_item, COV_CP)
   ))
 # sanity check
-table(simulation_data_cp$simulation_est) 
+table(approximation_sim_exact_match$simulation_est) 
 
 # Plot
-simulation_data_cp %>%
+approximation_sim_exact_match %>%
   ggplot(aes(x = simulation_est)) + # Plot model simulation
   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
   geom_histogram(color = 'black', binwidth = 1) +
@@ -195,7 +195,7 @@ give_all_prop = subset_data %>%
   select(max_pct)
 
 # Simulate the data
-simulation_data_sub = all.data %>%
+approximation_sim_give_all = all.data %>%
   filter(Task == "Parallel",
          CP_subset == "Subset") %>%
   group_by(SID) %>%
@@ -208,11 +208,11 @@ simulation_data_sub = all.data %>%
     get_approximate_estimate(Task_item, COV_SUB)
   ))
 
-table(simulation_data_sub$category) # sanity check
-table(simulation_data_sub$simulation_est) # sanity check
+table(approximation_sim_give_all$category) # sanity check
+table(approximation_sim_give_all$simulation_est) # sanity check
 
 # Plot
-simulation_data_sub %>%
+approximation_sim_give_all %>%
   ggplot(aes(x = simulation_est)) + # Plot model simulation
   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
   geom_histogram(color = 'black', binwidth = 1) +
@@ -285,7 +285,7 @@ mle_fit_approx = function(data, fit_params) {
 
 
 ## Analysis
-fit_params_subset = c("logL", "n", "cov_fitted")
+fit_params_subset_approx = c("logL", "n", "cov_fitted")
 priors = list()
 priors[[1]] =  function(x) {-dnorm(x, log(0.3), 0.1, log = T)} # priors for cov value in log space
 # priors[[1]] = function(x){0} # NB: without prior, this fits really high CoV (~.7)
@@ -299,9 +299,9 @@ subset_data = all.data %>%
          # Task_item %in% c(3, 4, 6, 8, 10))
 
 # Do MLE fit for CoV
-subset_vars = mle_fit_approx(subset_data, fit_params_subset)
-subset_vars
-exp(subset_vars['cov_fitted'])
+subset_vars_approx = mle_fit_approx(subset_data, fit_params_subset_approx)
+subset_vars_approx
+exp(subset_vars_approx['cov_fitted'])
 
 # simulate
 # TODO these simulations seem highly variable, maybe we do 1000s of runs?
@@ -330,16 +330,16 @@ exp(subset_vars['cov_fitted'])
 # large scale simulation
 SAMPLES = 10000
 obs = length(subset_data$Task_item)
-subset_simulation_data = data.frame(
+subset_simulation_data_approx = data.frame(
   Task_item = rep(unique(subset_data$Task_item), SAMPLES)
 )
-subset_simulation_data = subset_simulation_data %>%
+subset_simulation_data_approx = subset_simulation_data_approx %>%
   rowwise() %>%
   mutate(simulation_est = get_approximate_estimate(Task_item, 
                                                    exp(subset_vars['cov_fitted'])))
 
 scale_factor = obs / SAMPLES
-subset_simulation_data %>%
+subset_simulation_data_approx %>%
   ggplot(aes(x = simulation_est)) + # Plot model simulation
   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
   geom_histogram(aes(y = ..count.. * scale_factor),color = 'black', binwidth = 1) +
@@ -363,71 +363,71 @@ subset_simulation_data %>%
 # log likelihood function: find MLE for CoV
 # Returns probability of sampling the subject's response 
 # from a log normal distribution centered at the prompted value, with sd = log(cov)
-loglik_subset_lnorm = function(task_item, subj_resp, cov_val) {
-  sum(
-    ifelse(subj_resp == GIVE_ALL_MAX, 
-           # subject response was maximum: return probability of value >= 15
-           log(
-             1 - plnorm(subj_resp, meanlog = log(task_item), sdlog = cov_val)
-           ),
-           # subject response was < maximum
-           log(
-             plnorm(subj_resp + 0.5, meanlog = log(task_item), sdlog = cov_val, log.p = T) -
-               plnorm(subj_resp - 0.5, meanlog = log(task_item), sdlog = cov_val, log.p = T)
-           ))
-  )
-}
-
-
-# fit function
-mle_fit_subset_lnorm = function(data, fit_params) {
-  nLL = function(cov_fitted) {
-    -loglik_subset_lnorm(data$Task_item, data$Response, cov_fitted) +
-      priors_lnorm[[1]](cov_fitted)
-  }
-  iter = 0
-  fits = NULL
-  fit = NULL
-  while (is.null(fits)) {
-    try(fit <- summary(mle(nLL,
-                           # start = list(cov_fitted = 0.2))),
-                           start = list(cov_fitted = log(0.2)))), # log CoV
-        TRUE) 
-    iter = iter + 1
-    
-    if (!is.null(fit)) {
-      # m2logL is deviance (-2x LL)
-      fits = c(-0.5*fit@m2logL, length(data$Task_item), fit@coef[,"Estimate"])
-    } else {
-      if (iter > 500) {
-        fits = c(-9999, 0, 0)
-      }
-    }
-  }
-  names(fits) = fit_params
-  return(fits)
-}
+# loglik_subset_lnorm = function(task_item, subj_resp, cov_val) {
+#   sum(
+#     ifelse(subj_resp == GIVE_ALL_MAX, 
+#            # subject response was maximum: return probability of value >= 15
+#            log(
+#              1 - plnorm(subj_resp, meanlog = log(task_item), sdlog = cov_val)
+#            ),
+#            # subject response was < maximum
+#            log(
+#              plnorm(subj_resp + 0.5, meanlog = log(task_item), sdlog = cov_val, log.p = T) -
+#                plnorm(subj_resp - 0.5, meanlog = log(task_item), sdlog = cov_val, log.p = T)
+#            ))
+#   )
+# }
+# 
+# 
+# # fit function
+# mle_fit_subset_lnorm = function(data, fit_params) {
+#   nLL = function(cov_fitted) {
+#     -loglik_subset_lnorm(data$Task_item, data$Response, cov_fitted) +
+#       priors_lnorm[[1]](cov_fitted)
+#   }
+#   iter = 0
+#   fits = NULL
+#   fit = NULL
+#   while (is.null(fits)) {
+#     try(fit <- summary(mle(nLL,
+#                            # start = list(cov_fitted = 0.2))),
+#                            start = list(cov_fitted = log(0.2)))), # log CoV
+#         TRUE) 
+#     iter = iter + 1
+#     
+#     if (!is.null(fit)) {
+#       # m2logL is deviance (-2x LL)
+#       fits = c(-0.5*fit@m2logL, length(data$Task_item), fit@coef[,"Estimate"])
+#     } else {
+#       if (iter > 500) {
+#         fits = c(-9999, 0, 0)
+#       }
+#     }
+#   }
+#   names(fits) = fit_params
+#   return(fits)
+# }
 
 
 
 ## Analysis
-fit_params_subset_lnorm = c("logL", "n", "cov_fitted")
-priors_lnorm = list()
+# fit_params_subset_lnorm = c("logL", "n", "cov_fitted")
+# priors_lnorm = list()
 # priors_lnorm[[1]] =  function(x) {-dlnorm(x, 0.2, 0.1, log = T)} # priors for cov value
 # priors_lnorm[[1]] =  function(x) {-dlnorm(x, log(0.2), 0.1, log = T)} # priors for cov value in log space
-priors_lnorm[[1]] = function(x){0}
+# priors_lnorm[[1]] = function(x){0}
 
 # Pull out data to fit
-subset_data = all.data %>%
-  filter(CP_subset == "Subset",
-         Task == "Parallel",
-         Task_item %in% c(6, 8, 10))
+# subset_data = all.data %>%
+#   filter(CP_subset == "Subset",
+#          Task == "Parallel",
+#          Task_item %in% c(6, 8, 10))
 # compare to fitting 3, 4 as well
 # Task_item %in% c(3, 4, 6, 8, 10))
 
 # Do MLE fit for CoV from log normal
-subset_vars_lnorm = mle_fit_subset_lnorm(subset_data, fit_params_subset_lnorm)
-subset_vars_lnorm
+# subset_vars_lnorm = mle_fit_subset_lnorm(subset_data, fit_params_subset_lnorm)
+# subset_vars_lnorm
 
 
 #' Options
@@ -445,7 +445,7 @@ subset_vars_lnorm
 # Then generate model data with fitted CoV
 
 ## Analysis
-fit_params_cp = c("logL", "n", "cov_fitted")
+fit_params_cp_approx = c("logL", "n", "cov_fitted")
 priors = list()
 priors[[1]] =  function(x) {-dnorm(x, subset_vars['cov_fitted'], 0.1, log = T)} # priors for cov value in log space
 # priors[[1]] = function(x){0} # NB: without prior, this fits really high CoV (~.7)
@@ -459,17 +459,18 @@ cp_data = all.data %>%
          # Task_item %in% c(3, 4, 6, 8, 10))
 
 # Do MLE fit for CoV
-cp_vars = mle_fit_approx(cp_data, fit_params_cp)
-cp_vars
-exp(cp_vars['cov_fitted'])
+cp_vars_approx = mle_fit_approx(cp_data, fit_params_cp_approx)
+cp_vars_approx
+exp(cp_vars_approx['cov_fitted'])
 
 
 # simulate
 # TODO these simulations seem highly variable, maybe we do 1000s of runs?
-cp_data = subset_data %>%
-  rowwise() %>%
-  mutate(simulation_est = get_approximate_estimate(Task_item,
-                                                   exp(cp_vars['cov_fitted'])))
+# cp_data = subset_data %>%
+#   rowwise() %>%
+#   mutate(simulation_est = get_approximate_estimate(Task_item,
+#                                                    exp(cp_vars['cov_fitted'])))
+
 # sanity check
 # table(cp_data$simulation_est)
 # plot simulated data
@@ -491,16 +492,16 @@ cp_data = subset_data %>%
 # large scale simulation
 SAMPLES = 10000
 obs = length(cp_data$Task_item)
-cp_simulation_data = data.frame(
+cp_simulation_data_approx = data.frame(
   Task_item = rep(unique(cp_data$Task_item), SAMPLES)
 )
-cp_simulation_data = cp_simulation_data %>%
+cp_simulation_data_approx = cp_simulation_data_approx %>%
   rowwise() %>%
   mutate(simulation_est = get_approximate_estimate(Task_item, 
-                                                   exp(cp_vars['cov_fitted'])))
+                                                   exp(cp_vars_approx['cov_fitted'])))
 
 scale_factor = obs / SAMPLES
-cp_simulation_data %>%
+cp_simulation_data_approx %>%
   ggplot(aes(x = simulation_est)) + # Plot model simulation
   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
   geom_histogram(aes(y = ..count.. * scale_factor),color = 'black', binwidth = 1) +
@@ -511,24 +512,24 @@ cp_simulation_data %>%
   facet_grid(~Task_item) +
   ylim(c(0, 65)) +
   labs(x = 'Number of items given', y = 'Frequency',
-       title = paste0("Simulated CP data, (fitted) CoV=", round(exp(cp_vars['cov_fitted']), 2)))
+       title = paste0("Simulated CP data, (fitted) CoV=", round(exp(cp_vars_approx['cov_fitted']), 2)))
 
 
 
 
 
 # 4. Fitted CoV analysis: CP with exact match percent ==========================
-# Fit CoV instead of using values manually generated above
-# Then generate model data with fitted CoV
+# Fit CoV instead of using values manually generated,
+# along with percent of people who are doing "exact match".
+# Then generate model data with fitted CoV and exact match percent
 
 
 # log likelihood function: find MLE for CoV and exact match percent
-# match_pct of the time, returns probability of sampling the subject's response
-# from a normal distribution centered at the prompted value, with sd -> 0
-# (1-match_pct) of the time, returns probability of sampling the subject's response 
+# logistic(match_log_odds) percent of the time, returns the exact value
+# (1-logistic(match_log_odds)) percent of the time, returns probability of sampling the subject's response 
 # from a normal distribution centered at the prompted value, with sd = prompted value * cov
 # TODO clean this up, move logic to separate functions, etc.
-loglik_cp = function(task_item, subj_resp, cov_val, match_log_odds) {
+loglik_exact_match = function(task_item, subj_resp, cov_val, match_log_odds) {
   sum(
     log(
       # match_pct of the time, subject's value is basically spot on
@@ -553,9 +554,9 @@ loglik_cp = function(task_item, subj_resp, cov_val, match_log_odds) {
 }
 
 # fit function
-mle_fit_cp = function(data, fit_params) {
+mle_fit_exact_match = function(data, fit_params) {
   nLL = function(cov_fitted, match_log_odds_fitted) {
-    -loglik_cp(data$Task_item, data$Response, cov_fitted, match_log_odds_fitted) +
+    -loglik_exact_match(data$Task_item, data$Response, cov_fitted, match_log_odds_fitted) +
       priors[[1]](cov_fitted) +
       priors[[2]](match_log_odds_fitted)
   }
@@ -565,7 +566,7 @@ mle_fit_cp = function(data, fit_params) {
   while (is.null(fits)) {
     try(fit <- summary(mle(nLL,
                            start = list(cov_fitted = log(0.2),
-                                        match_log_odds_fitted = logit(0.25)))), # convert starting probability to log odds
+                                        match_log_odds_fitted = logit(0.1)))), # convert starting probability to log odds
         TRUE) 
     iter = iter + 1
     
@@ -585,7 +586,8 @@ mle_fit_cp = function(data, fit_params) {
 
 # Approximation function: generates integer estimate by drawing from
 # normal distribution centered at number with sd = number * CoV
-get_mixture_cp_estimate = function(number, CoV, match_percent) {
+# or by simply returning the exact value match_percent of the time
+get_mixture_exact_match_estimate = function(number, CoV, match_percent) {
   if (rbinom(1, 1, match_percent)) {
     # match_percent of the time, return exact match
     return(number)
@@ -600,11 +602,11 @@ get_mixture_cp_estimate = function(number, CoV, match_percent) {
 
 
 # Fit CoV and match percent 
-fit_params_cp = c("logL", "n", "cov_fitted", "match_log_odds_fitted")
+fit_params_cp_exact_match = c("logL", "n", "cov_fitted", "match_log_odds_fitted")
 priors = list()
 priors[[1]] = function(x) {-dnorm(x, log(0.2), 0.1, log = T)} # priors for cov value in log space
 # priors[[1]] = function(x){0}
-priors[[2]] =  function(x) {-dnorm(logistic(x), 0.25, 0.1, log = T)} # priors for match pct log odds
+priors[[2]] =  function(x) {-dnorm(logistic(x), 0.1, 0.1, log = T)} # priors for match pct log odds
 # priors[[2]] = function(x){0}
 
 # Pull out data to fit
@@ -615,12 +617,12 @@ cp_data = all.data %>%
          # check fit with all values
          # Task_item %in% c(3, 4, 6, 8, 10))
 
-# MLE fit for CoV
+# MLE fit for CoV and exact match percent
 # TODO fit this as a percent of subjects rather than responses
-cp_vars = mle_fit_cp(cp_data, fit_params_cp)
-cp_vars
-exp(cp_vars['cov_fitted'])
-logistic(cp_vars['match_log_odds_fitted'])
+cp_vars_exact_match = mle_fit_exact_match(cp_data, fit_params_cp_exact_match)
+cp_vars_exact_match
+exp(cp_vars_exact_match['cov_fitted'])
+logistic(cp_vars_exact_match['match_log_odds_fitted'])
 
 
 
@@ -628,19 +630,19 @@ logistic(cp_vars['match_log_odds_fitted'])
 # Simulate responses based on fitted CoV and match percent
 SAMPLES = 10000
 obs = length(cp_data$Task_item)
-cp_simulation_data = data.frame(
+cp_simulation_data_exact_match = data.frame(
   Task_item = rep(unique(cp_data$Task_item), SAMPLES)
 )
-cp_simulation_data = cp_simulation_data %>%
+cp_simulation_data_exact_match = cp_simulation_data_exact_match %>%
   rowwise() %>%
-  mutate(simulation_est = get_mixture_cp_estimate(Task_item, 
-                                                  exp(cp_vars['cov_fitted']), 
-                                                  logistic(cp_vars['match_log_odds_fitted'])))
+  mutate(simulation_est = get_mixture_exact_match_estimate(Task_item, 
+                                                           exp(cp_vars_exact_match['cov_fitted']), 
+                                                           logistic(cp_vars_exact_match['match_log_odds_fitted'])))
 # sanity check
-table(cp_simulation_data$simulation_est)
+table(cp_simulation_data_exact_match$simulation_est)
 
 scale_factor = obs / SAMPLES
-cp_simulation_data %>%
+cp_simulation_data_exact_match %>%
   ggplot(aes(x = simulation_est)) + # Plot model simulation
   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
   geom_histogram(aes(y = ..count.. * scale_factor), color = 'black', binwidth = 1) +
@@ -652,12 +654,141 @@ cp_simulation_data %>%
   #ylim(c(0, 65)) +
   labs(x = 'Number of items given', y = 'Frequency',
        title = paste0("Simulated CP data, (fitted) CoV=", 
-                      round(exp(cp_vars['cov_fitted']), 2),
+                      round(exp(cp_vars_exact_match['cov_fitted']), 2),
                       ", (fitted) match pct.=", 
-                      round(logistic(cp_vars['match_log_odds_fitted']), 2)))
+                      round(logistic(cp_vars_exact_match['match_log_odds_fitted']), 2)))
 
 
 
+# 5. Fitted CoV analysis: Subset with "give-all" percent =======================
+# Fit CoV instead of using values manually generated,
+# along with percent of people who are doing "give-all".
+# Then generate model data with fitted CoV and give-all percent
+
+# log likelihood function: find MLE for CoV and give-all percent
+# logistic(give_all_log_odds) percent of the time, returns maximum value
+# (1-logistic(give_all_log_odds)) percent of the time, returns probability of sampling the subject's response 
+# from a normal distribution centered at the prompted value, with sd = prompted value * cov
+# TODO clean this up, move logic to separate functions, etc.
+loglik_give_all = function(task_item, subj_resp, cov_val, give_all_log_odds) {
+  sum(
+    log(
+      # match_pct of the time, subject's value is the maximum
+      (logistic(give_all_log_odds) * (
+        subj_resp == GIVE_ALL_MAX)) +
+      # (1 - match_pct) of the time, subject's value is approximation
+      (1 - logistic(give_all_log_odds)) * (
+        # subject response was < maximum
+        (pnorm(subj_resp + 0.5, mean = task_item, sd = exp(cov_val) * task_item) -
+           pnorm(subj_resp - 0.5, mean = task_item, sd = exp(cov_val) * task_item)) /
+          (1 - pnorm(0, mean = task_item, sd = exp(cov_val) * task_item))
+      )
+    )  
+  )
+}
+
+# fit function
+mle_fit_give_all = function(data, fit_params) {
+  nLL = function(cov_fitted, give_all_log_odds_fitted) {
+    -loglik_give_all(data$Task_item, data$Response, cov_fitted, give_all_log_odds_fitted) +
+      priors[[1]](cov_fitted) +
+      priors[[2]](give_all_log_odds_fitted)
+  }
+  iter = 0
+  fits = NULL
+  fit = NULL
+  while (is.null(fits)) {
+    try(fit <- summary(mle(nLL,
+                           start = list(cov_fitted = log(0.2),
+                                        give_all_log_odds_fitted = logit(0.25)))), # convert starting probability to log odds
+        TRUE) 
+    iter = iter + 1
+    
+    if (!is.null(fit)) {
+      # m2logL is deviance (-2x LL)
+      fits = c(-0.5*fit@m2logL, length(data$Task_item), fit@coef[,"Estimate"])
+    } else {
+      if (iter > 1000) {
+        fits = c(-9999, length(data$Task_item), 0, 0)
+      }
+    }
+  }
+  names(fits) = fit_params
+  return(fits)
+}
+
+
+# Approximation function: generates integer estimate by drawing from
+# normal distribution centered at number with sd = number * CoV or
+# by simply giving the maximum value give_all_percent of the time
+get_mixture_give_all_estimate = function(number, CoV, give_all_percent) {
+  if (rbinom(1, 1, give_all_percent)) {
+    # give_all_percent of the time, return maximum value
+    return(GIVE_ALL_MAX)
+  } else {
+    # sample from normal distribution: return 0 if sample < 0, 15 if sample > 15
+    return(
+      min(max(round(rnorm(1, number, number * CoV), 0), 0), GIVE_ALL_MAX)
+    )
+  }
+}
+
+
+
+# Fit CoV and give-all percent 
+fit_params_give_all = c("logL", "n", "cov_fitted", "give_all_log_odds_fitted")
+priors = list()
+priors[[1]] = function(x) {-dnorm(x, log(0.2), 0.1, log = T)} # priors for cov value in log space
+# priors[[1]] = function(x){0}
+priors[[2]] =  function(x) {-dnorm(logistic(x), 0.25, 0.1, log = T)} # priors for give-all pct log odds
+# priors[[2]] = function(x){0}
+
+# Pull out data to fit
+subset_data = all.data %>%
+  filter(CP_subset == "Subset",
+         Task == "Parallel",
+         Task_item %in% c(6, 8, 10))
+# check fit with all values
+# Task_item %in% c(3, 4, 6, 8, 10))
+
+# MLE fit for CoV and give-all percent
+# TODO fit this as a percent of subjects rather than responses
+subset_vars_give_all = mle_fit_give_all(subset_data, fit_params_give_all)
+subset_vars_give_all
+exp(subset_vars_give_all['cov_fitted'])
+logistic(subset_vars_give_all['give_all_log_odds_fitted'])
+
+
+# Simulate responses based on fitted CoV and give-all percent
+SAMPLES = 10000
+obs = length(subset_data$Task_item)
+subset_simulation_data_give_all = data.frame(
+  Task_item = rep(unique(subset_data$Task_item), SAMPLES)
+)
+subset_simulation_data_give_all = subset_simulation_data_give_all %>%
+  rowwise() %>%
+  mutate(simulation_est = get_mixture_give_all_estimate(Task_item, 
+                                                        exp(subset_vars_give_all['cov_fitted']), 
+                                                        logistic(subset_vars_give_all['give_all_log_odds_fitted'])))
+# sanity check
+table(subset_simulation_data_give_all$simulation_est)
+
+scale_factor = obs / SAMPLES
+subset_simulation_data_give_all %>%
+  ggplot(aes(x = simulation_est)) + # Plot model simulation
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+  geom_histogram(aes(y = ..count.. * scale_factor), color = 'black', binwidth = 1) +
+  theme_bw(base_size = 18) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+        panel.grid = element_blank()) +
+  facet_grid(~Task_item) +
+  #ylim(c(0, 65)) +
+  labs(x = 'Number of items given', y = 'Frequency',
+       title = paste0("Simulated Subset data, (fitted) CoV=", 
+                      round(exp(subset_vars_give_all['cov_fitted']), 2),
+                      ", (fitted) give-all pct.=", 
+                      round(logistic(subset_vars_give_all['give_all_log_odds_fitted']), 2)))
 
 
 
