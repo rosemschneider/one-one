@@ -75,10 +75,6 @@ make_dist_plot_default <- function(df, task, numbers, title) { #numbers should b
 parallel_dist_plot  <- make_dist_plot_default(all.data, "Parallel", c(3, 4, 6, 8, 10), "Parallel Task")
 orthogonal_dist_plot <- make_dist_plot_default(all.data, "Orthogonal", c(3, 4, 6, 8, 10), "Orthogonal Task")
 
-
-
-# 1. Manual CoV analysis =======================================================
-
 GIVE_ALL_MAX = 15
 TASK_ITEMS = sort(unique(all.data$Task_item))
 
@@ -88,6 +84,10 @@ get_approximate_estimate = function(number, CoV) {
   # sample from normal distribution: return 0 if sample < 0, 15 if sample > 15
   min(max(round(rnorm(1, number, number * CoV), 0), 0), GIVE_ALL_MAX)
 }
+
+
+# 1. Manual CoV analysis =======================================================
+
 
 
 # baseline values (globals)
@@ -633,6 +633,7 @@ logistic(cp_vars_exact_match['match_log_odds_fitted'])
 k_exact = 2
 BIC_exact_match = -2 * cp_vars_exact_match['logL'] +
   k_exact * log(length(cp_data$SID))
+BIC_exact_match
 
 k_approx = 1
 BIC_approx = -2 * cp_vars_approx['logL'] +
@@ -800,7 +801,7 @@ subset_simulation_data_give_all %>%
         axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
         panel.grid = element_blank()) +
   facet_grid(~Task_item) +
-  #ylim(c(0, 65)) +
+  ylim(c(0, 65)) +
   labs(x = 'Number of items given', y = 'Frequency',
        title = paste0("Simulated Subset data, (fitted) CoV=", 
                       round(exp(subset_vars_give_all['cov_fitted']), 2),
@@ -815,6 +816,29 @@ subset_simulation_data_give_all %>%
 # as independent
 
 
+get_estimate_aggregate = function(subj_data, cov_val) {
+  return_prob = 1
+  for (trial in subj_data$Trial_number) {
+    task_item = subj_data$Task_item[subj_data$Trial_number == trial]
+    subj_resp = subj_data$Response[subj_data$Trial_number == trial]
+    return_prob = return_prob * (
+      # this logic copied from loglik_approx above
+      ifelse(subj_resp == GIVE_ALL_MAX,
+             # subject response was maximum: return probability of value >= 15
+             (1 - pnorm(subj_resp - 0.5, mean = task_item, sd = exp(cov_val) * task_item)) /
+               # normalize by probability of response > 0
+               (1 - pnorm(0, mean = task_item, sd = exp(cov_val) * task_item)),
+             # subject response was < maximum
+             (pnorm(subj_resp + 0.5, mean = task_item, sd = exp(cov_val) * task_item) -
+                pnorm(subj_resp - 0.5, mean = task_item, sd = exp(cov_val) * task_item)) /
+               (1 - pnorm(0, mean = task_item, sd = exp(cov_val) * task_item))
+      )
+    )
+  }
+  # print(return_prob)
+  return(return_prob)
+}
+
 # log likelihood function: MLE for CoV and exact match percent
 # logistic(match_log_odds) percent of the time, returns the exact value 
 # for *all of a subject's trials* 
@@ -824,9 +848,9 @@ subset_simulation_data_give_all %>%
 loglik_exact_match_subj = function(data, cov_val, match_log_odds) {
   ll_sum = 0
   for (subj in unique(data$SID)) {
+    # print(ll_sum)
     subj_data = data %>%
       filter(SID == subj)
-    
     ll_sum = ll_sum +
       log(
         # match_pct of the time, subject's values are all accurate
@@ -834,23 +858,10 @@ loglik_exact_match_subj = function(data, cov_val, match_log_odds) {
           sum(subj_data$Correct) == length(subj_data$Correct))) +
         # (1 - match_pct) of the time, subject's values are approximation
         (1 - logistic(match_log_odds)) * (
-          for (trial in subj_data$Trial_number) {
-            task_item = subj_data$Task_item[subj_data$Trial_number == trial]
-            subj_resp = subj_data$Response[subj_data$Trial_number == trial]
-            # this logic copied from loglik_approx above
-            ifelse(subj_resp == GIVE_ALL_MAX, 
-                   # subject response was maximum: return probability of value >= 15
-                   (1 - pnorm(subj_resp - 0.5, mean = task_item, sd = exp(cov_val) * task_item)) /
-                     # normalize by probability of response > 0
-                     (1 - pnorm(0, mean = task_item, sd = exp(cov_val) * task_item)),
-                   # subject response was < maximum
-                   (pnorm(subj_resp + 0.5, mean = task_item, sd = exp(cov_val) * task_item) -
-                      pnorm(subj_resp - 0.5, mean = task_item, sd = exp(cov_val) * task_item)) /
-                     (1 - pnorm(0, mean = task_item, sd = exp(cov_val) * task_item))
-            )
-          }
-        )  
+          get_estimate_aggregate(subj_data, cov_val)
+        )
       )
+    # print(ll_sum)
   }
   return(ll_sum)
 }
@@ -911,25 +922,30 @@ fit_params_cp_exact_match_subject = c("logL", "n", "cov_fitted", "match_log_odds
 priors = list()
 priors[[1]] = function(x) {-dnorm(x, log(0.2), 0.1, log = T)} # priors for cov value in log space
 # priors[[1]] = function(x){0}
-priors[[2]] =  function(x) {-dnorm(logistic(x), 0.1, 0.1, log = T)} # priors for match pct log odds
+priors[[2]] =  function(x) {-dnorm(logistic(x), 0.1, 0.25, log = T)} # priors for match pct log odds
 # priors[[2]] = function(x){0}
 
 # Pull out data to fit
 cp_data = all.data %>%
   filter(CP_subset == "CP",
          Task == "Parallel",
-         Task_item %in% c(6, 8, 10))
+         Task_item %in% c(6, 8, 10)) %>%
+  select(SID, Trial_number, Task_item, Response, Correct) # NB: this is mostly for debugging
 # check fit with all values
 # Task_item %in% c(3, 4, 6, 8, 10))
 
+length(unique(cp_data$SID)) # 70 participants
+cp_data %>% # only 9 got all 3 correct (13%)
+  group_by(SID) %>%
+  summarize(correct_tot = sum(Correct)) %>%
+  filter(correct_tot == 3)
+
 # MLE fit for CoV and exact match percent
 options("tidylog.display" = list())
-# NB: this is v. slow (~120s) because of the filtering in the log likelihood fxn
 cp_vars_exact_match_subj = mle_fit_exact_match_subj(cp_data, fit_params_cp_exact_match_subject)
 cp_vars_exact_match_subj
 exp(cp_vars_exact_match_subj['cov_fitted'])
 logistic(cp_vars_exact_match_subj['match_log_odds_fitted'])
-
 
 
 
@@ -946,9 +962,8 @@ cp_simulation_data_exact_match_subj = cp_simulation_data_exact_match_subj %>%
 cp_simulation_data_exact_match_subj = cp_simulation_data_exact_match_subj %>%
   group_by(SID) %>%
   mutate(simulation_est = get_mixture_exact_match_subj_estimate(Task_item, 
-                                                                # exp(cp_vars_exact_match['cp_vars_exact_match_subj']), 
-                                                                # logistic(cp_vars_exact_match['cp_vars_exact_match_subj'])))
-                                                                0.3, 0.25))
+                                                                exp(cp_vars_exact_match_subj['cov_fitted']),
+                                                                logistic(cp_vars_exact_match_subj['match_log_odds_fitted'])))
 # sanity check
 table(cp_simulation_data_exact_match_subj$simulation_est)
 
@@ -962,18 +977,19 @@ cp_simulation_data_exact_match_subj %>%
         axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
         panel.grid = element_blank()) +
   facet_grid(~Task_item) +
-  #ylim(c(0, 65)) +
+  ylim(c(0, 65)) +
   labs(x = 'Number of items given', y = 'Frequency',
-       title = "test")
-       # title = paste0("Simulated CP data, (fitted) CoV=", 
-       #                round(exp(cp_vars_exact_match['cov_fitted']), 2),
-       #                ", (fitted) match pct.=", 
-       #                round(logistic(cp_vars_exact_match['match_log_odds_fitted']), 2)))
+       title = paste0("Simulated CP data, (fitted) CoV=",
+                      round(exp(cp_vars_exact_match_subj['cov_fitted']), 2),
+                      ", (fitted) match pct.=",
+                      round(logistic(cp_vars_exact_match_subj['match_log_odds_fitted']), 2)))
 
+k_exact_subj = 2
+BIC_exact_subj = -2 * cp_vars_exact_match_subj['logL'] +
+  k_exact_subj * log(length(cp_data$SID))
 
-# TODO
-# - Fix by-subject fit above
-# - Compare model fits with AIC or BIC to factor in params
-
-
+# Compare
+BIC_exact_subj
+BIC_exact_match 
+BIC_approx 
 
