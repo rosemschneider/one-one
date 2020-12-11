@@ -328,17 +328,17 @@ exp(subset_vars_approx['cov_fitted'])
 
 
 # large scale simulation
-SAMPLES = 10000
+SAMPLE_N = 10000
 obs = length(subset_data$Task_item)
 subset_simulation_data_approx = data.frame(
-  Task_item = rep(unique(subset_data$Task_item), SAMPLES)
+  Task_item = rep(unique(subset_data$Task_item), SAMPLE_N)
 )
 subset_simulation_data_approx = subset_simulation_data_approx %>%
   rowwise() %>%
   mutate(simulation_est = get_approximate_estimate(Task_item, 
                                                    exp(subset_vars_approx['cov_fitted'])))
 
-scale_factor = obs / SAMPLES
+scale_factor = obs / (SAMPLE_N * length(unique(subset_data$Task_item)))
 subset_simulation_data_approx %>%
   ggplot(aes(x = simulation_est)) + # Plot model simulation
   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
@@ -447,7 +447,8 @@ subset_simulation_data_approx %>%
 ## Analysis
 fit_params_cp_approx = c("logL", "n", "cov_fitted")
 priors = list()
-priors[[1]] =  function(x) {-dnorm(x, subset_vars_approx['cov_fitted'], 0.1, log = T)} # priors for cov value in log space
+# priors[[1]] =  function(x) {-dnorm(x, subset_vars_approx['cov_fitted'], 0.25, log = T)} # priors for cov value in log space
+priors[[1]] =  function(x) {-dnorm(x, 0.1, 0.25, log = T)} # priors for cov value in log space
 # priors[[1]] = function(x){0} # NB: without prior, this fits really high CoV (~.7)
 
 # Pull out data to fit
@@ -490,17 +491,17 @@ exp(cp_vars_approx['cov_fitted'])
 
 
 # large scale simulation
-SAMPLES = 10000
+SAMPLE_N = 10000
 obs = length(cp_data$Task_item)
 cp_simulation_data_approx = data.frame(
-  Task_item = rep(unique(cp_data$Task_item), SAMPLES)
+  Task_item = rep(unique(cp_data$Task_item), SAMPLE_N)
 )
 cp_simulation_data_approx = cp_simulation_data_approx %>%
   rowwise() %>%
   mutate(simulation_est = get_approximate_estimate(Task_item, 
                                                    exp(cp_vars_approx['cov_fitted'])))
 
-scale_factor = obs / SAMPLES
+scale_factor = obs / (SAMPLE_N * length(unique(cp_data$Task_item)))
 cp_simulation_data_approx %>%
   ggplot(aes(x = simulation_est)) + # Plot model simulation
   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
@@ -606,7 +607,7 @@ fit_params_cp_exact_match = c("logL", "n", "cov_fitted", "match_log_odds_fitted"
 priors = list()
 priors[[1]] = function(x) {-dnorm(x, log(0.2), 0.1, log = T)} # priors for cov value in log space
 # priors[[1]] = function(x){0}
-priors[[2]] =  function(x) {-dnorm(logistic(x), 0.1, 0.1, log = T)} # priors for match pct log odds
+priors[[2]] =  function(x) {-dnorm(logistic(x), 0.1, 0.25, log = T)} # priors for match pct log odds
 # priors[[2]] = function(x){0}
 
 # Pull out data to fit
@@ -625,13 +626,29 @@ exp(cp_vars_exact_match['cov_fitted'])
 logistic(cp_vars_exact_match['match_log_odds_fitted'])
 
 
+# Compare BICs 
+# "In general, BIC penalizes models with more parameters more than AICc does"
+# So this is good, we should use BIC to be conservative
+# TODO put this somewhere useful
+k_exact = 2
+BIC_exact_match = -2 * cp_vars_exact_match['logL'] +
+  k_exact * log(length(cp_data$SID))
+
+k_approx = 1
+BIC_approx = -2 * cp_vars_approx['logL'] +
+  k_approx * log(length(cp_data$SID))
+BIC_approx 
+
+BIC_exact_match < BIC_approx # If TRUE, yay!
+
+
 
 
 # Simulate responses based on fitted CoV and match percent
-SAMPLES = 10000
+SAMPLE_N = 10000
 obs = length(cp_data$Task_item)
 cp_simulation_data_exact_match = data.frame(
-  Task_item = rep(unique(cp_data$Task_item), SAMPLES)
+  Task_item = rep(unique(cp_data$Task_item), SAMPLE_N)
 )
 cp_simulation_data_exact_match = cp_simulation_data_exact_match %>%
   rowwise() %>%
@@ -641,7 +658,7 @@ cp_simulation_data_exact_match = cp_simulation_data_exact_match %>%
 # sanity check
 table(cp_simulation_data_exact_match$simulation_est)
 
-scale_factor = obs / SAMPLES
+scale_factor = obs / (SAMPLE_N * length(unique(cp_data$Task_item)))
 cp_simulation_data_exact_match %>%
   ggplot(aes(x = simulation_est)) + # Plot model simulation
   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
@@ -651,7 +668,7 @@ cp_simulation_data_exact_match %>%
         axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
         panel.grid = element_blank()) +
   facet_grid(~Task_item) +
-  #ylim(c(0, 65)) +
+  ylim(c(0, 65)) +
   labs(x = 'Number of items given', y = 'Frequency',
        title = paste0("Simulated CP data, (fitted) CoV=", 
                       round(exp(cp_vars_exact_match['cov_fitted']), 2),
@@ -760,10 +777,10 @@ logistic(subset_vars_give_all['give_all_log_odds_fitted'])
 
 
 # Simulate responses based on fitted CoV and give-all percent
-SAMPLES = 10000
+SAMPLE_N = 10000
 obs = length(subset_data$Task_item)
 subset_simulation_data_give_all = data.frame(
-  Task_item = rep(unique(subset_data$Task_item), SAMPLES)
+  Task_item = rep(unique(subset_data$Task_item), SAMPLE_N)
 )
 subset_simulation_data_give_all = subset_simulation_data_give_all %>%
   rowwise() %>%
@@ -773,7 +790,7 @@ subset_simulation_data_give_all = subset_simulation_data_give_all %>%
 # sanity check
 table(subset_simulation_data_give_all$simulation_est)
 
-scale_factor = obs / SAMPLES
+scale_factor = obs / (SAMPLE_N * length(unique(subset_data$Task_item)))
 subset_simulation_data_give_all %>%
   ggplot(aes(x = simulation_est)) + # Plot model simulation
   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
@@ -790,6 +807,173 @@ subset_simulation_data_give_all %>%
                       ", (fitted) give-all pct.=", 
                       round(logistic(subset_vars_give_all['give_all_log_odds_fitted']), 2)))
 
+
+
+
+# 6. Fitted CoV analysis: CP with "exact match" percent by subject =============
+# Fit CoV and exact match percent, but by subject instead of treating trials
+# as independent
+
+
+# log likelihood function: MLE for CoV and exact match percent
+# logistic(match_log_odds) percent of the time, returns the exact value 
+# for *all of a subject's trials* 
+# (1-logistic(match_log_odds)) percent of the time, returns probability of sampling the subject's responses 
+# from a normal distribution centered at the prompted value, with sd = prompted value * cov
+# TODO clean this up, move logic to separate functions, etc.
+loglik_exact_match_subj = function(data, cov_val, match_log_odds) {
+  ll_sum = 0
+  for (subj in unique(data$SID)) {
+    subj_data = data %>%
+      filter(SID == subj)
+    
+    ll_sum = ll_sum +
+      log(
+        # match_pct of the time, subject's values are all accurate
+        (logistic(match_log_odds) * (
+          sum(subj_data$Correct) == length(subj_data$Correct))) +
+        # (1 - match_pct) of the time, subject's values are approximation
+        (1 - logistic(match_log_odds)) * (
+          for (trial in subj_data$Trial_number) {
+            task_item = subj_data$Task_item[subj_data$Trial_number == trial]
+            subj_resp = subj_data$Response[subj_data$Trial_number == trial]
+            # this logic copied from loglik_approx above
+            ifelse(subj_resp == GIVE_ALL_MAX, 
+                   # subject response was maximum: return probability of value >= 15
+                   (1 - pnorm(subj_resp - 0.5, mean = task_item, sd = exp(cov_val) * task_item)) /
+                     # normalize by probability of response > 0
+                     (1 - pnorm(0, mean = task_item, sd = exp(cov_val) * task_item)),
+                   # subject response was < maximum
+                   (pnorm(subj_resp + 0.5, mean = task_item, sd = exp(cov_val) * task_item) -
+                      pnorm(subj_resp - 0.5, mean = task_item, sd = exp(cov_val) * task_item)) /
+                     (1 - pnorm(0, mean = task_item, sd = exp(cov_val) * task_item))
+            )
+          }
+        )  
+      )
+  }
+  return(ll_sum)
+}
+
+# fit function
+mle_fit_exact_match_subj = function(data, fit_params) {
+  nLL = function(cov_fitted, match_log_odds_fitted) {
+    -loglik_exact_match_subj(data, cov_fitted, match_log_odds_fitted) +
+      priors[[1]](cov_fitted) +
+      priors[[2]](match_log_odds_fitted)
+  }
+  iter = 0
+  fits = NULL
+  fit = NULL
+  while (is.null(fits)) {
+    try(fit <- summary(mle(nLL,
+                           start = list(cov_fitted = log(0.2),
+                                        match_log_odds_fitted = logit(0.1)))), # convert starting probability to log odds
+        TRUE) 
+    iter = iter + 1
+    
+    if (!is.null(fit)) {
+      # m2logL is deviance (-2x LL)
+      fits = c(-0.5*fit@m2logL, length(data$Task_item), fit@coef[,"Estimate"])
+    } else {
+      if (iter > 1000) {
+        fits = c(-9999, length(data$Task_item), 0, 0)
+      }
+    }
+  }
+  names(fits) = fit_params
+  return(fits)
+}
+
+
+# Approximation function: generates integer estimate by drawing from
+# normal distribution centered at number with sd = number * CoV
+# or by simply returning the exact value match_percent of the time
+get_mixture_exact_match_subj_estimate = function(number_set, CoV, match_percent) {
+  if (rbinom(1, 1, match_percent)) {
+    # match_percent of the time, return exact match
+    return(number_set)
+  } else {
+    # sample from normal distribution: return 0 if sample < 0, 15 if sample > 15
+    estimates = c()
+    for (num in number_set) {
+      estimates = c(estimates, 
+                    min(max(round(rnorm(1, num, num * CoV), 0), 0), GIVE_ALL_MAX))
+    }
+    return(estimates)
+  }
+}
+
+
+
+# Fit CoV and match percent 
+fit_params_cp_exact_match_subject = c("logL", "n", "cov_fitted", "match_log_odds_fitted")
+priors = list()
+priors[[1]] = function(x) {-dnorm(x, log(0.2), 0.1, log = T)} # priors for cov value in log space
+# priors[[1]] = function(x){0}
+priors[[2]] =  function(x) {-dnorm(logistic(x), 0.1, 0.1, log = T)} # priors for match pct log odds
+# priors[[2]] = function(x){0}
+
+# Pull out data to fit
+cp_data = all.data %>%
+  filter(CP_subset == "CP",
+         Task == "Parallel",
+         Task_item %in% c(6, 8, 10))
+# check fit with all values
+# Task_item %in% c(3, 4, 6, 8, 10))
+
+# MLE fit for CoV and exact match percent
+options("tidylog.display" = list())
+# NB: this is v. slow (~120s) because of the filtering in the log likelihood fxn
+cp_vars_exact_match_subj = mle_fit_exact_match_subj(cp_data, fit_params_cp_exact_match_subject)
+cp_vars_exact_match_subj
+exp(cp_vars_exact_match_subj['cov_fitted'])
+logistic(cp_vars_exact_match_subj['match_log_odds_fitted'])
+
+
+
+
+# Simulate responses based on fitted CoV and match percent
+SAMPLE_N = 10000
+obs = length(cp_data$Task_item)
+cp_simulation_data_exact_match_subj = data.frame(
+  SID = rep(seq(1, SAMPLE_N), length(unique(cp_data$Task_item)))
+)
+cp_simulation_data_exact_match_subj = cp_simulation_data_exact_match_subj %>%
+  group_by(SID) %>%
+  mutate(Task_item = unique(cp_data$Task_item))
+
+cp_simulation_data_exact_match_subj = cp_simulation_data_exact_match_subj %>%
+  group_by(SID) %>%
+  mutate(simulation_est = get_mixture_exact_match_subj_estimate(Task_item, 
+                                                                # exp(cp_vars_exact_match['cp_vars_exact_match_subj']), 
+                                                                # logistic(cp_vars_exact_match['cp_vars_exact_match_subj'])))
+                                                                0.3, 0.25))
+# sanity check
+table(cp_simulation_data_exact_match_subj$simulation_est)
+
+scale_factor = obs / (SAMPLE_N * length(unique(cp_data$Task_item)))
+cp_simulation_data_exact_match_subj %>%
+  ggplot(aes(x = simulation_est)) + # Plot model simulation
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+  geom_histogram(aes(y = ..count.. * scale_factor), color = 'black', binwidth = 1) +
+  theme_bw(base_size = 18) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+        panel.grid = element_blank()) +
+  facet_grid(~Task_item) +
+  #ylim(c(0, 65)) +
+  labs(x = 'Number of items given', y = 'Frequency',
+       title = "test")
+       # title = paste0("Simulated CP data, (fitted) CoV=", 
+       #                round(exp(cp_vars_exact_match['cov_fitted']), 2),
+       #                ", (fitted) match pct.=", 
+       #                round(logistic(cp_vars_exact_match['match_log_odds_fitted']), 2)))
+
+
+# TODO
+# - Fix by-subject fit above
+# - Compare model fits with AIC or BIC to factor in params
 
 
 
