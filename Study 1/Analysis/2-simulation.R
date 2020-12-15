@@ -339,6 +339,8 @@ subset_simulation_data_approx = subset_simulation_data_approx %>%
                                                    exp(subset_vars_approx['cov_fitted'])))
 
 scale_factor = obs / (SAMPLE_N * length(unique(subset_data$Task_item)))
+
+###old plot of simulations only
 subset_simulation_data_approx %>%
   ggplot(aes(x = simulation_est)) + # Plot model simulation
   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
@@ -516,6 +518,10 @@ cp_simulation_data_approx %>%
        title = paste0("Simulated CP data, (fitted) CoV=", round(exp(cp_vars_approx['cov_fitted']), 2)))
 
 
+##new plot with simulations overlaid with real data -- first do approx data only
+cp_sim_data <- cp_simulation_data_approx %>%
+  dplyr::rename('Response' = 'simulation_est')
+
 
 
 
@@ -660,21 +666,64 @@ cp_simulation_data_exact_match = cp_simulation_data_exact_match %>%
 table(cp_simulation_data_exact_match$simulation_est)
 
 scale_factor = obs / (SAMPLE_N * length(unique(cp_data$Task_item)))
-cp_simulation_data_exact_match %>%
-  ggplot(aes(x = simulation_est)) + # Plot model simulation
-  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
-  geom_histogram(aes(y = ..count.. * scale_factor), color = 'black', binwidth = 1) +
-  theme_bw(base_size = 18) +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
-        panel.grid = element_blank()) +
-  facet_grid(~Task_item) +
-  ylim(c(0, 65)) +
-  labs(x = 'Number of items given', y = 'Frequency',
-       title = paste0("Simulated CP data, (fitted) CoV=", 
-                      round(exp(cp_vars_exact_match['cov_fitted']), 2),
-                      ", (fitted) match pct.=", 
-                      round(logistic(cp_vars_exact_match['match_log_odds_fitted']), 2)))
+
+# 4.1 Overlaid plots of simulated and real CP-knower data ==========================
+#rename and plot all together
+##adding a type for nice faceting
+cp_exact_data <- cp_simulation_data_exact_match %>%
+  dplyr::rename('Response' = 'simulation_est') %>%
+  mutate(type = "Approximation + Exact match")
+
+cp_data_abb <- cp_data %>%
+  mutate(type = "Approximation + Exact match")%>%
+  dplyr::select(Task_item, Response, type)
+
+cp_sim_data <- cp_sim_data %>%
+  mutate(type = "Approximation")
+
+cp_data_dummy <- cp_data %>%
+  mutate(type = "Approximation")%>%
+  dplyr::select(Task_item, Response, type)
+
+## CP-knower data
+ggplot(cp_data_dummy, aes(x = Response)) + 
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed", color = 'black') +
+  geom_histogram(aes(y = ..count.., fill = "CP-knower"), binwidth = 1, color = 'black', 
+                 alpha = .9) + #CP-data first
+  geom_histogram(data = cp_sim_data, aes(y = ..count.. * scale_factor, fill = 'Simulated'), color = 'black', 
+                 binwidth = 1, alpha = .5) + #simulation - approx next
+  geom_vline(data = cp_data_abb, aes(xintercept = Task_item), linetype = "dashed", color = 'black') +
+  geom_histogram(data = cp_data_abb, aes(y = ..count.., fill = 'CP-knower'), color = 'black', 
+                 binwidth = 1, alpha = .9) + #now CP-data for exact
+  geom_histogram(data = cp_exact_data, aes(y = ..count.. * scale_factor, fill = 'Simulated'), color = 'black', 
+                 binwidth = 1, alpha = .5) + # now simulation data for exact
+  scale_x_continuous(breaks= seq(1, 15, 1)) +
+  facet_grid(type~Task_item) +
+  theme(axis.text.x = element_text(hjust = 1, angle = 45), 
+        legend.position = "right") +
+  scale_fill_manual(name = "Data type", 
+                    values = c('Simulated' = "#827f7d", 'CP-knower' = "#1ECCE3")) +
+  labs(y = "Frequency", 
+       fill = "legend") 
+
+ggsave('Study 1/Analysis/Figures/CP_simulation_data.png', width = 8)
+  
+###old plot - nice new shiny plot is above
+# cp_simulation_data_exact_match %>%
+#   ggplot(aes(x = simulation_est)) + # Plot model simulation
+#   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+#   geom_histogram(aes(y = ..count.. * scale_factor), color = 'black', binwidth = 1) +
+#   theme_bw(base_size = 18) +
+#   theme(legend.position = "none",
+#         axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+#         panel.grid = element_blank()) +
+#   facet_grid(~Task_item) +
+#   ylim(c(0, 65)) +
+#   labs(x = 'Number of items given', y = 'Frequency',
+#        title = paste0("Simulated CP data, (fitted) CoV=", 
+#                       round(exp(cp_vars_exact_match['cov_fitted']), 2),
+#                       ", (fitted) match pct.=", 
+#                       round(logistic(cp_vars_exact_match['match_log_odds_fitted']), 2)))
 
 
 
@@ -792,21 +841,70 @@ subset_simulation_data_give_all = subset_simulation_data_give_all %>%
 table(subset_simulation_data_give_all$simulation_est)
 
 scale_factor = obs / (SAMPLE_N * length(unique(subset_data$Task_item)))
-subset_simulation_data_give_all %>%
-  ggplot(aes(x = simulation_est)) + # Plot model simulation
-  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
-  geom_histogram(aes(y = ..count.. * scale_factor), color = 'black', binwidth = 1) +
-  theme_bw(base_size = 18) +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
-        panel.grid = element_blank()) +
-  facet_grid(~Task_item) +
-  ylim(c(0, 65)) +
-  labs(x = 'Number of items given', y = 'Frequency',
-       title = paste0("Simulated Subset data, (fitted) CoV=", 
-                      round(exp(subset_vars_give_all['cov_fitted']), 2),
-                      ", (fitted) give-all pct.=", 
-                      round(logistic(subset_vars_give_all['give_all_log_odds_fitted']), 2)))
+
+# 5.1 Overlaid plots of simulated and real subset-knower data =======================
+###get the relevant data frames together and add a "type" for pretty plots
+#approximation simulation
+subset_sim_data_approx <- subset_simulation_data_approx %>%
+  dplyr::rename('Response' = 'simulation_est')%>%
+  mutate(type = "Approximation")
+#give-all simulation
+subset_sim_data_giveall <- subset_simulation_data_give_all %>%
+  dplyr::rename("Response" = "simulation_est")%>%
+  mutate(type = "Approximation + Give All")
+#subset actual data down for give-all dummy
+subset_data_dummy_give_all <- subset_data %>%
+  mutate(type = "Approximation + Give All")%>%
+  select(Task_item, Response, type)
+#subset actual data down for approximation dummy
+subset_data_dummy_approximation <- subset_data %>%
+  mutate(type = "Approximation")%>%
+  select(Task_item, Response, type)
+
+
+## subset-knower data
+ggplot(subset_data_dummy_approximation, aes(x = Response)) + 
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed", color = 'black') +
+  geom_histogram(aes(y = ..count.., fill = "Subset-knower"), binwidth = 1, color = 'black', 
+                 alpha = .9) + #Subset-data first
+  geom_histogram(data = subset_sim_data_approx, aes(y = ..count.. * scale_factor, fill = 'Simulated'), color = 'black', 
+                 binwidth = 1, alpha = .5) + #simulation - approx next
+  geom_vline(data = subset_data_dummy_give_all, aes(xintercept = Task_item), linetype = "dashed", color = 'black') +
+  geom_histogram(data = subset_data_dummy_give_all, aes(y = ..count.., fill = 'Subset-knower'), color = 'black', 
+                 binwidth = 1, alpha = .9) + #now subset-data for give-all
+  geom_histogram(data = subset_sim_data_giveall, aes(y = ..count.. * scale_factor, fill = 'Simulated'), color = 'black',
+                 binwidth = 1, alpha = .5) + # now simulation data for give-all
+  scale_x_continuous(breaks= seq(1, 15, 1)) +
+  facet_grid(type~Task_item) +
+  theme(axis.text.x = element_text(hjust = 1, angle = 45), 
+        legend.position = "right") +
+  scale_fill_manual(name = "Data type", 
+                    values = c('Subset-knower' = "#FF7C00", 'Simulated' = "#827f7d")) +
+  labs(y = "Frequency", 
+       fill = "legend") + 
+  guides(fill = guide_legend(reverse = TRUE))
+
+ggsave('Study 1/Analysis/Figures/subset_simulation_data.png', width = 8)
+
+
+
+
+##this is the old plotting code!
+# subset_simulation_data_give_all %>%
+#   ggplot(aes(x = simulation_est)) + # Plot model simulation
+#   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+#   geom_histogram(aes(y = ..count.. * scale_factor), color = 'black', binwidth = 1) +
+#   theme_bw(base_size = 18) +
+#   theme(legend.position = "none",
+#         axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+#         panel.grid = element_blank()) +
+#   facet_grid(~Task_item) +
+#   ylim(c(0, 65)) +
+#   labs(x = 'Number of items given', y = 'Frequency',
+#        title = paste0("Simulated Subset data, (fitted) CoV=", 
+#                       round(exp(subset_vars_give_all['cov_fitted']), 2),
+#                       ", (fitted) give-all pct.=", 
+#                       round(logistic(subset_vars_give_all['give_all_log_odds_fitted']), 2)))
 
 
 
