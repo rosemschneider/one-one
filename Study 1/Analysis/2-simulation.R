@@ -702,7 +702,7 @@ ggplot(cp_data_dummy, aes(x = Response)) +
   theme(axis.text.x = element_text(hjust = 1, angle = 45), 
         legend.position = "right") +
   scale_fill_manual(name = "Data type", 
-                    values = c('CP-knower' = "#1ECCE3", 'Simulated' = "#827f7d")) +
+                    values = c('Simulated' = "#827f7d", 'CP-knower' = "#1ECCE3")) +
   labs(y = "Frequency", 
        fill = "legend") 
 
@@ -881,7 +881,8 @@ ggplot(subset_data_dummy_approximation, aes(x = Response)) +
   scale_fill_manual(name = "Data type", 
                     values = c('Subset-knower' = "#FF7C00", 'Simulated' = "#827f7d")) +
   labs(y = "Frequency", 
-       fill = "legend") 
+       fill = "legend") + 
+  guides(fill = guide_legend(reverse = TRUE))
 
 ggsave('Study 1/Analysis/Figures/subset_simulation_data.png', width = 8)
 
