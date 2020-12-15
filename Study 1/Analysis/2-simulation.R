@@ -993,3 +993,102 @@ BIC_exact_subj
 BIC_exact_match 
 BIC_approx 
 
+
+
+
+# 7. Fitted CoV analysis: Subset with exact match percent ======================
+# Fit CoV instead of using values manually generated,
+# along with percent of people who are doing "exact match".
+# Then generate model data with fitted CoV and exact match percent
+
+# Fit CoV and match percent 
+fit_params_subset_exact_match = c("logL", "n", "cov_fitted", "match_log_odds_fitted")
+priors = list()
+priors[[1]] = function(x) {-dnorm(x, log(0.2), 0.1, log = T)} # priors for cov value in log space
+# priors[[1]] = function(x){0}
+priors[[2]] =  function(x) {-dnorm(logistic(x), 0.1, 0.25, log = T)} # priors for match pct log odds
+# priors[[2]] = function(x){0}
+
+# Pull out data to fit
+subset_data = all.data %>%
+  filter(CP_subset == "Subset",
+         Task == "Parallel",
+         Task_item %in% c(6, 8, 10))
+# check fit with all values
+# Task_item %in% c(3, 4, 6, 8, 10))
+
+# MLE fit for CoV and exact match percent
+subset_vars_exact_match = mle_fit_exact_match(subset_data, fit_params_subset_exact_match)
+subset_vars_exact_match
+exp(subset_vars_exact_match['cov_fitted'])
+logistic(subset_vars_exact_match['match_log_odds_fitted'])
+
+
+# Compare BICs 
+# "In general, BIC penalizes models with more parameters more than AICc does"
+# So this is good, we should use BIC to be conservative
+# TODO put this somewhere useful
+k_exact = 2
+BIC_exact_match = -2 * subset_vars_exact_match['logL'] +
+  k_exact * log(length(subset_data$SID))
+BIC_exact_match
+
+k_approx = 1
+BIC_approx = -2 * subset_vars_approx['logL'] +
+  k_approx * log(length(subset_data$SID))
+BIC_approx 
+
+BIC_exact_match < BIC_approx # If FALSE, yay!
+
+
+
+# 8. Fitted CoV analysis: CP approximation, orthogonal data ====================
+
+
+## Analysis
+fit_params_cp_approx_orth = c("logL", "n", "cov_fitted")
+priors = list()
+# priors[[1]] =  function(x) {-dnorm(x, subset_vars_approx['cov_fitted'], 0.25, log = T)} # priors for cov value in log space
+priors[[1]] =  function(x) {-dnorm(x, 0.1, 0.25, log = T)} # priors for cov value in log space
+# priors[[1]] = function(x){0} # NB: without prior, this fits really high CoV (~.7)
+
+# Pull out data to fit
+cp_data_orth = all.data %>%
+  filter(CP_subset == "CP",
+         Task == "Orthogonal",
+         Task_item %in% c(6, 8, 10))
+# compare to fitting 3, 4 as well
+# Task_item %in% c(3, 4, 6, 8, 10))
+
+# Do MLE fit for CoV
+cp_vars_approx_orth = mle_fit_approx(cp_data_orth, fit_params_cp_approx_orth)
+cp_vars_approx_orth
+exp(cp_vars_approx_orth['cov_fitted'])
+
+
+# large scale simulation
+SAMPLE_N = 10000
+obs = length(cp_data_orth$Task_item)
+cp_simulation_data_approx_orth = data.frame(
+  Task_item = rep(unique(cp_data_orth$Task_item), SAMPLE_N)
+)
+cp_simulation_data_approx_orth = cp_simulation_data_approx_orth %>%
+  rowwise() %>%
+  mutate(simulation_est = get_approximate_estimate(Task_item, 
+                                                   exp(cp_vars_approx_orth['cov_fitted'])))
+
+scale_factor = obs / (SAMPLE_N * length(unique(cp_data_orth$Task_item)))
+cp_simulation_data_approx_orth %>%
+  ggplot(aes(x = simulation_est)) + # Plot model simulation
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+  geom_histogram(aes(y = ..count.. * scale_factor),color = 'black', binwidth = 1) +
+  theme_bw(base_size = 18) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+        panel.grid = element_blank()) +
+  facet_grid(~Task_item) +
+  ylim(c(0, 65)) +
+  labs(x = 'Number of items given', y = 'Frequency',
+       title = paste0("Simulated CP data, orthogonal; (fitted) CoV=", round(exp(cp_vars_approx_orth['cov_fitted']), 2)))
+
+
