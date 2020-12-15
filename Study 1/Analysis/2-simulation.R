@@ -82,7 +82,7 @@ TASK_ITEMS = sort(unique(all.data$Task_item))
 # normal distribution centered at number with sd = number * CoV
 get_approximate_estimate = function(number, CoV) {
   # sample from normal distribution: return 0 if sample < 0, 15 if sample > 15
-  min(max(round(rnorm(1, number, number * CoV), 0), 0), GIVE_ALL_MAX)
+  min(max(round(rnorm(1, number, number * CoV), 0), 1), GIVE_ALL_MAX)
 }
 
 
@@ -467,6 +467,18 @@ cp_vars_approx
 exp(cp_vars_approx['cov_fitted'])
 
 
+k_approx = 1
+BIC_approx = -2 * cp_vars_approx['logL'] +
+  k_approx * log(length(cp_data$SID))
+BIC_approx 
+
+# compare to approx fit for subset
+BIC_approx_sub = -2 * subset_vars_approx['logL'] +
+  k_approx * log(length(subset_data$SID))
+BIC_approx_sub
+
+
+
 # simulate
 # TODO these simulations seem highly variable, maybe we do 1000s of runs?
 # cp_data = subset_data %>%
@@ -601,7 +613,7 @@ get_mixture_exact_match_estimate = function(number, CoV, match_percent) {
   } else {
     # sample from normal distribution: return 0 if sample < 0, 15 if sample > 15
     return(
-      min(max(round(rnorm(1, number, number * CoV), 0), 0), GIVE_ALL_MAX)
+      min(max(round(rnorm(1, number, number * CoV), 0), 1), GIVE_ALL_MAX)
     )
   }
 }
@@ -795,7 +807,7 @@ get_mixture_give_all_estimate = function(number, CoV, give_all_percent) {
   } else {
     # sample from normal distribution: return 0 if sample < 0, 15 if sample > 15
     return(
-      min(max(round(rnorm(1, number, number * CoV), 0), 0), GIVE_ALL_MAX)
+      min(max(round(rnorm(1, number, number * CoV), 0), 1), GIVE_ALL_MAX)
     )
   }
 }
@@ -824,6 +836,23 @@ subset_vars_give_all = mle_fit_give_all(subset_data, fit_params_give_all)
 subset_vars_give_all
 exp(subset_vars_give_all['cov_fitted'])
 logistic(subset_vars_give_all['give_all_log_odds_fitted'])
+
+
+
+# Model comparison with regular approx with subset
+BIC_approx_sub = -2 * subset_vars_approx['logL'] +
+  k_approx * log(length(subset_data$SID))
+BIC_approx_sub
+
+k_give_all = 2
+BIC_give_all_sub = -2 * subset_vars_give_all['logL'] +
+  k_give_all * log(length(subset_data$SID))
+BIC_give_all_sub
+
+# Assuming lower is better (...), give-all is a slightly better fit
+# than approx. Not super compelling, but interesting
+
+
 
 
 # Simulate responses based on fitted CoV and give-all percent
@@ -1007,7 +1036,7 @@ get_mixture_exact_match_subj_estimate = function(number_set, CoV, match_percent)
     estimates = c()
     for (num in number_set) {
       estimates = c(estimates, 
-                    min(max(round(rnorm(1, num, num * CoV), 0), 0), GIVE_ALL_MAX))
+                    min(max(round(rnorm(1, num, num * CoV), 0), 1), GIVE_ALL_MAX))
     }
     return(estimates)
   }
@@ -1172,21 +1201,94 @@ cp_simulation_data_approx_orth = data.frame(
 )
 cp_simulation_data_approx_orth = cp_simulation_data_approx_orth %>%
   rowwise() %>%
-  mutate(simulation_est = get_approximate_estimate(Task_item, 
+  mutate(Response = get_approximate_estimate(Task_item, 
                                                    exp(cp_vars_approx_orth['cov_fitted'])))
 
 scale_factor = obs / (SAMPLE_N * length(unique(cp_data_orth$Task_item)))
-cp_simulation_data_approx_orth %>%
-  ggplot(aes(x = simulation_est)) + # Plot model simulation
-  geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
-  geom_histogram(aes(y = ..count.. * scale_factor),color = 'black', binwidth = 1) +
-  theme_bw(base_size = 18) +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
-        panel.grid = element_blank()) +
+# cp_simulation_data_approx_orth %>%
+#   ggplot(aes(x = simulation_est)) + # Plot model simulation
+#   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
+#   geom_histogram(aes(y = ..count.. * scale_factor),color = 'black', binwidth = 1) +
+#   theme_bw(base_size = 18) +
+#   theme(legend.position = "none",
+#         axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+#         panel.grid = element_blank()) +
+#   facet_grid(~Task_item) +
+#   ylim(c(0, 65)) +
+#   labs(x = 'Number of items given', y = 'Frequency',
+#        title = paste0("Simulated CP data, orthogonal; (fitted) CoV=", round(exp(cp_vars_approx_orth['cov_fitted']), 2)))
+
+
+ggplot(cp_data_orth, aes(x = Response)) + 
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed", color = 'black') +
+  geom_histogram(aes(y = ..count.., fill = "CP-knower"), binwidth = 1, color = 'black', 
+                 alpha = .9) + #CP-data first
+  geom_histogram(data = cp_simulation_data_approx_orth, aes(y = ..count.. * scale_factor, fill = 'Simulated'), color = 'black', 
+                 binwidth = 1, alpha = .5) + #simulation - approx next
+  # geom_vline(data = cp_data_abb, aes(xintercept = Task_item), linetype = "dashed", color = 'black') +
+  # geom_histogram(data = cp_data_abb, aes(y = ..count.., fill = 'CP-knower'), color = 'black', 
+  #                binwidth = 1, alpha = .9) + #now CP-data for exact
+  # geom_histogram(data = cp_exact_data, aes(y = ..count.. * scale_factor, fill = 'Simulated'), color = 'black', 
+  #                binwidth = 1, alpha = .5) + # now simulation data for exact
+  scale_x_continuous(breaks= seq(1, 15, 1)) +
   facet_grid(~Task_item) +
-  ylim(c(0, 65)) +
-  labs(x = 'Number of items given', y = 'Frequency',
-       title = paste0("Simulated CP data, orthogonal; (fitted) CoV=", round(exp(cp_vars_approx_orth['cov_fitted']), 2)))
+  scale_y_continuous(breaks = seq(0, 30, by = 10), limits = seq(0, 30, by = 10), labels = seq(0, 30, by = 10)) +
+  ylim(c(0, 30)) +
+  theme(axis.text.x = element_text(hjust = 1, angle = 45), 
+        legend.position = "right") +
+  scale_fill_manual(name = "Data type", 
+                    values = c('Simulated' = "#827f7d", 'CP-knower' = "#1ECCE3")) +
+  labs(y = "Frequency", 
+       fill = "legend") 
+
+
+# compare fits
+k_approx = 1
+BIC_approx = -2 * cp_vars_approx['logL'] +
+  k_approx * log(length(cp_data$SID))
+BIC_approx 
+
+BIC_approx_orth = -2 * cp_vars_approx_orth['logL'] +
+  k_approx * log(length(cp_data_orth$SID))
+BIC_approx_orth 
+
+
+
+# 9. Fit exact match to CP orthogonal data =====================================
+# Fit CoV and match percent 
+fit_params_cp_exact_match_orth = c("logL", "n", "cov_fitted", "match_log_odds_fitted")
+priors = list()
+priors[[1]] = function(x) {-dnorm(x, log(0.2), 0.1, log = T)} # priors for cov value in log space
+# priors[[1]] = function(x){0}
+priors[[2]] =  function(x) {-dnorm(logistic(x), 0.1, 0.25, log = T)} # priors for match pct log odds
+# priors[[2]] = function(x){0}
+
+# Pull out data to fit
+cp_data_orth = all.data %>%
+  filter(CP_subset == "CP",
+         Task == "Orthogonal",
+         Task_item %in% c(6, 8, 10))
+# check fit with all values
+# Task_item %in% c(3, 4, 6, 8, 10))
+
+# MLE fit for CoV and exact match percent
+# TODO fit this as a percent of subjects rather than responses
+cp_vars_exact_match_orth = mle_fit_exact_match(cp_data_orth, fit_params_cp_exact_match_orth)
+cp_vars_exact_match_orth
+exp(cp_vars_exact_match_orth['cov_fitted'])
+logistic(cp_vars_exact_match_orth['match_log_odds_fitted'])
+
+
+BIC_approx_orth = -2 * cp_vars_approx_orth['logL'] +
+  k_approx * log(length(cp_data_orth$SID))
+BIC_approx_orth 
+
+k_exact = 2
+BIC_exact_orth = -2 * cp_vars_exact_match_orth['logL'] +
+  k_exact * log(length(cp_data_orth$SID))
+BIC_exact_orth 
+
+
+
 
 
