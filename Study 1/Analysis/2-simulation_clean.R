@@ -19,8 +19,8 @@ library(psych) # used for logit and logistic transformations
 # # Custom global variables
 cp.sub.palette <- c("#1ECCE3", "#FF7C00")
 #global theme set
-theme_set(theme_bw() + theme(text = element_text(size=9),
-                             axis.title=element_text(size=8),
+theme_set(theme_bw() + theme(text = element_text(size=12),
+                             axis.title=element_text(size=11),
                              strip.text = element_text(margin=margin(2,0,2,0)),
                              panel.grid = element_blank()))
 
@@ -171,13 +171,13 @@ ggplot(subset_data, aes(x = Response)) +
   scale_y_continuous(breaks = seq(0, 40, by = 10)) +
   ylim(c(0, 40)) +
   theme(axis.text.x = element_text(hjust = 1, angle = 45), 
-        legend.position = "right") +
+        legend.position = "top") +
   scale_fill_manual(name = "Data type", 
                     values = c('Simulated' = "#827f7d", 'Subset-knower' = "#FF7C00")) +
   labs(y = "Frequency", 
        fill = "legend") 
 
-# 5. Fitted CoV analysis: Subset with "give-all" percent =======================
+# 3. Fitted CoV analysis: Subset with "give-all" percent =======================
 # Fit CoV instead of using values manually generated,
 # along with percent of people who are doing "give-all".
 # Then generate model data with fitted CoV and give-all percent
@@ -334,16 +334,16 @@ ggplot(subset_data_dummy_approximation, aes(x = Response)) +
   ylim(c(0, 40)) +
   facet_grid(type~Task_item) +
   theme(axis.text.x = element_text(hjust = 1, angle = 45), 
-        legend.position = "right") +
+        legend.position = "top") +
   scale_fill_manual(name = "Data type", 
                     values = c('Subset-knower' = "#FF7C00", 'Simulated' = "#827f7d")) +
   labs(y = "Frequency", 
        fill = "legend") + 
   guides(fill = guide_legend(reverse = TRUE))
 
-ggsave('Study 1/Analysis/Figures/subset_simulation_data.png', width = 8)
+ggsave('Study 1/Analysis/Figures/subset_simulation_data.png', width = 8, height = 5)
 
-# 3. Fitted CoV analysis: CP ===================================================
+# 5. Fitted CoV analysis: CP ===================================================
 # Fit CoV to CP knower data
 # Then generate model data with fitted CoV
 
@@ -405,13 +405,13 @@ ggplot(cp_data, aes(x = Response)) +
   ylim(c(0, 40)) +
   facet_grid(~Task_item) +
   theme(axis.text.x = element_text(hjust = 1, angle = 45), 
-        legend.position = "right") +
+        legend.position = "top") +
   scale_fill_manual(name = "Data type", 
                     values = c('Simulated' = "#827f7d", 'CP-knower' = "#1ECCE3")) +
   labs(y = "Frequency", 
        fill = "legend") 
 
-# 4. Fitted CoV analysis: CP with exact match percent ==========================
+# 6. Fitted CoV analysis: CP with exact match percent ==========================
 # Fit CoV instead of using values manually generated,
 # along with percent of people who are doing "exact match".
 # Then generate model data with fitted CoV and exact match percent
@@ -509,7 +509,6 @@ cp_vars_exact_match
 exp(cp_vars_exact_match['cov_fitted'])
 logistic(cp_vars_exact_match['match_log_odds_fitted'])
 
-
 # Compare BICs 
 # "In general, BIC penalizes models with more parameters more than AICc does"
 # So this is good, we should use BIC to be conservative
@@ -580,16 +579,16 @@ ggplot(cp_data_dummy, aes(x = Response)) +
   ylim(c(0, 40)) +
   facet_grid(type~Task_item) +
   theme(axis.text.x = element_text(hjust = 1, angle = 45), 
-        legend.position = "right") +
+        legend.position = "top") +
   scale_fill_manual(name = "Data type", 
                     values = c('Simulated' = "#827f7d", 'CP-knower' = "#1ECCE3")) +
   labs(y = "Frequency", 
        fill = "legend") 
 
-ggsave('Study 1/Analysis/Figures/CP_simulation_data.png', width = 8)
+ggsave('Study 1/Analysis/Figures/CP_simulation_data.png', width = 8, height = 5)
 
 
-# 5. Fitted CoV analysis: Subset with exact match percent ======================
+# 7. Fitted CoV analysis: Subset with exact match percent ======================
 # Fit CoV instead of using values manually generated,
 # along with percent of people who are doing "exact match".
 # Then generate model data with fitted CoV and exact match percent
@@ -625,7 +624,7 @@ BIC_approx
 
 BIC_exact_match < BIC_approx # If FALSE, yay!
 
-# 6. Fitted CoV analysis: CP approximation, orthogonal data ====================
+# 8. Fitted CoV analysis: CP approximation, orthogonal data ====================
 ## Analysis
 fit_params_cp_approx_orth = c("logL", "n", "cov_fitted")
 priors = list()
@@ -688,11 +687,12 @@ ggplot(cp_data_orth, aes(x = Response)) +
   scale_y_continuous(breaks = seq(0, 30, by = 10), limits = seq(0, 30, by = 10), labels = seq(0, 30, by = 10)) +
   ylim(c(0, 30)) +
   theme(axis.text.x = element_text(hjust = 1, angle = 45), 
-        legend.position = "right") +
+        legend.position = "top") +
   scale_fill_manual(name = "Data type", 
                     values = c('Simulated' = "#827f7d", 'CP-knower' = "#1ECCE3")) +
   labs(y = "Frequency", 
        fill = "legend") 
+
 
 
 # compare fits
