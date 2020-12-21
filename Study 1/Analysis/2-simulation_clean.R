@@ -20,9 +20,9 @@ library(psych) # used for logit and logistic transformations
 GIVE_ALL_MAX = 15 # maximum value participants can provide
 SAMPLE_N = 10000 # number of sample "participants" to use in simulation data
 
-theme_set(theme_bw() + theme(text = element_text(size=12),
-                             axis.title=element_text(size=11),
-                             strip.text = element_text(margin=margin(2,0,2,0)),
+theme_set(theme_bw() + theme(text = element_text(size = 12),
+                             axis.title=element_text(size = 11),
+                             strip.text = element_text(margin=margin(2, 0, 2, 0)),
                              panel.grid = element_blank()))
 
 #
@@ -344,21 +344,6 @@ subset_simulation_data_give_all = subset_simulation_data_give_all %>%
                                                   exp(subset_vars_give_all['cov_fitted']), 
                                                   logistic(subset_vars_give_all['give_all_log_odds_fitted'])))
 
-
-# MODEL COMPARISON: Subset approximation, give-all ----
-
-# Compare BIC for subset approximation model and subset "give-all" model
-BIC_subset_approx = get_BIC(subset_vars_approx['logL'],
-                            k = 1, n = length(subset_data$SID))
-BIC_subset_give_all = get_BIC(subset_vars_give_all['logL'],
-                              k = 2, n = length(subset_data$SID))
-# give-all is a slightly better fit than approx.
-# even after correcting for add'l params
-BIC_subset_approx
-BIC_subset_give_all
-BIC_subset_give_all < BIC_subset_approx 
-
-
 # PLOT: Subset, model comparison ----
 
 # Overlaid plots of simulated and real subset-knower data for BOTH approximate AND Give-All
@@ -406,6 +391,21 @@ ggplot(subset_data_dummy_approximation, aes(x = Response)) +
   guides(fill = guide_legend(reverse = TRUE))
 
 ggsave('Study 1/Analysis/Figures/subset_simulation_data.png', width = 8, height = 5)
+
+
+# MODEL COMPARISON: Subset approximation, give-all ----
+
+# Compare BIC for subset approximation model and subset "give-all" model
+BIC_subset_approx = get_BIC(subset_vars_approx['logL'],
+                            k = 1, n = length(subset_data$SID))
+BIC_subset_give_all = get_BIC(subset_vars_give_all['logL'],
+                              k = 2, n = length(subset_data$SID))
+
+# give-all is a slightly better fit than approx.
+# even after correcting for add'l params
+BIC_subset_approx
+BIC_subset_give_all
+BIC_subset_give_all < BIC_subset_approx 
 
 
 #
@@ -489,22 +489,6 @@ cp_simulation_data_exact_match = cp_simulation_data_exact_match %>%
                                                      exp(cp_vars_exact_match['cov_fitted']), 
                                                      logistic(cp_vars_exact_match['match_log_odds_fitted'])))
 
-
-# MODEL COMPARISON: CP approximation, exact match ----
-
-# Compare BIC for CP approximation model and CP "exact match" model
-BIC_cp_approx = get_BIC(cp_vars_approx['logL'],
-                        k = 1, n = length(cp_data$SID))
-BIC_cp_exact_match = get_BIC(cp_vars_exact_match['logL'],
-                             k = 2, n = length(cp_data$SID))
-
-# exact match is a slightly better fit than approx.
-# even after correcting for add'l params
-BIC_cp_approx
-BIC_cp_exact_match
-BIC_cp_exact_match < BIC_cp_approx 
-
-
 # PLOT: CP, model comparison ----
 
 # Overlaid plots of simulated and real CP-knower data 
@@ -551,6 +535,22 @@ ggplot(cp_data_dummy, aes(x = Response)) +
        fill = "legend") 
 
 ggsave('Study 1/Analysis/Figures/CP_simulation_data.png', width = 8, height = 5)
+
+
+# MODEL COMPARISON: CP approximation, exact match ----
+
+# Compare BIC for CP approximation model and CP "exact match" model
+BIC_cp_approx = get_BIC(cp_vars_approx['logL'],
+                        k = 1, n = length(cp_data$SID))
+BIC_cp_exact_match = get_BIC(cp_vars_exact_match['logL'],
+                             k = 2, n = length(cp_data$SID))
+
+# exact match is a slightly better fit than approx.
+# even after correcting for add'l params
+BIC_cp_approx
+BIC_cp_exact_match
+BIC_cp_exact_match < BIC_cp_approx 
+
 
 
 #
@@ -627,7 +627,7 @@ cp_orth_exact_match_priors = list(function(x) {-dnorm(x, log(0.3), 0.1, log = T)
                                   function(x) {-dnorm(logistic(x), 0.1, 0.25, log = T)}) # priors for match pct log odds
 
 # MLE fit for CoV and exact match percent
-cp_vars_exact_match_orth = mle_fit_exact_match(cp_data, 
+cp_vars_exact_match_orth = mle_fit_exact_match(cp_data_orth, 
                                                cp_orth_exact_match_init, 
                                                cp_orth_exact_match_priors)
 # Sanity check fitted values
@@ -642,6 +642,8 @@ BIC_cp_orth_approx = get_BIC(cp_vars_approx_orth['logL'],
 BIC_cp_orth_exact_match = get_BIC(cp_vars_exact_match_orth['logL'],
                                   k = 2, n = length(cp_data_orth$SID))
 
-# exact match appears to be a better fit for the CP knower orthogonal data
+# approximation is a slightly better fit than exact match after correcting
+# for add'l params (they're basically identical)
 BIC_cp_orth_approx
 BIC_cp_orth_exact_match
+
