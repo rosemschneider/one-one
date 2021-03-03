@@ -41,6 +41,9 @@ all.data %<>%
          Task_item = as.numeric(as.character(Task_item)),
          Response = as.numeric(as.character(Response)))
 
+## save data for aggregate graph 
+write.csv(all.data, "Study 1/Data/agg_data_exp1.csv")
+
 
 ## make an error df
 error.df <- all.data %>%
@@ -87,6 +90,13 @@ all.data %>%
   group_by(Sex)%>%
   summarise(n = n())
 
+#sex/KL
+all.data %>%
+  distinct(SID, Sex, CP_subset)%>%
+  group_by(CP_subset,Sex)%>%
+  summarise(n = n())
+
+
 # Accuracy ----
 ## Correct response defined as exact match
 
@@ -97,6 +107,23 @@ all.data %>%
                list(~mean(., na.rm=T),
                     ~sd(., na.rm=T)))%>%
   dplyr::select(CP_subset, Task, Numerosity, mean, sd)
+
+all.data %>%
+  group_by(CP_subset, Numerosity)%>%
+  summarise_at('Correct',
+               list(~mean(., na.rm=T),
+                    ~sd(., na.rm=T)))%>%
+  dplyr::select(CP_subset, Numerosity, mean, sd)
+
+## Overall accuracy
+all.data %>%
+  filter(Task == "Parallel" | 
+           Task == "Orthogonal")%>%
+  group_by(CP_subset)%>%
+  summarise_at('Correct',
+               list(~mean(., na.rm=T),
+                    ~sd(., na.rm=T)))%>%
+  dplyr::select(CP_subset, mean, sd)
 
 # ...visualizations of accuracy ----
 all.data %>%
@@ -423,6 +450,26 @@ leveneTest(Response ~ Task, data = subset(var.df,
                                           CP_subset == "Subset" &
                                             Task_item == 10))
 
+## CP vs. subset
+## 3
+leveneTest(Response ~ CP_subset, data = subset(var.df,
+                                               Task_item == 3))
+
+## 4
+leveneTest(Response ~ CP_subset, data = subset(var.df,
+                                               Task_item == 4))
+
+## 6
+leveneTest(Response ~ CP_subset, data = subset(var.df,
+                                          Task_item == 6))
+
+## 8
+leveneTest(Response ~ CP_subset, data = subset(var.df,
+                                               Task_item == 8))
+
+## 10
+leveneTest(Response ~ CP_subset, data = subset(var.df,
+                                               Task_item == 10))
 
 # ... follow-up: what is the modal response for each set size and kl? ----
 # Create the function.
@@ -534,8 +581,42 @@ cp.hc.hc <- glmer(Correct ~ highest_count.c + Task_item.c + Task + age.c + (1|SI
 anova(cp.hc.base, cp.hc.hc, test = 'lrt') #nope, p = .83
 
 # Counting attempts ----
-## Do children who attempt to count do better?
-## Still to import into this script - from previous analysis, nope
+## How often do children attempt to count by knower level? 
+all.data %>%
+  filter(Task == "Parallel" | 
+           Task == "Orthogonal")%>%
+  group_by(CP_subset)%>%
+  summarise(n = n(),
+            n_count = sum(Counting_validate, na.rm = TRUE), 
+            n_num = sum(Num_lang, na.rm = TRUE))
+
+## Did children ever try to repeatedly count? 
+all.data %>%
+  filter(Task == "Parallel" | 
+           Task == "Orthogonal")%>%
+  group_by(SID, Task)%>%
+  summarise(n = n(),
+            n_count = sum(Counting_validate, na.rm = TRUE), 
+            n_num = sum(Num_lang, na.rm = TRUE))%>%
+  filter(n_count > 2)
+
+## how often did kids count and get the correct answer??
+all.data %>%
+  filter(Task == "Parallel" | 
+           Task == "Orthogonal", 
+         Counting_validate == 1)%>%
+  group_by(Correct)%>%
+  summarise(n = n())
+
+
+ all.data %>%
+  filter(Task == "Parallel" | 
+           Task == "Orthogonal")%>%
+  group_by(Task, Task_item)%>%
+  summarise(n_count = sum(Counting_validate, na.rm = TRUE))%>%
+  group_by(Task)%>%
+  mutate(total.n = sum(n_count))
+
 
 
 # Error ----
