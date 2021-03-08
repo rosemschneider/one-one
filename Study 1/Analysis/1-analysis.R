@@ -115,6 +115,14 @@ all.data %>%
                     ~sd(., na.rm=T)))%>%
   dplyr::select(CP_subset, Numerosity, mean, sd)
 
+## by identity
+all.data %>%
+  group_by(CP_subset, Condition)%>%
+  summarise_at('Correct',
+               list(~mean(., na.rm=T),
+                    ~sd(., na.rm=T)))%>%
+  dplyr::select(CP_subset, Condition, mean, sd)
+
 ## Overall accuracy
 all.data %>%
   filter(Task == "Parallel" | 
@@ -269,7 +277,7 @@ all.data %>%
         panel.grid = element_blank(),
         legend.title = element_blank()) +
   labs(x = "Set size", y = "Mean performance") +
-  scale_colour_manual(values = cp.sub.palette)
+  scale_colour_manual(values = cp.sub.palette) + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  +
   labs(color = "Knower Level")
 
@@ -307,6 +315,23 @@ overall.acc.kl.int <- glmer(Correct ~ CP_subset*Task_item.c + Task + age.c + (1|
 anova(overall.acc.base, overall.acc.kl, overall.acc.kl.int, test = 'lrt') ##nope - interaction doesn't significantly improve model fit; p = .27
 tidy(overall.acc.kl, conf.int=T) %>% #coefficients, cis, and p values
   mutate_at(c("estimate", "conf.low", "conf.high"), list(EXP=exp))
+
+## LRT for main effects
+#add CP_subset-knower status
+overall.acc.kl.noage <- glmer(Correct ~ CP_subset + Task_item.c + Task + (1|SID),
+                        family = "binomial", data = model.df)
+anova(overall.acc.kl.noage, overall.acc.kl, test = 'lrt')
+## set size
+overall.acc.kl.nosize <- glmer(Correct ~ CP_subset + Task + age.c + (1|SID),
+                              family = "binomial", data = model.df)
+anova(overall.acc.kl.nosize, overall.acc.kl, test = 'lrt')
+## orientation
+overall.acc.kl.notask <- glmer(Correct ~ CP_subset + Task_item.c + age.c + (1|SID),
+                               family = "binomial", data = model.df)
+anova(overall.acc.kl.notask, overall.acc.kl, test = 'lrt')
+
+
+
 
 ### FOLLOW UP TEST FOR 3 WAY INTERACTION BETWEEN SET SIZE, ORIENTATION, AND CP ###
 ## FIRST, test for interaction between task and set size
@@ -627,6 +652,24 @@ error.df %>%
                list(~mean(., na.rm=T),
                     ~sd(., na.rm=T)))%>%
   dplyr::select(CP_subset, Task, Numerosity, mean, sd)
+ 
+ #By task
+ error.df %>%
+   group_by(CP_subset, Task)%>%
+   summarise_at('abs.error',
+                list(~mean(., na.rm=T),
+                     ~sd(., na.rm=T)))%>%
+   dplyr::select(CP_subset, Task, mean, sd)
+ 
+ #By KL
+ error.df %>%
+   group_by(CP_subset)%>%
+   summarise_at('abs.error',
+                list(~mean(., na.rm=T),
+                     ~sd(., na.rm=T)))%>%
+   dplyr::select(CP_subset, mean, sd)
+ 
+ 
 
 # ...visualization: overall error ----
 error.df %>%
@@ -694,6 +737,22 @@ anova(overall.error.base, overall.error.kl, overall.error.int, test = 'lrt')
 tidy(overall.error.kl, conf.int=T) %>% #coefficients, cis, and p values
   mutate_at(c("estimate", "conf.low", "conf.high"), list(EXP=exp))
 
+## LRTs for main effects
+## age
+overall.error.kl.noage <- lmer(abs.error ~ CP_subset + Task_item.c + Task + (1|SID),
+                               data = error.model.df)
+anova(overall.error.kl.noage, overall.error.kl, test = 'lrt')
+
+## set size
+overall.error.kl.nosize <- lmer(abs.error ~ CP_subset + Task + age.c + (1|SID),
+                               data = error.model.df)
+anova(overall.error.kl.nosize, overall.error.kl, test = 'lrt')
+
+## task
+overall.error.kl.notask <- lmer(abs.error ~ CP_subset + Task_item.c +  age.c + (1|SID),
+                                data = error.model.df)
+anova(overall.error.kl.notask, overall.error.kl, test = 'lrt')
+
 # ... follow up: is there a three-way interaction with orientation? ----
 follow.3way.error.base <- lmer(abs.error ~ CP_subset + Task + Task_item.c + age.c +
                                  (1|SID),
@@ -725,9 +784,3 @@ overall.error.cond.int <- lmer(abs.error ~ Condition*CP_subset+ Task_item.c + Ta
 car::Anova(overall.error.cond.int) #but a significant interaction, p = .001
 tidy(overall.error.cond.int, conf.int=T) %>% #coefficients, cis, and p values
   mutate_at(c("estimate", "conf.low", "conf.high"), list(EXP=exp))
-
-#multiple comparisons
-error.group <- lmer(abs.error ~ CP_subset + Numerosity + Condition +
-                      age.group.floor + (1|SID),
-                    data=subset(error.model.df, Task == "Parallel"))
-emmeans::emmeans(error.group, list(pairwise ~ CP_subset*Numerosity*Condition), adjust = 'tukey')
