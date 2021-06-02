@@ -23,8 +23,8 @@ library(patchwork)
 # # Custom global variables
 cp.sub.palette <- c("#1ECCE3", "#FF7C00")
 #global theme set
-theme_set(theme_bw() + theme(text = element_text(size=9),
-                             axis.title=element_text(size=8),
+theme_set(theme_bw() + theme(text = element_text(size=11),
+                             axis.title=element_text(size=10),
                              strip.text = element_text(margin=margin(2,0,2,0)),
                              panel.grid = element_blank()))
 
@@ -108,6 +108,7 @@ all.data %>%
                     ~sd(., na.rm=T)))%>%
   dplyr::select(CP_subset, Task, Numerosity, mean, sd)
 
+## By numerosity and knower level
 all.data %>%
   group_by(CP_subset, Numerosity)%>%
   summarise_at('Correct',
@@ -115,7 +116,7 @@ all.data %>%
                     ~sd(., na.rm=T)))%>%
   dplyr::select(CP_subset, Numerosity, mean, sd)
 
-## by identity
+## by identity and knower level
 all.data %>%
   group_by(CP_subset, Condition)%>%
   summarise_at('Correct',
@@ -144,7 +145,6 @@ all.data %>%
   geom_line() +
   geom_linerange(aes(ymin = ci_lower, ymax = ci_upper),
                  width = .1) +
-  theme_bw(base_size = 15) +
   facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
   theme(panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -154,7 +154,7 @@ all.data %>%
   scale_colour_manual(values = cp.sub.palette) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(color= "Knower Level")
-ggsave("Figures/mean_accuracy.png", width = 5.8, height = 3.5)
+ggsave("Study 1/Analysis/Figures/mean_accuracy.png", width = 5.8, height = 2.5)
 
 ## ... visualization of just parallel for talks ----
 all.data %>%
@@ -178,28 +178,29 @@ all.data %>%
   scale_colour_manual(values = cp.sub.palette) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(color= "Knower Level")
-ggsave("Figures/mean_accuracy_parallel.png", width = 4, height = 3.5)
+ggsave("Study 1/Analysis/Figures/mean_accuracy_parallel.png", width = 4, height = 3)
 
 # ...response distribution: Parallel ----
 para <- all.data %>%
   filter(Task == "Parallel")%>%
-  filter(Task_item > 2)%>%
   group_by(CP_subset, Task_item, Response)%>%
   # summarise(n = n()) %>%
   ggplot(aes(x = Response, fill = CP_subset)) +
   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
   geom_histogram(color = 'black', binwidth = 1) +
-  theme_bw(base_size = 18) +
   theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
-        panel.grid = element_blank()) +
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 18),
+        panel.grid = element_blank(), 
+        strip.text = element_text(size = 18), 
+        axis.title = element_text(size = 20), 
+        text = element_text(size= 21)) +
   scale_fill_manual(values = cp.sub.palette) +
   facet_grid(CP_subset ~ Task_item) +
-  scale_x_continuous(breaks = seq(1, 15, 1)) +
+  scale_x_continuous(breaks = c(1, 5, 10 ,15)) +
   labs(x = 'Number of items given', y = 'Frequency',
-       title = 'a) Parallel trials')
+       title = 'A) Parallel trials')
 
-ggsave("Figures/dist_response_parallel.png", width = 14)
+ggsave("Study 1/Analysis/Figures/dist_response_parallel.png", height = 4)
 
 # ...response distribution: Orthogonal ----
 orth <- all.data %>%
@@ -210,21 +211,23 @@ orth <- all.data %>%
   ggplot(aes(x = Response, fill = CP_subset)) +
   geom_vline(aes(xintercept = Task_item), linetype = "dashed") +
   geom_histogram(binwidth = 1, color = 'black') +
-  theme_bw(base_size = 18) +
   theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
-        panel.grid = element_blank()) +
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 18),
+        panel.grid = element_blank(), 
+        strip.text = element_text(size = 18), 
+        axis.title = element_text(size = 20), 
+        text = element_text(size= 21)) +
   scale_fill_manual(values = cp.sub.palette) +
   facet_grid(CP_subset ~ Task_item) +
-  scale_x_continuous(breaks = seq(1, 15, 1)) +
+  scale_x_continuous(breaks = c(1, 5, 10 ,15)) +
   labs(x = 'Number of items given', y = 'Frequency',
-       title = 'b) Orthogonal trials')
+       title = 'B) Orthogonal trials')
 
-ggsave("Figures/dist_response_orthogonal.png", width = 14)
+ggsave("Study 1/Analysis/Figures/dist_response_orthogonal.png", width = 14)
 
 ## putting together para/orth together for a pretty paper figure
 para / orth
-ggsave("Figures/dist_response_both.png", width = 14,
+ggsave("Study 1/Analysis/Figures/dist_response_both.png", width = 14,
        height = 10)
 
 # ...accuracy by age ----
@@ -281,7 +284,7 @@ all.data %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  +
   labs(color = "Knower Level")
 
-ggsave("Figures/mean_accuracy_condition.png", width = 6, height = 4.2)
+ggsave("Study 1/Analysis/Figures/mean_accuracy_condition.png", width = 6, height = 4.2)
 
 # ...Overall accuracy by CP-knower status analysis ----
 #make model df
@@ -289,11 +292,6 @@ model.df <- all.data %>%
   mutate(Task_item.c = as.vector(scale(Task_item, center = TRUE, scale=TRUE)),
          count_proficiency.c = as.vector(scale(count_proficiency, center = TRUE, scale = TRUE)),
          CP_subset = factor(CP_subset, levels = c("Subset", "CP")))
-
-summary(glmer(Correct ~ Task_item.c + age.c + (1|SID),
-        family = "binomial",
-        data = subset(model.df, CP_subset == "CP" && Task == "Parallel")))
-
 
 # Do CP-knowers perform better overall?
 #create a base model that includes numerosity and task
@@ -361,7 +359,7 @@ three_way.full <- glmer(Correct ~  CP_subset*Task*Task_item.c + age.c + (1|SID),
                         family = "binomial", data = model.df,
                         control=glmerControl(optimizer="bobyqa",
                                              optCtrl=list(maxfun=2e4)))
-anova(three_way.base.full, three_way.full, test= 'lrt') # significant interaction between set size, task, and cp knower status, p = .0005
+anova(three_way.base.full, three_way.2int, three_way.base.full, test= 'lrt') # significant interaction between set size, task, and cp knower status, p = .0005
 summary(three_way.full)
 
 # ...Followup analysis: Are CP-knowers significantly more accurate than subset-knowers on Orthogonal task? ----
@@ -403,23 +401,6 @@ condition.acc.2int <- glmer(Correct ~ CP_subset*Condition + Task_item.c + Task +
 anova(overall.acc.kl, condition.acc.base, condition.acc.2int, test = 'lrt') ##yes, sig.interaction, p = .002
 tidy(condition.acc.2int, conf.int=T) %>% #coefficients, cis, and p values
   mutate_at(c("estimate", "conf.low", "conf.high"), list(EXP=exp))
-
-#multiple comparisons for parallel condition;
-## restricting to parallel because the orthogonal performance is so low for both groups
-## NB that age is now categorical, not continuous, so that we can use Tukey's HSD - same with numerosity
-
-## No difference between CP and Subset knowers when items are identical (p = .11)
-## No difference for subset knowers on identical vs non-identical (p = .23)
-## CP-knowers better on non-identical than subset knowers' identical (p = .0001)
-## CP-knowers better on identical than subset knowers' non-identical (p < .0001)
-## No difference for CP-knowers between identical and non-identical (p = .09)
-## CP-knowers better on non-identical than subset knowers (p < .0001)
-condition.group <- glmer(Correct ~ CP_subset*Condition + Numerosity  +
-                         age.group.floor + (1|SID),
-                       data=subset(model.df, Task == "Parallel"), family = 'binomial',
-                       control=glmerControl(optimizer="bobyqa",
-                                            optCtrl=list(maxfun=2e4)))
-emmeans::emmeans(condition.group, list(pairwise ~ CP_subset*Condition), adjust = 'tukey')
 
 # ...follow up: comparing variances ----
 ##exploratory analysis - I'm looking at variance as a proxy for strategy
@@ -542,17 +523,17 @@ count.prof.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID),
                          data = subset(count.prof.df, CP_subset == "Subset"),
                          control=glmerControl(optimizer="bobyqa",
                                               optCtrl=list(maxfun=2e4)))
-count.prof.count <- glmer(Correct ~ count_proficiency.group + Task_item.c + Task + age.c + (1|SID),
+count.prof.count <- glmer(Correct ~ count_proficiency.c + Task_item.c + Task + age.c + (1|SID),
                          family = 'binomial',
                          data = subset(count.prof.df, CP_subset == "Subset"),
                          control=glmerControl(optimizer="bobyqa",
                                               optCtrl=list(maxfun=2e4)))
-count.prof.int <- glmer(Correct ~ count_proficiency.group*Task_item.c + Task + age.c + (1|SID),
+count.prof.int <- glmer(Correct ~ count_proficiency.c*Task_item.c + Task + age.c + (1|SID),
                          family = 'binomial',
                          data = subset(count.prof.df, CP_subset == "Subset"),
                         control=glmerControl(optimizer="bobyqa",
                                              optCtrl=list(maxfun=2e4)))
-anova(count.prof.base, count.prof.count, count.prof.int, test = 'lrt') #no significant effect of counting proficiency, p = .85
+anova(count.prof.base, count.prof.count, count.prof.int, test = 'lrt') #no significant effect of counting proficiency, p = .56
 
 #now try with CP knowers - exploratory
 count.prof.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID),
@@ -560,18 +541,61 @@ count.prof.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID),
                          data = subset(count.prof.df, CP_subset == "CP"),
                          control=glmerControl(optimizer="bobyqa",
                                               optCtrl=list(maxfun=2e4)))
-count.prof.count <- glmer(Correct ~ count_proficiency.group + Task_item.c + Task + age.c + (1|SID),
+count.prof.count <- glmer(Correct ~ count_proficiency.c + Task_item.c + Task + age.c + (1|SID),
                           family = 'binomial',
                           data = subset(count.prof.df, CP_subset == "CP"),
                           control=glmerControl(optimizer="bobyqa",
                                                optCtrl=list(maxfun=2e4)))
-count.prof.int <- glmer(Correct ~ count_proficiency.group*Task_item.c + Task + age.c + (1|SID),
+count.prof.int <- glmer(Correct ~ count_proficiency.c*Task_item.c + Task + age.c + (1|SID),
                         family = 'binomial',
                         data = subset(count.prof.df, CP_subset == "CP"),
                         control=glmerControl(optimizer="bobyqa",
                                              optCtrl=list(maxfun=2e4)))
-anova(count.prof.base, count.prof.count, count.prof.int, test = 'lrt') #no significant effect of counting proficiency, p = .91
+anova(count.prof.base, count.prof.count, count.prof.int, test = 'lrt') #no significant effect of counting proficiency, p = .76
 
+#now try with both groups collapsed
+count.prof.base.all <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID),
+                         family = 'binomial',
+                         data = count.prof.df,
+                         control=glmerControl(optimizer="bobyqa",
+                                              optCtrl=list(maxfun=2e4)))
+count.prof.count.all <- glmer(Correct ~ count_proficiency.c + Task_item.c + Task + age.c + (1|SID),
+                          family = 'binomial',
+                          data = count.prof.df,
+                          control=glmerControl(optimizer="bobyqa",
+                                               optCtrl=list(maxfun=2e4)))
+count.prof.int.all <- glmer(Correct ~ count_proficiency.c*Task_item.c + Task + age.c + (1|SID),
+                        family = 'binomial',
+                        data = count.prof.df,
+                        control=glmerControl(optimizer="bobyqa",
+                                             optCtrl=list(maxfun=2e4)))
+anova(count.prof.base.all, count.prof.count.all, count.prof.int.all, test = 'lrt') 
+
+### There is a main effect of counting proficiency, but does it explain anything beyond the CP-knower stage
+count.prof.count.all.base <- glmer(Correct ~ CP_subset + Task_item.c + Task + age.c + (1|SID),
+                              family = 'binomial',
+                              data = count.prof.df,
+                              control=glmerControl(optimizer="bobyqa",
+                                                   optCtrl=list(maxfun=2e4)))
+count.prof.count.all.kl <- glmer(Correct ~ count_proficiency.group + CP_subset + Task_item.c + Task + age.c + (1|SID),
+                                   family = 'binomial',
+                                   data = count.prof.df,
+                                   control=glmerControl(optimizer="bobyqa",
+                                                        optCtrl=list(maxfun=2e4)))
+anova(count.prof.count.all.base, count.prof.count.all.kl, test = 'lrt')
+
+### does CP knower explain anything beyond counting proficiency
+count.prof.count.all.base <- glmer(Correct ~ count_proficiency.c + Task_item.c + Task + age.c + (1|SID),
+                                   family = 'binomial',
+                                   data = count.prof.df,
+                                   control=glmerControl(optimizer="bobyqa",
+                                                        optCtrl=list(maxfun=2e4)))
+count.prof.count.all.kl <- glmer(Correct ~ CP_subset + count_proficiency.group  +Task_item.c + Task + age.c + (1|SID),
+                                 family = 'binomial',
+                                 data = count.prof.df,
+                                 control=glmerControl(optimizer="bobyqa",
+                                                      optCtrl=list(maxfun=2e4)))
+anova(count.prof.count.all.base, count.prof.count.all.kl, test = 'lrt')
 
 # Highest count ----
 #Do children with higher verbal counts have better set-matching accuracy?
@@ -603,7 +627,60 @@ cp.hc.hc <- glmer(Correct ~ highest_count.c + Task_item.c + Task + age.c + (1|SI
                       data = subset(hc.df, CP_subset == "CP"),
                       control=glmerControl(optimizer="bobyqa",
                                            optCtrl=list(maxfun=2e4)))
-anova(cp.hc.base, cp.hc.hc, test = 'lrt') #nope, p = .83
+anova(cp.hc.base, cp.hc.hc, test = 'lrt') #nope, p = .69
+
+## Highest count with groups collapsed
+all.hc.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID),
+                             family = 'binomial',
+                             data = hc.df,
+                             control=glmerControl(optimizer="bobyqa",
+                                                  optCtrl=list(maxfun=2e4)))
+all.hc.base.hc <- glmer(Correct ~ highest_count.c + Task_item.c + Task + age.c + (1|SID),
+                              family = 'binomial',
+                              data = hc.df,
+                              control=glmerControl(optimizer="bobyqa",
+                                                   optCtrl=list(maxfun=2e4)))
+all.hc.base.hc.int <- glmer(Correct ~ highest_count.c*Task_item.c + Task + age.c + (1|SID),
+                            family = 'binomial',
+                            data = hc.df,
+                            control=glmerControl(optimizer="bobyqa",
+                                                 optCtrl=list(maxfun=2e4)))
+anova(all.hc.base, all.hc.base.hc, all.hc.base.hc.int, test = 'lrt') ## Highest count does not improve fit of the base model
+
+
+## Highest count above and beyond CP?? 
+## Highest count with groups collapsed
+cp.all.hc.base <- glmer(Correct ~ CP_subset + Task_item.c + Task + age.c + (1|SID),
+                     family = 'binomial',
+                     data = hc.df,
+                     control=glmerControl(optimizer="bobyqa",
+                                          optCtrl=list(maxfun=2e4)))
+cp.all.hc.base.hc <- glmer(Correct ~ highest_count.c + CP_subset + Task_item.c + Task + age.c + (1|SID),
+                        family = 'binomial',
+                        data = hc.df,
+                        control=glmerControl(optimizer="bobyqa",
+                                             optCtrl=list(maxfun=2e4)))
+
+anova(cp.all.hc.base, cp.all.hc.base.hc, test = 'lrt') ## Highest count does not improve fit of the base model
+
+## Ombinus with HC and counting proficiency
+cp.all.hc.base <- glmer(Correct ~ CP_subset + Task_item.c + Task + age.c + (1|SID),
+                        family = 'binomial',
+                        data = hc.df,
+                        control=glmerControl(optimizer="bobyqa",
+                                             optCtrl=list(maxfun=2e4)))
+cp.all.hc.base.prof <- glmer(Correct ~ count_proficiency.c + CP_subset + Task_item.c + Task + age.c + (1|SID),
+                           family = 'binomial',
+                           data = hc.df,
+                           control=glmerControl(optimizer="bobyqa",
+                                                optCtrl=list(maxfun=2e4)))
+cp.all.hc.base.hc <- glmer(Correct ~ highest_count.c + count_proficiency.c + CP_subset + Task_item.c + Task + age.c + (1|SID),
+                             family = 'binomial',
+                             data = hc.df,
+                             control=glmerControl(optimizer="bobyqa",
+                                                  optCtrl=list(maxfun=2e4)))
+anova(cp.all.hc.base, cp.all.hc.base.prof, cp.all.hc.base.hc, test = 'lrt')
+
 
 # Counting attempts ----
 ## How often do children attempt to count by knower level? 
@@ -682,7 +759,6 @@ error.df %>%
   geom_line() +
   geom_linerange(aes(ymin = ci_lower, ymax = ci_upper),
                  width = .1) +
-  theme_bw(base_size = 15) +
   facet_grid(~factor(Task, levels = c("Parallel", "Orthogonal")), scale = "free_x") +
   theme(legend.position = "right",
         panel.grid = element_blank(),
@@ -692,7 +768,7 @@ error.df %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  +
   labs(color = "Knower Level")
 
-ggsave("Figures/mean_abs_error.png", width = 5.8, height = 3.5)
+ggsave("Study 1/Analysis/Figures/mean_abs_error.png", width = 5.8, height = 2.5)
 
 # ... visualization: Error by condition ----
 error.df %>%
@@ -728,7 +804,7 @@ overall.error.base <- lmer(abs.error ~ Task_item.c + Task + age.c + (1|SID),
 overall.error.kl <- lmer(abs.error ~ CP_subset + Task_item.c + Task + age.c + (1|SID),
                          data = error.model.df)
 #compare - does CP knower status explain variance above age?
-anova(overall.error.base, overall.error.kl, test = 'lrt') # yes, p = .002
+anova(overall.error.base, overall.error.kl, test = 'lrt') # yes, p = .005
 
 #add interaction
 overall.error.int <- lmer(abs.error ~ CP_subset*Task_item.c + Task + age.c + (1|SID),

@@ -12,7 +12,7 @@ library(stringr)
 '%!in%' <- function(x,y)!('%in%'(x,y))
 
 # Read in data ----
-data.raw <- read.csv('../Data/1-1_Control data - Data.csv')%>%
+data.raw <- read.csv('Study 2.1/Data/1-1_Control data - Data.csv')%>%
   filter(SID != "CopyPasteMe", 
          SID != "Pilot")%>%
   droplevels()%>%
@@ -109,8 +109,8 @@ counting.check.df <- data.raw %>%
 ##rename 
 all.data.study2 <- data.raw 
 
-save(all.data.study2, file="../Data/one-one_control_cleaned.RData")
-save(counting.check.df, file = "../Data/one-one_control_check_cleaned.RData")
+save(all.data.study2, file="Study 2.1/Data/one-one_control_cleaned.RData")
+save(counting.check.df, file = "Study 2.1/Data/one-one_control_check_cleaned.RData")
 
-write.csv(all.data.study2, file="../Data/one-one_control_cleaned.csv")
+write.csv(all.data.study2, file="Study 2.1/Data/one-one_control_cleaned.csv")
 

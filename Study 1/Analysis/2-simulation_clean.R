@@ -22,7 +22,6 @@ SAMPLE_N = 10000 # number of sample "participants" to use in simulation data
 
 theme_set(theme_bw() + theme(text = element_text(size = 12),
                              axis.title=element_text(size = 11),
-                             strip.text = element_text(margin=margin(2, 0, 2, 0)),
                              panel.grid = element_blank()))
 
 #
@@ -495,17 +494,17 @@ cp_simulation_data_exact_match = cp_simulation_data_exact_match %>%
 # For approximation only and approximation + exact match 
 # Rename and plot all together, adding a type for nice faceting
 cp_exact_data <- cp_simulation_data_exact_match %>%
-  mutate(type = "Approximation + Exact match")
+  mutate(type = "One-to-one")
 
 cp_data_abb <- cp_data %>%
-  mutate(type = "Approximation + Exact match")%>%
+  mutate(type = "One-to-one")%>%
   dplyr::select(Task_item, Response, type)
 
 cp_sim_data <- cp_simulation_data_approx %>%
-  mutate(type = "Approximation")
+  mutate(type = "Approximation-only")
 
 cp_data_dummy <- cp_data %>%
-  mutate(type = "Approximation")%>%
+  mutate(type = "Approximation-only")%>%
   dplyr::select(Task_item, Response, type)
 
 # Plot both data simulations with real data
@@ -523,18 +522,26 @@ ggplot(cp_data_dummy, aes(x = Response)) +
                  binwidth = 1, alpha = .9) + #now CP-data for exact
   geom_histogram(data = cp_exact_data, aes(y = ..count.. * scale_factor, fill = 'Simulated'), color = 'black', 
                  binwidth = 1, alpha = .5) + # now simulation data for exact
-  scale_x_continuous(breaks= seq(1, 15, 1)) +
+  scale_x_continuous(breaks= c(1, 5, 10, 15)) +
   scale_y_continuous(breaks = seq(0, 40, by = 10)) +
   ylim(c(0, 40)) +
-  facet_grid(type~Task_item) +
-  theme(axis.text.x = element_text(hjust = 1, angle = 45), 
-        legend.position = "top") +
+  facet_grid(type~Task_item, labeller = label_wrap_gen(width = 2, multi_line = TRUE)) +
+  theme(axis.text.x = element_text(hjust = 1, angle = 45, size = 16), 
+        axis.text.y = element_text(size = 16),
+        legend.position = "top", 
+        strip.background.y =element_rect(fill="white"), 
+        strip.text.y = element_text(size = 18, face = "bold"), 
+        axis.title.x = element_text(size = 18), 
+        axis.title.y = element_text(size = 18), 
+        strip.text.x = element_text(size = 14), 
+        legend.text = element_text(size = 14), 
+        legend.title = element_blank()) +
   scale_fill_manual(name = "Data type", 
                     values = c('Simulated' = "#827f7d", 'CP-knower' = "#1ECCE3")) +
   labs(y = "Frequency", 
        fill = "legend") 
 
-ggsave('Study 1/Analysis/Figures/CP_simulation_data.png', width = 8, height = 5)
+ggsave('Study 1/Analysis/Figures/CP_simulation_data.png', width = 11, height = 6.65)
 
 
 # MODEL COMPARISON: CP approximation, exact match ----
