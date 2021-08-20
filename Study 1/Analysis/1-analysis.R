@@ -110,13 +110,13 @@ all.data %>%
 
 ## By numerosity and knower level
 all.data %>%
-  group_by(CP_subset, Numerosity)%>%
+  group_by(CP_subset, Numerosity, Task)%>%
   summarise_at('Correct',
                list(~mean(., na.rm=T),
                     ~sd(., na.rm=T)))%>%
-  dplyr::select(CP_subset, Numerosity, mean, sd)
+  dplyr::select(CP_subset, Numerosity, Task, mean, sd)
 
-## by identity and knower level
+d## by identity and knower level
 all.data %>%
   group_by(CP_subset, Condition)%>%
   summarise_at('Correct',
@@ -128,11 +128,9 @@ all.data %>%
 all.data %>%
   filter(Task == "Parallel" | 
            Task == "Orthogonal")%>%
-  group_by(CP_subset)%>%
-  summarise_at('Correct',
-               list(~mean(., na.rm=T),
-                    ~sd(., na.rm=T)))%>%
-  dplyr::select(CP_subset, mean, sd)
+  group_by(CP_subset, Task)%>%
+  summarise(mean = mean(Correct, na.rm = TRUE), 
+            sd = sd(Correct, na.rm = TRUE))
 
 # ...visualizations of accuracy ----
 all.data %>%
@@ -175,10 +173,11 @@ all.data %>%
     legend.title = element_blank(),
     legend.position = "right") +
   labs(x = "Set size", y = "Mean accuracy") +
-  scale_colour_manual(values = cp.sub.palette) +
+  # scale_colour_manual(values = cp.sub.palette) +
+  scale_color_brewer(palette = "Paired") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(color= "Knower Level")
-ggsave("Study 1/Analysis/Figures/mean_accuracy_parallel.png", width = 4, height = 3)
+ggsave("Study 1/Analysis/Figures/mean_accuracy_parallel.png", width = 5, height = 3)
 
 # ...response distribution: Parallel ----
 para <- all.data %>%
@@ -311,8 +310,10 @@ overall.acc.kl.int <- glmer(Correct ~ CP_subset*Task_item.c + Task + age.c + (1|
 
 #compare
 anova(overall.acc.base, overall.acc.kl, overall.acc.kl.int, test = 'lrt') ##nope - interaction doesn't significantly improve model fit; p = .27
-tidy(overall.acc.kl, conf.int=T) %>% #coefficients, cis, and p values
-  mutate_at(c("estimate", "conf.low", "conf.high"), list(EXP=exp))
+# tidy(overall.acc.kl, conf.int=T) %>% #coefficients, cis, and p values
+#   mutate_at(c("estimate", "conf.low", "conf.high"), list(EXP=exp))
+
+summary(overall.acc.kl.int)
 
 ## LRT for main effects
 #add CP_subset-knower status
@@ -399,8 +400,9 @@ condition.acc.2int <- glmer(Correct ~ CP_subset*Condition + Task_item.c + Task +
                             control=glmerControl(optimizer="bobyqa",
                                                  optCtrl=list(maxfun=2e4)))
 anova(overall.acc.kl, condition.acc.base, condition.acc.2int, test = 'lrt') ##yes, sig.interaction, p = .002
-tidy(condition.acc.2int, conf.int=T) %>% #coefficients, cis, and p values
-  mutate_at(c("estimate", "conf.low", "conf.high"), list(EXP=exp))
+summary(condition.acc.2int)
+
+emmeans::emmeans(condition.acc.2int, list(pairwise~CP_subset*Condition), adjust = 'none')
 
 # ...follow up: comparing variances ----
 ##exploratory analysis - I'm looking at variance as a proxy for strategy
@@ -490,27 +492,25 @@ var.df %>%
 
 # Counting proficiency ----
 ## visualization of counting proficiency score by KL
-all.data %>%
+count.prof.df<- model.df %>%
   filter(!is.na(count_proficiency))%>%
-  distinct(SID, CP_subset, count_proficiency)%>%
-  mutate(count_proficiency.group = cut(count_proficiency, seq(0, 3, 1), include.lowest = TRUE),
-         count_proficiency.group = factor(count_proficiency.group, labels =
-                                            c("Random counters",
-                                              "Minimal counters",
-                                              "Proficient counters")))%>%
-  group_by(CP_subset, count_proficiency.group)%>%
-  summarise(n = n()) %>%
-  ggplot(aes(x = CP_subset, y = n, fill = count_proficiency.group)) +
-  geom_bar(stat = 'identity')
+  mutate(count_proficiency.group= ifelse(count_proficiency < 1, "Random counters", 
+                                         ifelse((count_proficiency >= 1 & count_proficiency < 2), "Minimal counters", "Proficient counters")), 
+         count_proficiency.group = factor(count_proficiency.group, 
+                                          levels = c("Random counters", 
+                                                     "Minimal counters", 
+                                                     "Proficient counters"), 
+                                          ordered = TRUE))
 
 ##Does counting proficiency predict accuracy? Pre-registered w/ only subset knowers ---
-count.prof.df <- model.df %>%
-  filter(!is.na(count_proficiency.c))%>%
-  mutate(count_proficiency.group = cut(count_proficiency, seq(0, 3, 1), include.lowest = TRUE),
-         count_proficiency.group = factor(count_proficiency.group, labels =
-                                            c("Random counters",
-                                              "Minimal counters",
-                                              "Proficient counters")))
+count.prof.df %>%
+  filter(!is.na(count_proficiency))%>%
+  distinct(SID, CP_subset, count_proficiency.group)%>%
+  group_by(CP_subset, count_proficiency.group)%>%
+  summarise(n = n())%>%
+  ggplot(aes(x = CP_subset, y = n, fill = count_proficiency.group)) + 
+  geom_bar(stat = 'identity')
+
 
 count.prof.df %>%
   distinct(SID, CP_subset, count_proficiency.group)%>%
@@ -523,17 +523,19 @@ count.prof.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID),
                          data = subset(count.prof.df, CP_subset == "Subset"),
                          control=glmerControl(optimizer="bobyqa",
                                               optCtrl=list(maxfun=2e4)))
-count.prof.count <- glmer(Correct ~ count_proficiency.c + Task_item.c + Task + age.c + (1|SID),
+count.prof.count <- glmer(Correct ~ count_proficiency.group + Task_item.c + Task + age.c + (1|SID),
                          family = 'binomial',
                          data = subset(count.prof.df, CP_subset == "Subset"),
                          control=glmerControl(optimizer="bobyqa",
                                               optCtrl=list(maxfun=2e4)))
-count.prof.int <- glmer(Correct ~ count_proficiency.c*Task_item.c + Task + age.c + (1|SID),
+count.prof.int <- glmer(Correct ~ count_proficiency.group*Task_item.c + Task + age.c + (1|SID),
                          family = 'binomial',
                          data = subset(count.prof.df, CP_subset == "Subset"),
                         control=glmerControl(optimizer="bobyqa",
                                              optCtrl=list(maxfun=2e4)))
 anova(count.prof.base, count.prof.count, count.prof.int, test = 'lrt') #no significant effect of counting proficiency, p = .56
+
+summary(count.prof.count)
 
 #now try with CP knowers - exploratory
 count.prof.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID),
@@ -541,12 +543,12 @@ count.prof.base <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID),
                          data = subset(count.prof.df, CP_subset == "CP"),
                          control=glmerControl(optimizer="bobyqa",
                                               optCtrl=list(maxfun=2e4)))
-count.prof.count <- glmer(Correct ~ count_proficiency.c + Task_item.c + Task + age.c + (1|SID),
+count.prof.count <- glmer(Correct ~ count_proficiency.group + Task_item.c + Task + age.c + (1|SID),
                           family = 'binomial',
                           data = subset(count.prof.df, CP_subset == "CP"),
                           control=glmerControl(optimizer="bobyqa",
                                                optCtrl=list(maxfun=2e4)))
-count.prof.int <- glmer(Correct ~ count_proficiency.c*Task_item.c + Task + age.c + (1|SID),
+count.prof.int <- glmer(Correct ~ count_proficiency.group*Task_item.c + Task + age.c + (1|SID),
                         family = 'binomial',
                         data = subset(count.prof.df, CP_subset == "CP"),
                         control=glmerControl(optimizer="bobyqa",
@@ -559,12 +561,12 @@ count.prof.base.all <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID),
                          data = count.prof.df,
                          control=glmerControl(optimizer="bobyqa",
                                               optCtrl=list(maxfun=2e4)))
-count.prof.count.all <- glmer(Correct ~ count_proficiency.c + Task_item.c + Task + age.c + (1|SID),
+count.prof.count.all <- glmer(Correct ~ count_proficiency.group + Task_item.c + Task + age.c + (1|SID),
                           family = 'binomial',
                           data = count.prof.df,
                           control=glmerControl(optimizer="bobyqa",
                                                optCtrl=list(maxfun=2e4)))
-count.prof.int.all <- glmer(Correct ~ count_proficiency.c*Task_item.c + Task + age.c + (1|SID),
+count.prof.int.all <- glmer(Correct ~ count_proficiency.group*Task_item.c + Task + age.c + (1|SID),
                         family = 'binomial',
                         data = count.prof.df,
                         control=glmerControl(optimizer="bobyqa",
@@ -585,7 +587,7 @@ count.prof.count.all.kl <- glmer(Correct ~ count_proficiency.group + CP_subset +
 anova(count.prof.count.all.base, count.prof.count.all.kl, test = 'lrt')
 
 ### does CP knower explain anything beyond counting proficiency
-count.prof.count.all.base <- glmer(Correct ~ count_proficiency.c + Task_item.c + Task + age.c + (1|SID),
+count.prof.count.all.base <- glmer(Correct ~ count_proficiency.group + Task_item.c + Task + age.c + (1|SID),
                                    family = 'binomial',
                                    data = count.prof.df,
                                    control=glmerControl(optimizer="bobyqa",
@@ -596,6 +598,96 @@ count.prof.count.all.kl <- glmer(Correct ~ CP_subset + count_proficiency.group  
                                  control=glmerControl(optimizer="bobyqa",
                                                       optCtrl=list(maxfun=2e4)))
 anova(count.prof.count.all.base, count.prof.count.all.kl, test = 'lrt')
+
+### exploratory - proficient vs. non-proficient
+count.prof.df <- count.prof.df %>%
+  mutate(count_group = ifelse(count_proficiency.group == "Proficient counters", "Proficient", "Non-proficient"), 
+         count_group = factor(count_group, 
+                              levels = c("Non-proficient", 
+                                         "Proficient"), 
+                              ordered = TRUE))
+
+# subset-knowers
+count.prof.base.all <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID),
+                             family = 'binomial',
+                             data = subset(count.prof.df, CP_subset == "Subset"),
+                             control=glmerControl(optimizer="bobyqa",
+                                                  optCtrl=list(maxfun=2e4)))
+count.prof.count.all <- glmer(Correct ~ count_group + Task_item.c + Task + age.c + (1|SID),
+                              family = 'binomial',
+                              data = subset(count.prof.df, CP_subset == "Subset"),
+                              control=glmerControl(optimizer="bobyqa",
+                                                   optCtrl=list(maxfun=2e4)))
+count.prof.int.all <- glmer(Correct ~ count_group*Task_item.c + Task + age.c + (1|SID),
+                            family = 'binomial',
+                            data = subset(count.prof.df, CP_subset == "Subset"),
+                            control=glmerControl(optimizer="bobyqa",
+                                                 optCtrl=list(maxfun=2e4)))
+anova(count.prof.base.all, count.prof.count.all, count.prof.int.all, test = 'lrt') # not significant
+
+# CP-knowers
+count.prof.base.all <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID),
+                             family = 'binomial',
+                             data = subset(count.prof.df, CP_subset == "CP"),
+                             control=glmerControl(optimizer="bobyqa",
+                                                  optCtrl=list(maxfun=2e4)))
+count.prof.count.all <- glmer(Correct ~ count_group + Task_item.c + Task + age.c + (1|SID),
+                              family = 'binomial',
+                              data = subset(count.prof.df, CP_subset == "CP"),
+                              control=glmerControl(optimizer="bobyqa",
+                                                   optCtrl=list(maxfun=2e4)))
+count.prof.int.all <- glmer(Correct ~ count_group*Task_item.c + Task + age.c + (1|SID),
+                            family = 'binomial',
+                            data = subset(count.prof.df, CP_subset == "CP"),
+                            control=glmerControl(optimizer="bobyqa",
+                                                 optCtrl=list(maxfun=2e4)))
+anova(count.prof.base.all, count.prof.count.all, count.prof.int.all, test = 'lrt') # not significant
+
+# both groups collapsed
+count.prof.base.all <- glmer(Correct ~ Task_item.c + Task + age.c + (1|SID),
+                             family = 'binomial',
+                             data = count.prof.df, 
+                             control=glmerControl(optimizer="bobyqa",
+                                                  optCtrl=list(maxfun=2e4)))
+count.prof.count.all <- glmer(Correct ~ count_group + Task_item.c + Task + age.c + (1|SID),
+                              family = 'binomial',
+                              data = count.prof.df, 
+                              control=glmerControl(optimizer="bobyqa",
+                                                   optCtrl=list(maxfun=2e4)))
+count.prof.int.all <- glmer(Correct ~ count_group*Task_item.c + Task + age.c + (1|SID),
+                            family = 'binomial',
+                            data = count.prof.df, 
+                            control=glmerControl(optimizer="bobyqa",
+                                                 optCtrl=list(maxfun=2e4)))
+anova(count.prof.base.all, count.prof.count.all, count.prof.int.all, test = 'lrt') # significant, but does it do anything above CP
+
+### There is a main effect of counting proficiency, but does it explain anything beyond the CP-knower stage
+count.prof.count.all.base <- glmer(Correct ~ CP_subset + Task_item.c + Task + age.c + (1|SID),
+                                   family = 'binomial',
+                                   data = count.prof.df,
+                                   control=glmerControl(optimizer="bobyqa",
+                                                        optCtrl=list(maxfun=2e4)))
+count.prof.count.all.kl <- glmer(Correct ~ count_group + CP_subset + Task_item.c + Task + age.c + (1|SID),
+                                 family = 'binomial',
+                                 data = count.prof.df,
+                                 control=glmerControl(optimizer="bobyqa",
+                                                      optCtrl=list(maxfun=2e4)))
+anova(count.prof.count.all.base, count.prof.count.all.kl, test = 'lrt') # nope
+
+### does CP knower explain anything beyond counting proficiency
+count.prof.count.all.base <- glmer(Correct ~ count_group + Task_item.c + Task + age.c + (1|SID),
+                                   family = 'binomial',
+                                   data = count.prof.df,
+                                   control=glmerControl(optimizer="bobyqa",
+                                                        optCtrl=list(maxfun=2e4)))
+count.prof.count.all.kl <- glmer(Correct ~ CP_subset + count_group  +Task_item.c + Task + age.c + (1|SID),
+                                 family = 'binomial',
+                                 data = count.prof.df,
+                                 control=glmerControl(optimizer="bobyqa",
+                                                      optCtrl=list(maxfun=2e4)))
+anova(count.prof.count.all.base, count.prof.count.all.kl, test = 'lrt') #yes
+
+
 
 # Highest count ----
 #Do children with higher verbal counts have better set-matching accuracy?
@@ -701,6 +793,22 @@ all.data %>%
             n_count = sum(Counting_validate, na.rm = TRUE), 
             n_num = sum(Num_lang, na.rm = TRUE))%>%
   filter(n_count > 2)
+
+## how many childred OVERALL attempted to count
+
+all.data %>%
+  filter(Task == "Parallel" | 
+           Task == "Orthogonal")%>%
+  group_by(SID, CP_subset)%>%
+  summarise(n = n(),
+            n_count = sum(Counting_validate, na.rm = TRUE), 
+            n_num = sum(Num_lang, na.rm = TRUE))%>%
+  group_by(SID, CP_subset)%>%
+  mutate(counter = ifelse(n_count > 1, "Counter", "Non-counter"))%>%
+    group_by(CP_subset, counter) %>%
+  summarise(n =n())
+
+  
 
 ## how often did kids count and get the correct answer??
 all.data %>%
