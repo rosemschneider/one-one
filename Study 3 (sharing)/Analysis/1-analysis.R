@@ -2,7 +2,7 @@
 ## Rose M. Schneider
 
 ## Run the cleaning script
-source("Study 4/Analysis/0-clean.R")
+source("Study 3 (sharing)/Analysis/0-clean.R")
 
 ## setup
 rm(list = ls())
@@ -23,7 +23,7 @@ theme_set(theme_bw() + theme(text = element_text(size=11),
                              panel.grid = element_blank()))
 
 ## Read in the data ====
-sharing.data <- read.csv("Study 4/Data/one-one_sharing_cleaned.csv")%>%
+sharing.data <- read.csv("Study 3 (sharing)/Data/one-one_sharing_cleaned.csv")%>%
   mutate(Condition = "Study 3", 
          Response = ifelse(Response == 17, 15, as.numeric(Response)))%>% #one miscoded item
   filter(Task_item > 2) #all training trials should be removed, but just in case
@@ -52,6 +52,17 @@ baseline.limited <- baseline.data %>%
 
 full.df <- bind_rows(sharing.limited, baseline.limited)
 
+## Accuracy descriptives
+full.df %>%
+  group_by(Condition)%>%
+  summarise(mean = mean(Correct, na.rm = TRUE), 
+            sd = sd(Correct, na.rm = TRUE))
+
+full.df %>%
+  group_by(Condition, CP_subset)%>%
+  summarise(mean = mean(Correct, na.rm = TRUE), 
+            sd = sd(Correct, na.rm = TRUE))
+
 ## Accuracy visualization
 full.df %>%
   mutate(Task_item = factor(Task_item, levels = c("3", "4",
@@ -76,7 +87,7 @@ full.df %>%
         # legend.margin = unit(-0.6, 'cm'))
         )+
   labs(color= "Condition")
-ggsave("Study 4/Analysis/Figures/accuracy_sharingMatching.png", width = 5.8, height = 2.5)
+ggsave("Study 3 (sharing)/Analysis/Figures/accuracy_sharingMatching.png", width = 5.8, height = 2.5)
 
 ## Response distribution visualization
 ggplot(baseline.limited, aes(x = Response)) +
@@ -94,7 +105,7 @@ ggplot(baseline.limited, aes(x = Response)) +
   facet_grid(CP_subset ~ Task_item) +
   scale_x_continuous(breaks = c(1, 5, 10, 15)) +
   labs(x = 'Number of items given', y = 'Density')
-ggsave("Study 4/Analysis/Figures/sharingMatching_distribution.png", width = 7, height = 3.5)
+ggsave("Study 3 (sharing)/Analysis/Figures/sharingMatching_distribution.png", width = 7, height = 3.5)
 
 
 ## ... accuracy analysis ----
@@ -102,13 +113,13 @@ full.df <- full.df %>%
   mutate(Task_item.c = as.vector(scale(Task_item, center = TRUE, scale=TRUE)),
          age.c = as.vector(scale(Age, center = TRUE, scale=TRUE))) # center and scale continuous variables
 
-correct.baseline <- glmer(Correct ~ Task_item.c + CP_subset + age.c + (1|SID) + (1 | Task_item.c), 
+correct.baseline <- glmer(Correct ~ Task_item.c + CP_subset + age.c + (1|SID), 
                           family = "binomial", 
                           data = full.df)
-correct.condition <- glmer(Correct ~ Condition + Task_item.c + CP_subset + age.c + (1|SID) + (1 | Task_item.c), 
+correct.condition <- glmer(Correct ~ Condition + Task_item.c + CP_subset + age.c + (1|SID), 
                           family = "binomial", 
                           data = full.df)
-correct.int <- glmer(Correct ~ Condition*Task_item.c + CP_subset + age.c + (1|SID) + (1 | Task_item.c), 
+correct.int <- glmer(Correct ~ Condition*Task_item.c + CP_subset + age.c + (1|SID), 
                            family = "binomial", 
                            data = full.df)
 ##test for significance
@@ -116,10 +127,10 @@ anova(correct.baseline, correct.condition, correct.int, test = 'lrt') # there is
 summary(correct.condition) #children are less accurate on sharing relative to matching, p =
 
 ## ... Does sharing interact with KL? ---
-kl.baseline <- correct.baseline <- glmer(Correct ~ Condition + CP_subset +Task_item.c + age.c + (1|SID)+ (1 | Task_item.c), 
+kl.baseline <- correct.baseline <- glmer(Correct ~ Condition + CP_subset +Task_item.c + age.c + (1|SID), 
                                          family = "binomial", 
                                          data = full.df)
-kl.int <- correct.baseline <- glmer(Correct ~ Condition*CP_subset +Task_item.c + age.c + (1|SID)+ (1 | Task_item.c), 
+kl.int <- correct.baseline <- glmer(Correct ~ Condition*CP_subset +Task_item.c + age.c + (1|SID), 
                                          family = "binomial", 
                                          data = full.df)
 anova(kl.baseline, kl.int, test = 'lrt') # nope!
@@ -151,10 +162,31 @@ sharing.kl <- glmer(Correct ~ CP_subset + Task_item.c + age.c + (1|SID)+ (1 | Ta
 anova(sharing.base, sharing.kl, test = 'lrt')
 summary(sharing.kl)
 
+## Main effect of age 
+
+sharing.noage <- glmer(Correct ~ Task_item.c  + (1|SID)+ (1 | Task_item.c), 
+                       family = 'binomial', data = subset(full.df, Condition == "Study 3"))
+anova(sharing.noage, sharing.base, test = 'lrt')
+
+## Main effect of set size
+
+sharing.notask <- glmer(Correct ~ age.c + (1|SID)+ (1 | Task_item.c), 
+                       family = 'binomial', data = subset(full.df, Condition == "Study 3"))
+anova(sharing.notask, sharing.base, test = 'lrt')
+
 ## ... error analysis ----
 error.df <- full.df %>%
   filter(Correct == 0)%>% #get only incorrect
   mutate(abs.error = abs(Task_item - Response))
+
+## Error descriptives
+error.df %>%
+  group_by(Condition)%>%
+  summarise(mean = mean(abs.error))
+
+error.df %>%
+  group_by(Condition, CP_subset)%>%
+  summarise(mean = mean(abs.error))
 
 ## Visualize
 error.df %>%
@@ -182,17 +214,17 @@ error.df %>%
   labs(color= "Condition")
 
 ### Does error differ by condition??
-error.baseline <- lmer(abs.error ~ Task_item.c + CP_subset + age.c + (1|SID)+ (1 | Task_item.c), 
+error.baseline <- lmer(abs.error ~ Task_item.c + CP_subset + age.c + (1|SID), 
                        data = error.df)
-error.condition <- lmer(abs.error ~ Condition + Task_item.c + CP_subset + age.c + (1|SID)+ (1 | Task_item.c), 
+error.condition <- lmer(abs.error ~ Condition + Task_item.c + CP_subset + age.c + (1|SID), 
                         data = error.df)
-error.int <- lmer(abs.error ~ Condition*Task_item.c + CP_subset + age.c + (1|SID)+ (1 | Task_item.c), 
+error.int <- lmer(abs.error ~ Condition*Task_item.c + CP_subset + age.c + (1|SID), 
      data = error.df)
 anova(error.baseline, error.condition, error.int, test = 'lrt')
 summary(error.int) # I actually think that this interaction is an artifact of design??
 summary(error.condition)
 
-error.condition <- lmer(abs.error ~ Condition + CP_subset + Task_item.c + age.c + (1|SID)+ (1 | Task_item.c), 
+error.condition <- lmer(abs.error ~ Condition + CP_subset + Task_item.c + age.c + (1|SID), 
                         data = error.df)
 
 ## get those p values
@@ -221,4 +253,8 @@ t.test(subset(ms.error, CP_subset == "Subset" & Numerosity == "Large" & Conditio
        subset(ms.error, CP_subset == "Subset" & Numerosity == "Large" & Condition == "Study 1")$mean, var.equal = TRUE)
 
 
+## How many kids counted
+sharing.data %>% 
+  filter(Counting.Number.language == 1)%>%
+  distinct(SID, CP_subset)
 

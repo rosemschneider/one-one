@@ -1,15 +1,15 @@
-## One-to-one correspondence: Sharing (Study 4)
+## One-to-one correspondence: Sharing (Study 3)
 ## Data cleaning
 ## Rose M. Schneider
 
 ## Set-up
-rm(list = ls()) #clear everything in R
-library(tidyverse) #load tidyverse packages
-library(tidylog) #load tidylog package
+rm(list = ls()) 
+library(tidyverse) 
+library(tidylog)
 
 ## Read in data ----
 ### Study 1 (sharing)
-sharing.data <- read.csv("Study 4/Data/one-one_sharing.csv") #read in the data
+sharing.data <- read.csv("Study 3 (sharing)/Data/one-one_sharing.csv") #read in the data
 str(sharing.data) 
 summary(sharing.data) 
 
@@ -54,8 +54,8 @@ sharing.data %>%
 
 ## By sex
 sharing.data %>%
-  distinct(SID, Age, Sex)%>%
-  group_by(Sex)%>%
+  distinct(SID, CP_subset, Sex)%>%
+  group_by(CP_subset, Sex)%>%
   summarise(n = n())
 
 ## CP_subset
@@ -83,7 +83,7 @@ sharing.data %>%
   mutate(total.n = sum(n))
 
 ## Save cleaned data ----
-write.csv(sharing.data, "Study 4/Data/one-one_sharing_cleaned.csv")# to sharing folder
+write.csv(sharing.data, "Study 3 (sharing)/Data/one-one_sharing_cleaned.csv")# to sharing folder
 
 
 

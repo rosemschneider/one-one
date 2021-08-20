@@ -1,0 +1,127 @@
+"","SID","DOB","DOT","Age","Sex","Location","Experimenter","Entered.by","Language","Exclude","Exclude_reason","Knower_level","Counterbalance","Condition","Task","Trial_number","Task_item","Response","Correct","Counting.Number.language","Notes","Exclude.Trial","Exclude.Trial.Reason","CP_subset","highest_count","abs.error"
+"1","112219-I","11/22/16","11/22/19",2.997946612,"F","Bayside","RMS","RMS","English",0,"Pilot","2","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","Subset",9,0
+"2","112219-I","11/22/16","11/22/19",2.997946612,"F","Bayside","RMS","RMS","English",0,"Pilot","2","A","EXPLICIT","Set-matching","2",4,4,1,"","",NA,"","Subset",9,0
+"3","112219-I","11/22/16","11/22/19",2.997946612,"F","Bayside","RMS","RMS","English",0,"Pilot","2","A","EXPLICIT","Set-matching","3",10,10,1,"","",NA,"","Subset",9,0
+"4","112219-I","11/22/16","11/22/19",2.997946612,"F","Bayside","RMS","RMS","English",0,"Pilot","2","A","EXPLICIT","Set-matching","5",8,9,0,"","",NA,"","Subset",9,1
+"5","112219-R","12/1/16","11/22/19",2.973305955,"M","Bayside","RMS","RMS","English",0,"Pilot","1","B","EXPLICIT","Set-matching","1",4,5,0,"","",NA,"","Subset",9,1
+"6","112219-R","12/1/16","11/22/19",2.973305955,"M","Bayside","RMS","RMS","English",0,"Pilot","1","B","EXPLICIT","Set-matching","2",3,3,1,"","",NA,"","Subset",9,0
+"7","112219-R","12/1/16","11/22/19",2.973305955,"M","Bayside","RMS","RMS","English",0,"Pilot","1","B","EXPLICIT","Set-matching","3",8,7,0,"","",NA,"","Subset",9,1
+"8","112219-R","12/1/16","11/22/19",2.973305955,"M","Bayside","RMS","RMS","English",0,"Pilot","1","B","EXPLICIT","Set-matching","5",10,6,0,"","",NA,"","Subset",9,4
+"9","112219-D","6/22/15","11/22/19",4.41889117,"M","Bayside","RMS","RMS","English",0,"Pilot","CP","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","CP",20,0
+"10","112219-D","6/22/15","11/22/19",4.41889117,"M","Bayside","RMS","RMS","English",0,"Pilot","CP","A","EXPLICIT","Set-matching","2",4,4,1,"","",NA,"","CP",20,0
+"11","112219-D","6/22/15","11/22/19",4.41889117,"M","Bayside","RMS","RMS","English",0,"Pilot","CP","A","EXPLICIT","Set-matching","3",10,11,0,"","",NA,"","CP",20,1
+"12","112219-D","6/22/15","11/22/19",4.41889117,"M","Bayside","RMS","RMS","English",0,"Pilot","CP","A","EXPLICIT","Set-matching","5",8,11,0,"","",NA,"","CP",20,3
+"13","112219-M","10/13/15","11/22/19",4.109514031,"F","Bayside","RMS","RMS","English",0,"Pilot","CP","B","EXPLICIT","Set-matching","1",4,4,1,"","",NA,"","CP",30,0
+"14","112219-M","10/13/15","11/22/19",4.109514031,"F","Bayside","RMS","RMS","English",0,"Pilot","CP","B","EXPLICIT","Set-matching","2",3,3,1,"","",NA,"","CP",30,0
+"15","112219-M","10/13/15","11/22/19",4.109514031,"F","Bayside","RMS","RMS","English",0,"Pilot","CP","B","EXPLICIT","Set-matching","3",8,8,1,"","",NA,"","CP",30,0
+"16","112219-M","10/13/15","11/22/19",4.109514031,"F","Bayside","RMS","RMS","English",0,"Pilot","CP","B","EXPLICIT","Set-matching","5",10,10,1,"","",NA,"","CP",30,0
+"17","112519-S","11/3/15","11/25/19",4.060232717,"M","Seaside-Turquoise","RMS","RMS","English",0,"Pilot","2","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","Subset",10,0
+"18","112519-S","11/3/15","11/25/19",4.060232717,"M","Seaside-Turquoise","RMS","RMS","English",0,"Pilot","2","A","EXPLICIT","Set-matching","2",4,4,1,"","",NA,"","Subset",10,0
+"19","112519-S","11/3/15","11/25/19",4.060232717,"M","Seaside-Turquoise","RMS","RMS","English",0,"Pilot","2","A","EXPLICIT","Set-matching","3",10,7,0,"","",NA,"","Subset",10,3
+"20","112519-S","11/3/15","11/25/19",4.060232717,"M","Seaside-Turquoise","RMS","RMS","English",0,"Pilot","2","A","EXPLICIT","Set-matching","5",8,4,0,"","",NA,"","Subset",10,4
+"21","112619-IK","3/4/16","11/26/19",3.728952772,"F","Lab","KK","RMS","English",0,"Pilot","CP","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","CP",12,0
+"22","112619-IK","3/4/16","11/26/19",3.728952772,"F","Lab","KK","RMS","English",0,"Pilot","CP","A","EXPLICIT","Set-matching","2",4,5,0,"","",NA,"","CP",12,1
+"23","112619-IK","3/4/16","11/26/19",3.728952772,"F","Lab","KK","RMS","English",0,"Pilot","CP","A","EXPLICIT","Set-matching","3",10,15,0,"","""I think I have to do all of them""",NA,"","CP",12,5
+"24","112619-IK","3/4/16","11/26/19",3.728952772,"F","Lab","KK","RMS","English",0,"Pilot","CP","A","EXPLICIT","Set-matching","5",8,15,0,"","",NA,"","CP",12,7
+"25","112619-O","8/9/15","11/26/19",4.298425736,"F","Lab","RMS","RMS","English",0,"Pilot","4","A","EXPLICIT","Set-matching","1",3,4,0,"","",NA,"","Subset",20,1
+"26","112619-O","8/9/15","11/26/19",4.298425736,"F","Lab","RMS","RMS","English",0,"Pilot","4","A","EXPLICIT","Set-matching","2",4,5,0,"","",NA,"","Subset",20,1
+"27","112619-O","8/9/15","11/26/19",4.298425736,"F","Lab","RMS","RMS","English",0,"Pilot","4","A","EXPLICIT","Set-matching","3",10,10,1,"","""All of the fish""",NA,"","Subset",20,0
+"28","112619-O","8/9/15","11/26/19",4.298425736,"F","Lab","RMS","RMS","English",0,"Pilot","4","A","EXPLICIT","Set-matching","5",8,9,0,"","",NA,"","Subset",20,1
+"29","12219-N","9/12/14","12/2/19",5.221081451,"M","Northminster","RMS","RMS","English",0,"Pilot","CP","A","EXPLICIT","Set-matching","1",3,3,1,"1","""three""",NA,"","CP",50,0
+"30","12219-N","9/12/14","12/2/19",5.221081451,"M","Northminster","RMS","RMS","English",0,"Pilot","CP","A","EXPLICIT","Set-matching","2",4,4,1,"1","counting",NA,"","CP",50,0
+"31","12219-N","9/12/14","12/2/19",5.221081451,"M","Northminster","RMS","RMS","English",0,"Pilot","CP","A","EXPLICIT","Set-matching","3",10,8,0,"1","addition",NA,"","CP",50,2
+"32","12219-N","9/12/14","12/2/19",5.221081451,"M","Northminster","RMS","RMS","English",0,"Pilot","CP","A","EXPLICIT","Set-matching","4",8,6,0,"1","addition",NA,"","CP",50,2
+"33","22320-I","6/2/15","2/23/2020",4.728268309,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","1",3,4,0,"","",NA,"","CP",29,1
+"34","22320-I","6/2/15","2/23/2020",4.728268309,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","2",4,4,1,"","",NA,"","CP",29,0
+"35","22320-I","6/2/15","2/23/2020",4.728268309,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","3",10,9,0,"","",NA,"","CP",29,1
+"36","22320-I","6/2/15","2/23/2020",4.728268309,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","5",8,8,1,"","",NA,"","CP",29,0
+"37","22320-A2","11/16/16","2/23/20",3.26899384,"F","Birch","OM","OM","English",0,"","2","B","EXPLICIT","Set-matching","1",4,4,1,"","",NA,"","Subset",12,0
+"38","22320-A2","11/16/16","2/23/20",3.26899384,"F","Birch","OM","OM","English",0,"","2","B","EXPLICIT","Set-matching","2",3,4,0,"","",NA,"","Subset",12,1
+"39","22320-A2","11/16/16","2/23/20",3.26899384,"F","Birch","OM","OM","English",0,"","2","B","EXPLICIT","Set-matching","3",8,13,0,"","",NA,"","Subset",12,5
+"40","22320-A2","11/16/16","2/23/20",3.26899384,"F","Birch","OM","OM","English",0,"","2","B","EXPLICIT","Set-matching","5",10,14,0,"","",NA,"","Subset",12,4
+"41","22320-S","2/8/2017","2/23/2020",3.039014374,"F","Birch","OM","OM","English",0,"","4","B","EXPLICIT","Set-matching","1",4,4,1,"","",NA,"","Subset",5,0
+"42","22320-S","2/8/2017","2/23/2020",3.039014374,"F","Birch","OM","OM","English",0,"","4","B","EXPLICIT","Set-matching","2",3,3,1,"","",NA,"","Subset",5,0
+"43","22320-S","2/8/2017","2/23/2020",3.039014374,"F","Birch","OM","OM","English",0,"","4","B","EXPLICIT","Set-matching","3",8,8,1,"","",NA,"","Subset",5,0
+"44","22320-S","2/8/2017","2/23/2020",3.039014374,"F","Birch","OM","OM","English",0,"","4","B","EXPLICIT","Set-matching","5",10,11,0,"","",NA,"","Subset",5,1
+"45","22320-R","09/08/2016","2/23/2020",3.457905544,"F","Birch","OM","OM","English",0,"","3","B","EXPLICIT","Set-matching","1",4,5,0,"","",NA,"","Subset",10,1
+"46","22320-R","09/08/2016","2/23/2020",3.457905544,"F","Birch","OM","OM","English",0,"","3","B","EXPLICIT","Set-matching","2",3,3,1,"","",NA,"","Subset",10,0
+"47","22320-R","09/08/2016","2/23/2020",3.457905544,"F","Birch","OM","OM","English",0,"","3","B","EXPLICIT","Set-matching","3",8,9,0,"","",NA,"","Subset",10,1
+"48","22320-R","09/08/2016","2/23/2020",3.457905544,"F","Birch","OM","OM","English",0,"","3","B","EXPLICIT","Set-matching","5",10,11,0,"","",NA,"","Subset",10,1
+"49","22320-L","4/13/2015","2/23/2020",4.865160849,"F","Birch","OM","OM","English",0,"","4","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","Subset",19,0
+"50","22320-L","4/13/2015","2/23/2020",4.865160849,"F","Birch","OM","OM","English",0,"","4","A","EXPLICIT","Set-matching","2",4,4,1,"","",NA,"","Subset",19,0
+"51","22320-L","4/13/2015","2/23/2020",4.865160849,"F","Birch","OM","OM","English",0,"","4","A","EXPLICIT","Set-matching","3",10,11,0,"","",NA,"","Subset",19,1
+"52","22320-L","4/13/2015","2/23/2020",4.865160849,"F","Birch","OM","OM","English",0,"","4","A","EXPLICIT","Set-matching","5",8,9,0,"","",NA,"","Subset",19,1
+"53","22320-H","12/21/2015","2/23/20",4.17522245,"M","Birch","OM","OM","English",0,"","CP","B","EXPLICIT","Set-matching","1",4,4,1,"","",NA,"","CP",19,0
+"54","22320-H","12/21/2015","2/23/20",4.17522245,"M","Birch","OM","OM","English",0,"","CP","B","EXPLICIT","Set-matching","2",3,3,1,"","",NA,"","CP",19,0
+"55","22320-H","12/21/2015","2/23/20",4.17522245,"M","Birch","OM","OM","English",0,"","CP","B","EXPLICIT","Set-matching","3",8,10,0,"","",NA,"","CP",19,2
+"56","22320-H","12/21/2015","2/23/20",4.17522245,"M","Birch","OM","OM","English",0,"","CP","B","EXPLICIT","Set-matching","5",10,10,1,"","",NA,"","CP",19,0
+"57","030120-M3","01/05/2017","03/01/2020",3.151266256,"F","Birch","OM","OM","English",0,"","4","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","Subset",6,0
+"58","030120-M3","01/05/2017","03/01/2020",3.151266256,"F","Birch","OM","OM","English",0,"","4","A","EXPLICIT","Set-matching","2",4,4,1,"","",NA,"","Subset",6,0
+"59","030120-M3","01/05/2017","03/01/2020",3.151266256,"F","Birch","OM","OM","English",0,"","4","A","EXPLICIT","Set-matching","3",10,9,0,"","",NA,"","Subset",6,1
+"60","030120-M3","01/05/2017","03/01/2020",3.151266256,"F","Birch","OM","OM","English",0,"","4","A","EXPLICIT","Set-matching","5",8,8,1,"","",NA,"","Subset",6,0
+"61","030120-A","7/9/2015","03/01/2020",4.646132786,"F","Birch","OM","OM","English",0,"","CP","B","EXPLICIT","Set-matching","1",4,4,1,"","",NA,"","CP",13,0
+"62","030120-A","7/9/2015","03/01/2020",4.646132786,"F","Birch","OM","OM","English",0,"","CP","B","EXPLICIT","Set-matching","2",3,3,1,"","",NA,"","CP",13,0
+"63","030120-A","7/9/2015","03/01/2020",4.646132786,"F","Birch","OM","OM","English",0,"","CP","B","EXPLICIT","Set-matching","3",8,8,1,"","",NA,"","CP",13,0
+"64","030120-A","7/9/2015","03/01/2020",4.646132786,"F","Birch","OM","OM","English",0,"","CP","B","EXPLICIT","Set-matching","5",10,10,1,"","",NA,"","CP",13,0
+"65","030120-M2","9/15/2015","03/01/2020",4.459958932,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","CP",14,0
+"66","030120-M2","9/15/2015","03/01/2020",4.459958932,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","2",4,4,1,"","",NA,"","CP",14,0
+"67","030120-M2","9/15/2015","03/01/2020",4.459958932,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","3",10,10,1,"","",NA,"","CP",14,0
+"68","030120-M2","9/15/2015","03/01/2020",4.459958932,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","5",8,9,0,"","",NA,"","CP",14,1
+"69","030120-M","11/15/15","03/01/20",4.292950034,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","CP",12,0
+"70","030120-M","11/15/15","03/01/20",4.292950034,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","2",4,4,1,"counted, told her this is not a counting task","",NA,"","CP",12,0
+"71","030120-M","11/15/15","03/01/20",4.292950034,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","3",10,10,1,"","",NA,"","CP",12,0
+"72","030120-M","11/15/15","03/01/20",4.292950034,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","5",8,9,0,"","",NA,"","CP",12,1
+"73","030120-L","10/10/2016","03/01/2020",3.389459274,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","CP",49,0
+"74","030120-L","10/10/2016","03/01/2020",3.389459274,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","2",4,4,1,"","",NA,"","CP",49,0
+"75","030120-L","10/10/2016","03/01/2020",3.389459274,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","3",10,10,1,"","",NA,"","CP",49,0
+"76","030120-L","10/10/2016","03/01/2020",3.389459274,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","5",8,8,1,"","",NA,"","CP",49,0
+"77","030120-C","4/10/2015","03/01/2020",4.892539357,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","CP",29,0
+"78","030120-C","4/10/2015","03/01/2020",4.892539357,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","2",4,4,1,"","",NA,"","CP",29,0
+"79","030120-C","4/10/2015","03/01/2020",4.892539357,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","3",10,9,0,"","",NA,"","CP",29,1
+"80","030120-C","4/10/2015","03/01/2020",4.892539357,"F","Birch","OM","OM","English",0,"","CP","A","EXPLICIT","Set-matching","5",8,8,1,"","",NA,"","CP",29,0
+"81","030720-M","09/09/16","03/07/20",3.490759754,"M","Birch","LK","LK","English",0,"","2","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","Subset",10,0
+"82","030720-M","09/09/16","03/07/20",3.490759754,"M","Birch","LK","LK","English",0,"","2","A","EXPLICIT","Set-matching","2",4,8,0,"","",NA,"","Subset",10,4
+"83","030720-M","09/09/16","03/07/20",3.490759754,"M","Birch","LK","LK","English",0,"","2","A","EXPLICIT","Set-matching","3",10,10,1,"","",NA,"","Subset",10,0
+"84","030720-M","09/09/16","03/07/20",3.490759754,"M","Birch","LK","LK","English",0,"","2","A","EXPLICIT","Set-matching","5",8,5,0,"","",NA,"","Subset",10,3
+"85","030720-J","11/22/16","03/07/20",3.288158795,"F","Birch","LK","LK","English",0,"didnt do highest count","1","B","EXPLICIT","Set-matching","1",4,1,0,"","",NA,"","Subset",NA,3
+"86","030720-J","11/22/16","03/07/20",3.288158795,"F","Birch","LK","LK","English",0,"didnt do highest count","1","B","EXPLICIT","Set-matching","2",3,3,1,"","",NA,"","Subset",NA,0
+"87","030720-J","11/22/16","03/07/20",3.288158795,"F","Birch","LK","LK","English",0,"didnt do highest count","1","B","EXPLICIT","Set-matching","3",8,1,0,"","",NA,"","Subset",NA,7
+"88","030720-J","11/22/16","03/07/20",3.288158795,"F","Birch","LK","LK","English",0,"didnt do highest count","1","B","EXPLICIT","Set-matching","5",10,1,0,"","",NA,"","Subset",NA,9
+"89","030720-BB","5/29/2016","03/07/20",3.772758385,"M","Birch","EL","EL","English",0,"","CP","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","CP",20,0
+"90","030720-BB","5/29/2016","03/07/20",3.772758385,"M","Birch","EL","EL","English",0,"","CP","A","EXPLICIT","Set-matching","2",4,5,0,"","",NA,"","CP",20,1
+"91","030720-BB","5/29/2016","03/07/20",3.772758385,"M","Birch","EL","EL","English",0,"","CP","A","EXPLICIT","Set-matching","3",10,11,0,"","",NA,"","CP",20,1
+"92","031320-LV","9/22/15","3/13/20",4.473648186,"M","Seaside Bayside","AMB","AMB","English",0,"","3","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","Subset",29,0
+"93","031320-LV","9/22/15","3/13/20",4.473648186,"M","Seaside Bayside","AMB","AMB","English",0,"","3","A","EXPLICIT","Set-matching","2",4,4,1,"","",NA,"","Subset",29,0
+"94","031320-LV","9/22/15","3/13/20",4.473648186,"M","Seaside Bayside","AMB","AMB","English",0,"","3","A","EXPLICIT","Set-matching","3",10,14,0,"","",NA,"","Subset",29,4
+"95","031320-LV","9/22/15","3/13/20",4.473648186,"M","Seaside Bayside","AMB","AMB","English",0,"","3","A","EXPLICIT","Set-matching","5",8,11,0,"","",NA,"","Subset",29,3
+"96","0313020-OV","9/22/15","3/13/20",4.473648186,"M","Seaside Bayside","AMB","AMB","English",0,"","CP","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","CP",9,0
+"97","0313020-OV","9/22/15","3/13/20",4.473648186,"M","Seaside Bayside","AMB","AMB","English",0,"","CP","A","EXPLICIT","Set-matching","2",4,6,0,"","",NA,"","CP",9,2
+"98","0313020-OV","9/22/15","3/13/20",4.473648186,"M","Seaside Bayside","AMB","AMB","English",0,"","CP","A","EXPLICIT","Set-matching","3",10,14,0,"","",NA,"","CP",9,4
+"99","0313020-OV","9/22/15","3/13/20",4.473648186,"M","Seaside Bayside","AMB","AMB","English",0,"","CP","A","EXPLICIT","Set-matching","5",8,11,0,"","",NA,"","CP",9,3
+"100","031320-EW","4/21/15","3/13/20",4.895277207,"M","Seaside Bayside","AMB","AMB","English",0,"","CP","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","CP",112,0
+"101","031320-EW","4/21/15","3/13/20",4.895277207,"M","Seaside Bayside","AMB","AMB","English",0,"","CP","A","EXPLICIT","Set-matching","2",4,4,1,"","",NA,"","CP",112,0
+"102","031320-EW","4/21/15","3/13/20",4.895277207,"M","Seaside Bayside","AMB","AMB","English",0,"","CP","A","EXPLICIT","Set-matching","3",10,10,1,"","",NA,"","CP",112,0
+"103","031320-EW","4/21/15","3/13/20",4.895277207,"M","Seaside Bayside","AMB","AMB","English",0,"","CP","A","EXPLICIT","Set-matching","5",8,8,1,"","",NA,"","CP",112,0
+"104","031320-MM","10/13/15","3/13/20",4.41615332,"F","Seaside Bayside","AMB","AMB","English",0,"","CP","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","CP",29,0
+"105","031320-MM","10/13/15","3/13/20",4.41615332,"F","Seaside Bayside","AMB","AMB","English",0,"","CP","A","EXPLICIT","Set-matching","2",4,4,1,"","",NA,"","CP",29,0
+"106","031320-MM","10/13/15","3/13/20",4.41615332,"F","Seaside Bayside","AMB","AMB","English",0,"","CP","A","EXPLICIT","Set-matching","3",10,9,0,"","",NA,"","CP",29,1
+"107","031320-MM","10/13/15","3/13/20",4.41615332,"F","Seaside Bayside","AMB","AMB","English",0,"","CP","A","EXPLICIT","Set-matching","5",8,7,0,"","",NA,"","CP",29,1
+"108","031320-FB","7/4/15","3/13/20",4.692676249,"M","Seaside Bayside","AMB","AMB","English",0,"","CP","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","CP",29,0
+"109","031320-FB","7/4/15","3/13/20",4.692676249,"M","Seaside Bayside","AMB","AMB","English",0,"","CP","A","EXPLICIT","Set-matching","2",4,4,1,"","",NA,"","CP",29,0
+"110","031320-FB","7/4/15","3/13/20",4.692676249,"M","Seaside Bayside","AMB","AMB","English",0,"","CP","A","EXPLICIT","Set-matching","3",10,10,1,"","",NA,"","CP",29,0
+"111","031320-FB","7/4/15","3/13/20",4.692676249,"M","Seaside Bayside","AMB","AMB","English",0,"","CP","A","EXPLICIT","Set-matching","5",8,8,1,"","",NA,"","CP",29,0
+"112","031320-C","11/17/15","3/13/20",4.320328542,"M","Seaside Beachside","RMS","RMS","English",0,"","CP","B","EXPLICIT","Set-matching","1",4,5,0,"","",NA,"","CP",19,1
+"113","031320-C","11/17/15","3/13/20",4.320328542,"M","Seaside Beachside","RMS","RMS","English",0,"","CP","B","EXPLICIT","Set-matching","2",3,3,1,"","",NA,"","CP",19,0
+"114","031320-C","11/17/15","3/13/20",4.320328542,"M","Seaside Beachside","RMS","RMS","English",0,"","CP","B","EXPLICIT","Set-matching","3",8,11,0,"","",NA,"","CP",19,3
+"115","031320-C","11/17/15","3/13/20",4.320328542,"M","Seaside Beachside","RMS","RMS","English",0,"","CP","B","EXPLICIT","Set-matching","5",10,9,0,"","",NA,"","CP",19,1
+"116","031320-P","5/10/15","3/13/20",4.843258042,"F","Seaside Beachside","RMS","RMS","English",0,"","CP","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","CP",28,0
+"117","031320-P","5/10/15","3/13/20",4.843258042,"F","Seaside Beachside","RMS","RMS","English",0,"","CP","A","EXPLICIT","Set-matching","2",4,4,1,"","",NA,"","CP",28,0
+"118","031320-P","5/10/15","3/13/20",4.843258042,"F","Seaside Beachside","RMS","RMS","English",0,"","CP","A","EXPLICIT","Set-matching","3",10,15,0,"","",NA,"","CP",28,5
+"119","031320-P","5/10/15","3/13/20",4.843258042,"F","Seaside Beachside","RMS","RMS","English",0,"","CP","A","EXPLICIT","Set-matching","5",8,10,0,"","",NA,"","CP",28,2
+"120","031220-CD","8/4/15","3/12/20",4.605065024,"F","Seaside Beachside","Ay","AY","English",0,"","CP","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","CP",20,0
+"121","031220-CD","8/4/15","3/12/20",4.605065024,"F","Seaside Beachside","Ay","AY","English",0,"","CP","A","EXPLICIT","Set-matching","2",4,4,1,"","",NA,"","CP",20,0
+"122","031220-CD","8/4/15","3/12/20",4.605065024,"F","Seaside Beachside","Ay","AY","English",0,"","CP","A","EXPLICIT","Set-matching","3",10,14,0,"","",NA,"","CP",20,4
+"123","031220-CD","8/4/15","3/12/20",4.605065024,"F","Seaside Beachside","Ay","AY","English",0,"","CP","A","EXPLICIT","Set-matching","5",8,15,0,"","",NA,"","CP",20,7
+"124","031220-EM","2/1/16","3/12/20",4.109514031,"M","Seaside Beachside","AY","AY","English",0,"","CP","A","EXPLICIT","Set-matching","1",3,3,1,"","",NA,"","CP",29,0
+"125","031220-EM","2/1/16","3/12/20",4.109514031,"M","Seaside Beachside","AY","AY","English",0,"","CP","A","EXPLICIT","Set-matching","2",4,4,1,"","",NA,"","CP",29,0
+"126","031220-EM","2/1/16","3/12/20",4.109514031,"M","Seaside Beachside","AY","AY","English",0,"","CP","A","EXPLICIT","Set-matching","5",8,14,0,"","",NA,"","CP",29,6

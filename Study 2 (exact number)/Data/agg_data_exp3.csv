@@ -1,0 +1,127 @@
+,X,SID,Age,Sex,Location,Experimenter,Entered.by,Language,Exclude,Exclude_reason,Knower_level,Counterbalance,Condition,Task,Trial_number,Task_item,Response,Correct,Counting.Number.language,Notes,Exclude.Trial,Exclude.Trial.Reason,CP_subset,highest_count,abs.error
+1,1,112219-I,2.997946612,F,Bayside,RMS,RMS,English,0,Pilot,2,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,Subset,9,0
+2,2,112219-I,2.997946612,F,Bayside,RMS,RMS,English,0,Pilot,2,A,EXPLICIT,Set-matching,2,4,4,1,,,NA,NA,Subset,9,0
+3,3,112219-I,2.997946612,F,Bayside,RMS,RMS,English,0,Pilot,2,A,EXPLICIT,Set-matching,3,10,10,1,,,NA,NA,Subset,9,0
+4,4,112219-I,2.997946612,F,Bayside,RMS,RMS,English,0,Pilot,2,A,EXPLICIT,Set-matching,5,8,9,0,,,NA,NA,Subset,9,1
+5,5,112219-R,2.973305955,M,Bayside,RMS,RMS,English,0,Pilot,1,B,EXPLICIT,Set-matching,1,4,5,0,,,NA,NA,Subset,9,1
+6,6,112219-R,2.973305955,M,Bayside,RMS,RMS,English,0,Pilot,1,B,EXPLICIT,Set-matching,2,3,3,1,,,NA,NA,Subset,9,0
+7,7,112219-R,2.973305955,M,Bayside,RMS,RMS,English,0,Pilot,1,B,EXPLICIT,Set-matching,3,8,7,0,,,NA,NA,Subset,9,1
+8,8,112219-R,2.973305955,M,Bayside,RMS,RMS,English,0,Pilot,1,B,EXPLICIT,Set-matching,5,10,6,0,,,NA,NA,Subset,9,4
+9,9,112219-D,4.41889117,M,Bayside,RMS,RMS,English,0,Pilot,CP,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,CP,20,0
+10,10,112219-D,4.41889117,M,Bayside,RMS,RMS,English,0,Pilot,CP,A,EXPLICIT,Set-matching,2,4,4,1,,,NA,NA,CP,20,0
+11,11,112219-D,4.41889117,M,Bayside,RMS,RMS,English,0,Pilot,CP,A,EXPLICIT,Set-matching,3,10,11,0,,,NA,NA,CP,20,1
+12,12,112219-D,4.41889117,M,Bayside,RMS,RMS,English,0,Pilot,CP,A,EXPLICIT,Set-matching,5,8,11,0,,,NA,NA,CP,20,3
+13,13,112219-M,4.109514031,F,Bayside,RMS,RMS,English,0,Pilot,CP,B,EXPLICIT,Set-matching,1,4,4,1,,,NA,NA,CP,30,0
+14,14,112219-M,4.109514031,F,Bayside,RMS,RMS,English,0,Pilot,CP,B,EXPLICIT,Set-matching,2,3,3,1,,,NA,NA,CP,30,0
+15,15,112219-M,4.109514031,F,Bayside,RMS,RMS,English,0,Pilot,CP,B,EXPLICIT,Set-matching,3,8,8,1,,,NA,NA,CP,30,0
+16,16,112219-M,4.109514031,F,Bayside,RMS,RMS,English,0,Pilot,CP,B,EXPLICIT,Set-matching,5,10,10,1,,,NA,NA,CP,30,0
+17,17,112519-S,4.060232717,M,Seaside-Turquoise,RMS,RMS,English,0,Pilot,2,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,Subset,10,0
+18,18,112519-S,4.060232717,M,Seaside-Turquoise,RMS,RMS,English,0,Pilot,2,A,EXPLICIT,Set-matching,2,4,4,1,,,NA,NA,Subset,10,0
+19,19,112519-S,4.060232717,M,Seaside-Turquoise,RMS,RMS,English,0,Pilot,2,A,EXPLICIT,Set-matching,3,10,7,0,,,NA,NA,Subset,10,3
+20,20,112519-S,4.060232717,M,Seaside-Turquoise,RMS,RMS,English,0,Pilot,2,A,EXPLICIT,Set-matching,5,8,4,0,,,NA,NA,Subset,10,4
+21,21,112619-IK,3.728952772,F,Lab,KK,RMS,English,0,Pilot,CP,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,CP,12,0
+22,22,112619-IK,3.728952772,F,Lab,KK,RMS,English,0,Pilot,CP,A,EXPLICIT,Set-matching,2,4,5,0,,,NA,NA,CP,12,1
+23,23,112619-IK,3.728952772,F,Lab,KK,RMS,English,0,Pilot,CP,A,EXPLICIT,Set-matching,3,10,15,0,,"""I think I have to do all of them""",NA,NA,CP,12,5
+24,24,112619-IK,3.728952772,F,Lab,KK,RMS,English,0,Pilot,CP,A,EXPLICIT,Set-matching,5,8,15,0,,,NA,NA,CP,12,7
+25,25,112619-O,4.298425736,F,Lab,RMS,RMS,English,0,Pilot,4,A,EXPLICIT,Set-matching,1,3,4,0,,,NA,NA,Subset,20,1
+26,26,112619-O,4.298425736,F,Lab,RMS,RMS,English,0,Pilot,4,A,EXPLICIT,Set-matching,2,4,5,0,,,NA,NA,Subset,20,1
+27,27,112619-O,4.298425736,F,Lab,RMS,RMS,English,0,Pilot,4,A,EXPLICIT,Set-matching,3,10,10,1,,"""All of the fish""",NA,NA,Subset,20,0
+28,28,112619-O,4.298425736,F,Lab,RMS,RMS,English,0,Pilot,4,A,EXPLICIT,Set-matching,5,8,9,0,,,NA,NA,Subset,20,1
+29,29,12219-N,5.221081451,M,Northminster,RMS,RMS,English,0,Pilot,CP,A,EXPLICIT,Set-matching,1,3,3,1,1,"""three""",NA,NA,CP,50,0
+30,30,12219-N,5.221081451,M,Northminster,RMS,RMS,English,0,Pilot,CP,A,EXPLICIT,Set-matching,2,4,4,1,1,counting,NA,NA,CP,50,0
+31,31,12219-N,5.221081451,M,Northminster,RMS,RMS,English,0,Pilot,CP,A,EXPLICIT,Set-matching,3,10,8,0,1,addition,NA,NA,CP,50,2
+32,32,12219-N,5.221081451,M,Northminster,RMS,RMS,English,0,Pilot,CP,A,EXPLICIT,Set-matching,4,8,6,0,1,addition,NA,NA,CP,50,2
+33,33,22320-I,4.728268309,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,1,3,4,0,,,NA,NA,CP,29,1
+34,34,22320-I,4.728268309,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,2,4,4,1,,,NA,NA,CP,29,0
+35,35,22320-I,4.728268309,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,3,10,9,0,,,NA,NA,CP,29,1
+36,36,22320-I,4.728268309,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,5,8,8,1,,,NA,NA,CP,29,0
+37,37,22320-A2,3.26899384,F,Birch,OM,OM,English,0,,2,B,EXPLICIT,Set-matching,1,4,4,1,,,NA,NA,Subset,12,0
+38,38,22320-A2,3.26899384,F,Birch,OM,OM,English,0,,2,B,EXPLICIT,Set-matching,2,3,4,0,,,NA,NA,Subset,12,1
+39,39,22320-A2,3.26899384,F,Birch,OM,OM,English,0,,2,B,EXPLICIT,Set-matching,3,8,13,0,,,NA,NA,Subset,12,5
+40,40,22320-A2,3.26899384,F,Birch,OM,OM,English,0,,2,B,EXPLICIT,Set-matching,5,10,14,0,,,NA,NA,Subset,12,4
+41,41,22320-S,3.039014374,F,Birch,OM,OM,English,0,,4,B,EXPLICIT,Set-matching,1,4,4,1,,,NA,NA,Subset,5,0
+42,42,22320-S,3.039014374,F,Birch,OM,OM,English,0,,4,B,EXPLICIT,Set-matching,2,3,3,1,,,NA,NA,Subset,5,0
+43,43,22320-S,3.039014374,F,Birch,OM,OM,English,0,,4,B,EXPLICIT,Set-matching,3,8,8,1,,,NA,NA,Subset,5,0
+44,44,22320-S,3.039014374,F,Birch,OM,OM,English,0,,4,B,EXPLICIT,Set-matching,5,10,11,0,,,NA,NA,Subset,5,1
+45,45,22320-R,3.457905544,F,Birch,OM,OM,English,0,,3,B,EXPLICIT,Set-matching,1,4,5,0,,,NA,NA,Subset,10,1
+46,46,22320-R,3.457905544,F,Birch,OM,OM,English,0,,3,B,EXPLICIT,Set-matching,2,3,3,1,,,NA,NA,Subset,10,0
+47,47,22320-R,3.457905544,F,Birch,OM,OM,English,0,,3,B,EXPLICIT,Set-matching,3,8,9,0,,,NA,NA,Subset,10,1
+48,48,22320-R,3.457905544,F,Birch,OM,OM,English,0,,3,B,EXPLICIT,Set-matching,5,10,11,0,,,NA,NA,Subset,10,1
+49,49,22320-L,4.865160849,F,Birch,OM,OM,English,0,,4,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,Subset,19,0
+50,50,22320-L,4.865160849,F,Birch,OM,OM,English,0,,4,A,EXPLICIT,Set-matching,2,4,4,1,,,NA,NA,Subset,19,0
+51,51,22320-L,4.865160849,F,Birch,OM,OM,English,0,,4,A,EXPLICIT,Set-matching,3,10,11,0,,,NA,NA,Subset,19,1
+52,52,22320-L,4.865160849,F,Birch,OM,OM,English,0,,4,A,EXPLICIT,Set-matching,5,8,9,0,,,NA,NA,Subset,19,1
+53,53,22320-H,4.17522245,M,Birch,OM,OM,English,0,,CP,B,EXPLICIT,Set-matching,1,4,4,1,,,NA,NA,CP,19,0
+54,54,22320-H,4.17522245,M,Birch,OM,OM,English,0,,CP,B,EXPLICIT,Set-matching,2,3,3,1,,,NA,NA,CP,19,0
+55,55,22320-H,4.17522245,M,Birch,OM,OM,English,0,,CP,B,EXPLICIT,Set-matching,3,8,10,0,,,NA,NA,CP,19,2
+56,56,22320-H,4.17522245,M,Birch,OM,OM,English,0,,CP,B,EXPLICIT,Set-matching,5,10,10,1,,,NA,NA,CP,19,0
+57,57,030120-M3,3.151266256,F,Birch,OM,OM,English,0,,4,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,Subset,6,0
+58,58,030120-M3,3.151266256,F,Birch,OM,OM,English,0,,4,A,EXPLICIT,Set-matching,2,4,4,1,,,NA,NA,Subset,6,0
+59,59,030120-M3,3.151266256,F,Birch,OM,OM,English,0,,4,A,EXPLICIT,Set-matching,3,10,9,0,,,NA,NA,Subset,6,1
+60,60,030120-M3,3.151266256,F,Birch,OM,OM,English,0,,4,A,EXPLICIT,Set-matching,5,8,8,1,,,NA,NA,Subset,6,0
+61,61,030120-A,4.646132786,F,Birch,OM,OM,English,0,,CP,B,EXPLICIT,Set-matching,1,4,4,1,,,NA,NA,CP,13,0
+62,62,030120-A,4.646132786,F,Birch,OM,OM,English,0,,CP,B,EXPLICIT,Set-matching,2,3,3,1,,,NA,NA,CP,13,0
+63,63,030120-A,4.646132786,F,Birch,OM,OM,English,0,,CP,B,EXPLICIT,Set-matching,3,8,8,1,,,NA,NA,CP,13,0
+64,64,030120-A,4.646132786,F,Birch,OM,OM,English,0,,CP,B,EXPLICIT,Set-matching,5,10,10,1,,,NA,NA,CP,13,0
+65,65,030120-M2,4.459958932,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,CP,14,0
+66,66,030120-M2,4.459958932,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,2,4,4,1,,,NA,NA,CP,14,0
+67,67,030120-M2,4.459958932,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,3,10,10,1,,,NA,NA,CP,14,0
+68,68,030120-M2,4.459958932,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,5,8,9,0,,,NA,NA,CP,14,1
+69,69,030120-M,4.292950034,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,CP,12,0
+70,70,030120-M,4.292950034,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,2,4,4,1,"counted, told her this is not a counting task",,NA,NA,CP,12,0
+71,71,030120-M,4.292950034,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,3,10,10,1,,,NA,NA,CP,12,0
+72,72,030120-M,4.292950034,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,5,8,9,0,,,NA,NA,CP,12,1
+73,73,030120-L,3.389459274,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,CP,49,0
+74,74,030120-L,3.389459274,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,2,4,4,1,,,NA,NA,CP,49,0
+75,75,030120-L,3.389459274,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,3,10,10,1,,,NA,NA,CP,49,0
+76,76,030120-L,3.389459274,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,5,8,8,1,,,NA,NA,CP,49,0
+77,77,030120-C,4.892539357,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,CP,29,0
+78,78,030120-C,4.892539357,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,2,4,4,1,,,NA,NA,CP,29,0
+79,79,030120-C,4.892539357,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,3,10,9,0,,,NA,NA,CP,29,1
+80,80,030120-C,4.892539357,F,Birch,OM,OM,English,0,,CP,A,EXPLICIT,Set-matching,5,8,8,1,,,NA,NA,CP,29,0
+81,81,030720-M,3.490759754,M,Birch,LK,LK,English,0,,2,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,Subset,10,0
+82,82,030720-M,3.490759754,M,Birch,LK,LK,English,0,,2,A,EXPLICIT,Set-matching,2,4,8,0,,,NA,NA,Subset,10,4
+83,83,030720-M,3.490759754,M,Birch,LK,LK,English,0,,2,A,EXPLICIT,Set-matching,3,10,10,1,,,NA,NA,Subset,10,0
+84,84,030720-M,3.490759754,M,Birch,LK,LK,English,0,,2,A,EXPLICIT,Set-matching,5,8,5,0,,,NA,NA,Subset,10,3
+85,85,030720-J,3.288158795,F,Birch,LK,LK,English,0,didnt do highest count,1,B,EXPLICIT,Set-matching,1,4,1,0,,,NA,NA,Subset,NA,3
+86,86,030720-J,3.288158795,F,Birch,LK,LK,English,0,didnt do highest count,1,B,EXPLICIT,Set-matching,2,3,3,1,,,NA,NA,Subset,NA,0
+87,87,030720-J,3.288158795,F,Birch,LK,LK,English,0,didnt do highest count,1,B,EXPLICIT,Set-matching,3,8,1,0,,,NA,NA,Subset,NA,7
+88,88,030720-J,3.288158795,F,Birch,LK,LK,English,0,didnt do highest count,1,B,EXPLICIT,Set-matching,5,10,1,0,,,NA,NA,Subset,NA,9
+89,89,030720-BB,3.772758385,M,Birch,EL,EL,English,0,,CP,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,CP,20,0
+90,90,030720-BB,3.772758385,M,Birch,EL,EL,English,0,,CP,A,EXPLICIT,Set-matching,2,4,5,0,,,NA,NA,CP,20,1
+91,91,030720-BB,3.772758385,M,Birch,EL,EL,English,0,,CP,A,EXPLICIT,Set-matching,3,10,11,0,,,NA,NA,CP,20,1
+92,92,031320-LV,4.473648186,M,Seaside Bayside,AMB,AMB,English,0,,3,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,Subset,29,0
+93,93,031320-LV,4.473648186,M,Seaside Bayside,AMB,AMB,English,0,,3,A,EXPLICIT,Set-matching,2,4,4,1,,,NA,NA,Subset,29,0
+94,94,031320-LV,4.473648186,M,Seaside Bayside,AMB,AMB,English,0,,3,A,EXPLICIT,Set-matching,3,10,14,0,,,NA,NA,Subset,29,4
+95,95,031320-LV,4.473648186,M,Seaside Bayside,AMB,AMB,English,0,,3,A,EXPLICIT,Set-matching,5,8,11,0,,,NA,NA,Subset,29,3
+96,96,0313020-OV,4.473648186,M,Seaside Bayside,AMB,AMB,English,0,,CP,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,CP,9,0
+97,97,0313020-OV,4.473648186,M,Seaside Bayside,AMB,AMB,English,0,,CP,A,EXPLICIT,Set-matching,2,4,6,0,,,NA,NA,CP,9,2
+98,98,0313020-OV,4.473648186,M,Seaside Bayside,AMB,AMB,English,0,,CP,A,EXPLICIT,Set-matching,3,10,14,0,,,NA,NA,CP,9,4
+99,99,0313020-OV,4.473648186,M,Seaside Bayside,AMB,AMB,English,0,,CP,A,EXPLICIT,Set-matching,5,8,11,0,,,NA,NA,CP,9,3
+100,100,031320-EW,4.895277207,M,Seaside Bayside,AMB,AMB,English,0,,CP,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,CP,112,0
+101,101,031320-EW,4.895277207,M,Seaside Bayside,AMB,AMB,English,0,,CP,A,EXPLICIT,Set-matching,2,4,4,1,,,NA,NA,CP,112,0
+102,102,031320-EW,4.895277207,M,Seaside Bayside,AMB,AMB,English,0,,CP,A,EXPLICIT,Set-matching,3,10,10,1,,,NA,NA,CP,112,0
+103,103,031320-EW,4.895277207,M,Seaside Bayside,AMB,AMB,English,0,,CP,A,EXPLICIT,Set-matching,5,8,8,1,,,NA,NA,CP,112,0
+104,104,031320-MM,4.41615332,F,Seaside Bayside,AMB,AMB,English,0,,CP,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,CP,29,0
+105,105,031320-MM,4.41615332,F,Seaside Bayside,AMB,AMB,English,0,,CP,A,EXPLICIT,Set-matching,2,4,4,1,,,NA,NA,CP,29,0
+106,106,031320-MM,4.41615332,F,Seaside Bayside,AMB,AMB,English,0,,CP,A,EXPLICIT,Set-matching,3,10,9,0,,,NA,NA,CP,29,1
+107,107,031320-MM,4.41615332,F,Seaside Bayside,AMB,AMB,English,0,,CP,A,EXPLICIT,Set-matching,5,8,7,0,,,NA,NA,CP,29,1
+108,108,031320-FB,4.692676249,M,Seaside Bayside,AMB,AMB,English,0,,CP,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,CP,29,0
+109,109,031320-FB,4.692676249,M,Seaside Bayside,AMB,AMB,English,0,,CP,A,EXPLICIT,Set-matching,2,4,4,1,,,NA,NA,CP,29,0
+110,110,031320-FB,4.692676249,M,Seaside Bayside,AMB,AMB,English,0,,CP,A,EXPLICIT,Set-matching,3,10,10,1,,,NA,NA,CP,29,0
+111,111,031320-FB,4.692676249,M,Seaside Bayside,AMB,AMB,English,0,,CP,A,EXPLICIT,Set-matching,5,8,8,1,,,NA,NA,CP,29,0
+112,112,031320-C,4.320328542,M,Seaside Beachside,RMS,RMS,English,0,,CP,B,EXPLICIT,Set-matching,1,4,5,0,,,NA,NA,CP,19,1
+113,113,031320-C,4.320328542,M,Seaside Beachside,RMS,RMS,English,0,,CP,B,EXPLICIT,Set-matching,2,3,3,1,,,NA,NA,CP,19,0
+114,114,031320-C,4.320328542,M,Seaside Beachside,RMS,RMS,English,0,,CP,B,EXPLICIT,Set-matching,3,8,11,0,,,NA,NA,CP,19,3
+115,115,031320-C,4.320328542,M,Seaside Beachside,RMS,RMS,English,0,,CP,B,EXPLICIT,Set-matching,5,10,9,0,,,NA,NA,CP,19,1
+116,116,031320-P,4.843258042,F,Seaside Beachside,RMS,RMS,English,0,,CP,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,CP,28,0
+117,117,031320-P,4.843258042,F,Seaside Beachside,RMS,RMS,English,0,,CP,A,EXPLICIT,Set-matching,2,4,4,1,,,NA,NA,CP,28,0
+118,118,031320-P,4.843258042,F,Seaside Beachside,RMS,RMS,English,0,,CP,A,EXPLICIT,Set-matching,3,10,15,0,,,NA,NA,CP,28,5
+119,119,031320-P,4.843258042,F,Seaside Beachside,RMS,RMS,English,0,,CP,A,EXPLICIT,Set-matching,5,8,10,0,,,NA,NA,CP,28,2
+120,120,031220-CD,4.605065024,F,Seaside Beachside,Ay,AY,English,0,,CP,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,CP,20,0
+121,121,031220-CD,4.605065024,F,Seaside Beachside,Ay,AY,English,0,,CP,A,EXPLICIT,Set-matching,2,4,4,1,,,NA,NA,CP,20,0
+122,122,031220-CD,4.605065024,F,Seaside Beachside,Ay,AY,English,0,,CP,A,EXPLICIT,Set-matching,3,10,14,0,,,NA,NA,CP,20,4
+123,123,031220-CD,4.605065024,F,Seaside Beachside,Ay,AY,English,0,,CP,A,EXPLICIT,Set-matching,5,8,15,0,,,NA,NA,CP,20,7
+124,124,031220-EM,4.109514031,M,Seaside Beachside,AY,AY,English,0,,CP,A,EXPLICIT,Set-matching,1,3,3,1,,,NA,NA,CP,29,0
+125,125,031220-EM,4.109514031,M,Seaside Beachside,AY,AY,English,0,,CP,A,EXPLICIT,Set-matching,2,4,4,1,,,NA,NA,CP,29,0
+126,126,031220-EM,4.109514031,M,Seaside Beachside,AY,AY,English,0,,CP,A,EXPLICIT,Set-matching,5,8,14,0,,,NA,NA,CP,29,6
