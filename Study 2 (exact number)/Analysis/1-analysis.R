@@ -122,3 +122,35 @@ all.data %>%
   filter(counted == "Counted")%>%
   distinct(SID, CP_subset)
 
+## Accuracy Model ====
+### Read in the baseline data
+baseline.data <- read.csv("Study 1/Data/one-one_cleaned.csv")%>% #this is the data from the original study!
+  mutate(Condition = "Matching")%>%
+  filter(Task == "Parallel", 
+         Trial_number != "Training")%>%
+  mutate(Task_item = as.numeric(as.character(Task_item)),
+         Response = as.numeric(as.character(Response)))%>%
+  filter(Response <= 15)%>%
+  select(-X)%>%
+  mutate(Response = as.numeric(as.character(Response)))%>%
+  select(SID, Age, Condition, Task, Task_item, Response, Correct, Numerosity, CP_subset)
+
+exact.data <- all.data %>%
+  filter(Response <= 15)%>%
+  select(SID, Age, Condition, Task, Task_item, Response, Correct, Numerosity, CP_subset)
+
+## put these two datasets together
+omnibus.data <- bind_rows(baseline.data, exact.data)%>%
+  mutate(Task_item.c = as.vector(scale(Task_item, center = TRUE, scale=TRUE)), 
+         age.c = as.vector(scale(Age, center = TRUE, scale=TRUE)))
+
+## now make an accuracy glmer 
+omni.acc.base <- glmer(Correct ~ Task_item.c + age.c + (1|SID), 
+                       family = "binomial", 
+                       data = omnibus.data)
+omni.acc.condition <- glmer(Correct ~ Condition + Task_item.c + age.c + (1|SID), 
+                            family = "binomial", 
+                            data = omnibus.data)
+anova(omni.acc.base, omni.acc.condition, test = 'lrt') # nooooo difference
+summary(omni.acc.condition)
+
