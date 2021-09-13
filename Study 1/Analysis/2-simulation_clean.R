@@ -260,151 +260,6 @@ cp_data = all.data %>%
          Task_item %in% c(6, 8, 10))
 
 
-#
-# ANALYSIS: Subset, approximation ==============================================
-#
-
-# This fits a CoV to subset knower data then generates simulated data with fitted CoV
-# Initial vals and priors
-subset_approximation_init = list(cov_fitted = log(0.3))
-subset_approximation_priors = list(function(x) {-dnorm(x, log(0.3), 0.1, log = T)})
-
-# MLE fit for CoV
-subset_vars_approx = mle_fit_approx(subset_data, 
-                                    subset_approximation_init, 
-                                    subset_approximation_priors)
-# Sanity check fitted values
-subset_vars_approx
-exp(subset_vars_approx['cov_fitted']) # fits a COV of around .56
-
-# Simulate responses based on fitted CoV
-subset_simulation_data_approx = data.frame(
-  Task_item = rep(unique(subset_data$Task_item), SAMPLE_N)
-)
-subset_simulation_data_approx = subset_simulation_data_approx %>%
-  rowwise() %>%
-  mutate(Response = get_approximate_estimate(Task_item, 
-                                                   exp(subset_vars_approx['cov_fitted'])))
-
-
-# PLOT: Subset, approximation ----
-
-scale_factor = length(subset_data$Task_item) / 
-  (SAMPLE_N * length(unique(subset_data$Task_item)))
-
-ggplot(subset_data, aes(x = Response)) +
-  geom_vline(aes(xintercept = Task_item), linetype = "dashed", color = 'black') +
-  geom_histogram(aes(y = ..count.., fill = "Subset-knower"), binwidth = 1, color = 'black',
-                 alpha = .9) + #CP-data first
-  geom_histogram(data = subset_simulation_data_approx, aes(y = ..count.. * scale_factor, fill = 'Simulated'), color = 'black',
-                 binwidth = 1, alpha = .5) + #simulation - approx next
-  scale_x_continuous(breaks= seq(1, 15, 1)) +
-  facet_grid(~Task_item) +
-  scale_y_continuous(breaks = seq(0, 40, by = 10)) +
-  ylim(c(0, 40)) +
-  theme(axis.text.x = element_text(hjust = 1, angle = 45),
-        legend.position = "top") +
-  scale_fill_manual(name = "Data type",
-                    values = c('Simulated' = "#827f7d", 'Subset-knower' = "#FF7C00")) +
-  labs(y = "Frequency",
-       fill = "legend")
-
-
-#
-# ANALYSIS: Subset, "give-all" =================================================
-#
-
-# This fits a CoV and "give-all percent" to subset knower data then generates 
-# simulated data with fitted CoV and give-all percent
-
-# Initial vals and priors
-# NB: uses same initial CoV vals and priors as subset fitting above
-subset_give_all_init = list(cov_fitted = log(0.3),
-                            give_all_log_odds_fitted = logit(0.25))
-subset_give_all_priors = list(function(x) {-dnorm(x, log(0.3), 0.1, log = T)}, # priors for cov value in log space
-                              function(x) {-dnorm(logistic(x), 0.25, 0.1, log = T)}) # priors for give-all pct log odds
-
-# MLE fit for CoV and give-all percent
-subset_vars_give_all = mle_fit_give_all(subset_data, 
-                                        subset_give_all_init, 
-                                        subset_give_all_priors)
-# Sanity check fitted values
-subset_vars_give_all
-exp(subset_vars_give_all['cov_fitted'])
-logistic(subset_vars_give_all['give_all_log_odds_fitted'])
-
-# Simulate responses based on fitted CoV and give-all percent
-subset_simulation_data_give_all = data.frame(
-  Task_item = rep(unique(subset_data$Task_item), SAMPLE_N)
-)
-subset_simulation_data_give_all = subset_simulation_data_give_all %>%
-  rowwise() %>%
-  mutate(Response = get_mixture_give_all_estimate(Task_item, 
-                                                  exp(subset_vars_give_all['cov_fitted']), 
-                                                  logistic(subset_vars_give_all['give_all_log_odds_fitted'])))
-
-# PLOT: Subset, model comparison ----
-
-# Overlaid plots of simulated and real subset-knower data for BOTH approximate AND Give-All
-# Get the relevant data frames together and add a "type" for pretty plots
-# approximation simulation
-subset_sim_data_approx <- subset_simulation_data_approx %>%
-  mutate(type = "Approximation")
-# give-all simulation
-subset_sim_data_giveall <- subset_simulation_data_give_all %>%
-  mutate(type = "Approximation + Give All")
-# subset actual data down for give-all dummy
-subset_data_dummy_give_all <- subset_data %>%
-  mutate(type = "Approximation + Give All")%>%
-  select(Task_item, Response, type)
-# subset actual data down for approximation dummy
-subset_data_dummy_approximation <- subset_data %>%
-  mutate(type = "Approximation")%>%
-  select(Task_item, Response, type)
-
-# Plot both data simulations with real data
-scale_factor = length(subset_data$Task_item) / 
-  (SAMPLE_N * length(unique(subset_data$Task_item)))
-
-ggplot(subset_data_dummy_approximation, aes(x = Response)) + 
-  geom_vline(aes(xintercept = Task_item), linetype = "dashed", color = 'black') +
-  geom_histogram(aes(y = ..count.., fill = "Subset-knower"), binwidth = 1, color = 'black', 
-                 alpha = .9) + #Subset-data first
-  geom_histogram(data = subset_sim_data_approx, aes(y = ..count.. * scale_factor, fill = 'Simulated'), color = 'black', 
-                 binwidth = 1, alpha = .5) + #simulation - approx next
-  geom_vline(data = subset_data_dummy_give_all, aes(xintercept = Task_item), linetype = "dashed", color = 'black') +
-  geom_histogram(data = subset_data_dummy_give_all, aes(y = ..count.., fill = 'Subset-knower'), color = 'black', 
-                 binwidth = 1, alpha = .9) + #now subset-data for give-all
-  geom_histogram(data = subset_sim_data_giveall, aes(y = ..count.. * scale_factor, fill = 'Simulated'), color = 'black',
-                 binwidth = 1, alpha = .5) + # now simulation data for give-all
-  scale_x_continuous(breaks= seq(1, 15, 1)) +
-  scale_y_continuous(breaks = seq(0, 40, by = 10)) +
-  ylim(c(0, 40)) +
-  facet_grid(type~Task_item) +
-  theme(axis.text.x = element_text(hjust = 1, angle = 45), 
-        legend.position = "top") +
-  scale_fill_manual(name = "Data type", 
-                    values = c('Subset-knower' = "#FF7C00", 'Simulated' = "#827f7d")) +
-  labs(y = "Frequency", 
-       fill = "legend") + 
-  guides(fill = guide_legend(reverse = TRUE))
-
-ggsave('Study 1/Analysis/Figures/subset_simulation_data.png', width = 8, height = 5)
-
-
-# MODEL COMPARISON: Subset approximation, give-all ----
-
-# Compare BIC for subset approximation model and subset "give-all" model
-BIC_subset_approx = get_BIC(subset_vars_approx['logL'],
-                            k = 1, n = length(subset_data$SID))
-BIC_subset_give_all = get_BIC(subset_vars_give_all['logL'],
-                              k = 2, n = length(subset_data$SID))
-
-# give-all is a slightly better fit than approx.
-# even after correcting for add'l params
-BIC_subset_approx
-BIC_subset_give_all
-BIC_subset_give_all < BIC_subset_approx 
 
 
 #
@@ -416,7 +271,8 @@ BIC_subset_give_all < BIC_subset_approx
 # Initial vals and priors
 # NB: uses same initial vals and priors as subset fitting above
 cp_approximation_init = list(cov_fitted = log(0.3))
-cp_approximation_priors = list(function(x) {-dnorm(x, log(0.3), 0.1, log = T)})
+cp_approximation_priors = list(function(x) {0}) # NB: reported stats don't include a prior
+# cp_approximation_priors = list(function(x) {-dnorm(x, log(0.3), 0.1, log = T)})
 
 # MLE fit for CoV
 cp_vars_approx = mle_fit_approx(cp_data, cp_approximation_init, cp_approximation_priors)
@@ -457,6 +313,7 @@ ggplot(cp_data, aes(x = Response)) +
        fill = "legend") 
 
 
+
 #
 # ANALYSIS: CP, "exact-match" ==================================================
 #
@@ -468,8 +325,10 @@ ggplot(cp_data, aes(x = Response)) +
 # NB: uses same initial CoV vals and priors as subset fitting above
 cp_exact_match_init = list(cov_fitted = log(0.3),
                            match_log_odds_fitted = logit(0.1))
-cp_exact_match_priors = list(function(x) {-dnorm(x, log(0.3), 0.1, log = T)}, # priors for cov value in log space
-                             function(x) {-dnorm(logistic(x), 0.1, 0.25, log = T)}) # priors for match pct log odds
+cp_exact_match_priors = list(function(x) {0}, # NB: reported stats do not include priors
+                             function(x) {0})
+                             # function(x) {-dnorm(x, log(0.3), 0.1, log = T)}, # priors for cov value in log space
+                             # function(x) {-dnorm(logistic(x), 0.1, 0.25, log = T)}) # priors for match pct log odds
 
 # MLE fit for CoV and exact match percent
 cp_vars_exact_match = mle_fit_exact_match(cp_data, cp_exact_match_init, cp_exact_match_priors)
@@ -544,7 +403,10 @@ ggplot(cp_data_dummy, aes(x = Response)) +
 ggsave('Study 1/Analysis/Figures/CP_simulation_data.png', width = 11, height = 6.65)
 
 
-# MODEL COMPARISON: CP approximation, exact match ----
+
+#
+# MODEL COMPARISON: CP approximation, exact match ==============================
+#
 
 # Compare BIC for CP approximation model and CP "exact match" model
 BIC_cp_approx = get_BIC(cp_vars_approx['logL'],
@@ -556,7 +418,64 @@ BIC_cp_exact_match = get_BIC(cp_vars_exact_match['logL'],
 # even after correcting for add'l params
 BIC_cp_approx
 BIC_cp_exact_match
-BIC_cp_exact_match < BIC_cp_approx 
+BIC_cp_exact_match < BIC_cp_approx # huge if true
+
+
+
+
+
+
+#
+# ANALYSIS: Subset, approximation ==============================================
+#
+
+# This fits a CoV to subset knower data then generates simulated data with fitted CoV
+# Initial vals and priors
+subset_approximation_init = list(cov_fitted = log(0.3))
+subset_approximation_priors = list(function(x) {-dnorm(x, log(0.3), 0.1, log = T)})
+# subset_approximation_priors = list(function(x){0}) # NB: giving no prior at all fits a much larger CoV
+
+
+# MLE fit for CoV
+subset_vars_approx = mle_fit_approx(subset_data, 
+                                    subset_approximation_init, 
+                                    subset_approximation_priors)
+# Sanity check fitted values
+subset_vars_approx
+exp(subset_vars_approx['cov_fitted']) # fits a COV of around .56
+
+# Simulate responses based on fitted CoV
+subset_simulation_data_approx = data.frame(
+  Task_item = rep(unique(subset_data$Task_item), SAMPLE_N)
+)
+subset_simulation_data_approx = subset_simulation_data_approx %>%
+  rowwise() %>%
+  mutate(Response = get_approximate_estimate(Task_item, 
+                                                   exp(subset_vars_approx['cov_fitted'])))
+
+
+# PLOT: Subset, approximation ----
+
+scale_factor = length(subset_data$Task_item) / 
+  (SAMPLE_N * length(unique(subset_data$Task_item)))
+
+ggplot(subset_data, aes(x = Response)) +
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed", color = 'black') +
+  geom_histogram(aes(y = ..count.., fill = "Subset-knower"), binwidth = 1, color = 'black',
+                 alpha = .9) + #CP-data first
+  geom_histogram(data = subset_simulation_data_approx, aes(y = ..count.. * scale_factor, fill = 'Simulated'), color = 'black',
+                 binwidth = 1, alpha = .5) + #simulation - approx next
+  scale_x_continuous(breaks= seq(1, 15, 1)) +
+  facet_grid(~Task_item) +
+  scale_y_continuous(breaks = seq(0, 40, by = 10)) +
+  ylim(c(0, 40)) +
+  theme(axis.text.x = element_text(hjust = 1, angle = 45),
+        legend.position = "top") +
+  scale_fill_manual(name = "Data type",
+                    values = c('Simulated' = "#827f7d", 'Subset-knower' = "#FF7C00")) +
+  labs(y = "Frequency",
+       fill = "legend")
+
 
 
 
@@ -572,7 +491,9 @@ BIC_cp_exact_match < BIC_cp_approx
 # NB: uses same initial vals and priors as CP exact match fitting above
 subset_exact_match_init = list(cov_fitted = log(0.3),
                                match_log_odds_fitted = logit(0.1))
-subset_exact_match_priors = list(function(x) {-dnorm(x, log(0.3), 0.1, log = T)}, # priors for cov value in log space
+subset_exact_match_priors = list(# function(x) {0},
+                                 # function(x) {0})
+                                 function(x) {-dnorm(x, log(0.3), 0.1, log = T)}, # priors for cov value in log space
                                  function(x) {-dnorm(logistic(x), 0.1, 0.25, log = T)}) # priors for match pct log odds
 
 # MLE fit for CoV and exact match percent
@@ -585,9 +506,13 @@ exp(subset_vars_exact_match['cov_fitted'])
 logistic(subset_vars_exact_match['match_log_odds_fitted'])
 
 
-# MODEL COMPARISON: Subset approximation, exact match ----
+#
+# MODEL COMPARISON: Subset approximation, exact match ==========================
+#
 
 # Compare BIC for subset "exact match" model to earlier subset approximation model
+BIC_subset_approx = get_BIC(subset_vars_approx['logL'],
+                            k = 1, n = length(subset_data$SID))
 BIC_subset_exact_match = get_BIC(subset_vars_exact_match['logL'],
                                  k = 2, n = length(subset_data$SID))
 
@@ -595,7 +520,111 @@ BIC_subset_exact_match = get_BIC(subset_vars_exact_match['logL'],
 # after correcting for add'l params (they're basically equivalent)
 BIC_subset_approx
 BIC_subset_exact_match
-BIC_subset_approx < BIC_subset_exact_match
+BIC_subset_approx < BIC_subset_exact_match # huge if true
+
+
+
+#
+# ANALYSIS: Subset, "give-all" =================================================
+#
+
+# This fits a CoV and "give-all percent" to subset knower data then generates 
+# simulated data with fitted CoV and give-all percent
+
+# Initial vals and priors
+# NB: uses same initial CoV vals and priors as subset fitting above
+subset_give_all_init = list(cov_fitted = log(0.3),
+                            give_all_log_odds_fitted = logit(0.25))
+subset_give_all_priors = list(function(x) {0},
+                              function(x) {0})
+                              # function(x) {-dnorm(x, log(0.3), 0.1, log = T)}, # priors for cov value in log space
+                              # function(x) {-dnorm(logistic(x), 0.25, 0.1, log = T)}) # priors for give-all pct log odds
+
+# MLE fit for CoV and give-all percent
+subset_vars_give_all = mle_fit_give_all(subset_data, 
+                                        subset_give_all_init, 
+                                        subset_give_all_priors)
+# Sanity check fitted values
+subset_vars_give_all
+exp(subset_vars_give_all['cov_fitted'])
+logistic(subset_vars_give_all['give_all_log_odds_fitted'])
+
+# Simulate responses based on fitted CoV and give-all percent
+subset_simulation_data_give_all = data.frame(
+  Task_item = rep(unique(subset_data$Task_item), SAMPLE_N)
+)
+subset_simulation_data_give_all = subset_simulation_data_give_all %>%
+  rowwise() %>%
+  mutate(Response = get_mixture_give_all_estimate(Task_item, 
+                                                  exp(subset_vars_give_all['cov_fitted']), 
+                                                  logistic(subset_vars_give_all['give_all_log_odds_fitted'])))
+
+# PLOT: Subset, model comparison ----
+
+# Overlaid plots of simulated and real subset-knower data for BOTH approximate AND Give-All
+# Get the relevant data frames together and add a "type" for pretty plots
+# approximation simulation
+subset_sim_data_approx <- subset_simulation_data_approx %>%
+  mutate(type = "Approximation")
+# give-all simulation
+subset_sim_data_giveall <- subset_simulation_data_give_all %>%
+  mutate(type = "Approximation + Give All")
+# subset actual data down for give-all dummy
+subset_data_dummy_give_all <- subset_data %>%
+  mutate(type = "Approximation + Give All")%>%
+  select(Task_item, Response, type)
+# subset actual data down for approximation dummy
+subset_data_dummy_approximation <- subset_data %>%
+  mutate(type = "Approximation")%>%
+  select(Task_item, Response, type)
+
+# Plot both data simulations with real data
+scale_factor = length(subset_data$Task_item) / 
+  (SAMPLE_N * length(unique(subset_data$Task_item)))
+
+ggplot(subset_data_dummy_approximation, aes(x = Response)) + 
+  geom_vline(aes(xintercept = Task_item), linetype = "dashed", color = 'black') +
+  geom_histogram(aes(y = ..count.., fill = "Subset-knower"), binwidth = 1, color = 'black', 
+                 alpha = .9) + #Subset-data first
+  geom_histogram(data = subset_sim_data_approx, aes(y = ..count.. * scale_factor, fill = 'Simulated'), color = 'black', 
+                 binwidth = 1, alpha = .5) + #simulation - approx next
+  geom_vline(data = subset_data_dummy_give_all, aes(xintercept = Task_item), linetype = "dashed", color = 'black') +
+  geom_histogram(data = subset_data_dummy_give_all, aes(y = ..count.., fill = 'Subset-knower'), color = 'black', 
+                 binwidth = 1, alpha = .9) + #now subset-data for give-all
+  geom_histogram(data = subset_sim_data_giveall, aes(y = ..count.. * scale_factor, fill = 'Simulated'), color = 'black',
+                 binwidth = 1, alpha = .5) + # now simulation data for give-all
+  scale_x_continuous(breaks= seq(1, 15, 1)) +
+  scale_y_continuous(breaks = seq(0, 40, by = 10)) +
+  ylim(c(0, 40)) +
+  facet_grid(type~Task_item) +
+  theme(axis.text.x = element_text(hjust = 1, angle = 45), 
+        legend.position = "top") +
+  scale_fill_manual(name = "Data type", 
+                    values = c('Subset-knower' = "#FF7C00", 'Simulated' = "#827f7d")) +
+  labs(y = "Frequency", 
+       fill = "legend") + 
+  guides(fill = guide_legend(reverse = TRUE))
+
+ggsave('Study 1/Analysis/Figures/subset_simulation_data.png', width = 8, height = 5)
+
+
+#
+# MODEL COMPARISON: Subset approximation, give-all =============================
+#
+
+# Compare BIC for subset approximation model and subset "give-all" model
+BIC_subset_give_all = get_BIC(subset_vars_give_all['logL'],
+                              k = 2, n = length(subset_data$SID))
+
+# give-all is a slightly better fit than approx.
+# even after correcting for add'l params
+BIC_subset_approx
+BIC_subset_exact_match
+BIC_subset_give_all
+
+BIC_subset_give_all < BIC_subset_exact_match 
+
+
 
 
 #
