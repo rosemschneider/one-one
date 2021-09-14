@@ -645,6 +645,7 @@ cp_data_orth = all.data %>%
 # NB: uses same initial vals and priors as CP approximation fitting above
 cp_orth_approximation_init = list(cov_fitted = log(0.3))
 cp_orth_approximation_priors = list(function(x) {-dnorm(x, log(0.3), 0.1, log = T)})
+# cp_orth_approximation_priors = list(function(x) {0})
 
 # MLE fit for CoV
 cp_vars_approx_orth = mle_fit_approx(cp_data_orth, 
@@ -659,7 +660,9 @@ exp(cp_vars_approx_orth['cov_fitted'])
 # NB: uses same initial CoV vals and priors as CP exact match fitting above
 cp_orth_exact_match_init = list(cov_fitted = log(0.3),
                                 match_log_odds_fitted = logit(0.1))
-cp_orth_exact_match_priors = list(function(x) {-dnorm(x, log(0.3), 0.1, log = T)}, # priors for cov value in log space
+cp_orth_exact_match_priors = list(# function(x) {0},
+                                  # function(x) {0})
+                                  function(x) {-dnorm(x, log(0.3), 0.1, log = T)}, # priors for cov value in log space
                                   function(x) {-dnorm(logistic(x), 0.1, 0.25, log = T)}) # priors for match pct log odds
 
 # MLE fit for CoV and exact match percent
@@ -682,4 +685,67 @@ BIC_cp_orth_exact_match = get_BIC(cp_vars_exact_match_orth['logL'],
 # for add'l params (they're basically identical)
 BIC_cp_orth_approx
 BIC_cp_orth_exact_match
+
+
+
+#
+# APPENDIX ANALYSIS: subset orthogonal =========================================
+#
+
+# Pull out data to fit
+subset_data_orth = all.data %>%
+  filter(CP_subset == "Subset",
+         Task == "Orthogonal")
+         # Task_item %in% c(6, 8, 10))
+
+# Initial vals and priors: approximation model
+# NB: uses same initial vals and priors as CP approximation fitting above
+subset_orth_approximation_init = list(cov_fitted = log(0.3))
+# subset_orth_approximation_priors = list(function(x) {-dnorm(x, log(0.3), 0.1, log = T)})
+subset_orth_approximation_priors = list(function(x) {0})
+
+# MLE fit for CoV
+subset_vars_approx_orth = mle_fit_approx(subset_data_orth, 
+                                         subset_orth_approximation_init,
+                                         subset_orth_approximation_priors)
+# Sanity check fitted values
+subset_vars_approx_orth
+exp(subset_vars_approx_orth['cov_fitted'])
+
+# NB: model fails to fit!
+
+
+# Initial vals and priors: exact match model
+# NB: uses same initial CoV vals and priors as CP exact match fitting above
+subset_orth_exact_match_init = list(cov_fitted = log(0.3),
+                                    match_log_odds_fitted = logit(0.1))
+subset_orth_exact_match_priors = list(function(x) {0},
+                                      function(x) {0})
+                                      # function(x) {-dnorm(x, log(0.3), 0.1, log = T)}, # priors for cov value in log space
+                                      # function(x) {-dnorm(logistic(x), 0.1, 0.25, log = T)}) # priors for match pct log odds
+
+# MLE fit for CoV and exact match percent
+subset_vars_exact_match_orth = mle_fit_exact_match(subset_data_orth, 
+                                                   subset_orth_exact_match_init, 
+                                                   subset_orth_exact_match_priors)
+# Sanity check fitted values
+subset_vars_exact_match_orth
+exp(subset_vars_exact_match_orth['cov_fitted'])
+logistic(subset_vars_exact_match_orth['match_log_odds_fitted'])
+
+# NB: model fails to fit!
+
+
+# Compare BIC for approximation and exact match model with CP knower orthogonal data
+# BIC_subset_orth_approx = get_BIC(subset_vars_approx_orth['logL'],
+#                                  k = 1, n = length(subset_data_orth$SID))
+# BIC_subset_orth_exact_match = get_BIC(subset_vars_exact_match_orth['logL'],
+#                                       k = 2, n = length(subset_data_orth$SID))
+# 
+# 
+# BIC_subset_orth_approx
+# BIC_subset_orth_exact_match
+#
+
+
 
